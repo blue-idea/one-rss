@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>The Curator - 深度阅读</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800;900&amp;family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;family=Inter:wght@400;500;600&amp;family=Noto+Serif+SC:wght@500;700&amp;family=Noto+Sans+SC:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-variant": "#e2e2e5",
+                        "surface-container-highest": "#e2e2e5",
+                        "secondary-fixed": "#d8e2ff",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "on-secondary-container": "#2d4c83",
+                        "on-primary-fixed-variant": "#004493",
+                        "on-secondary": "#ffffff",
+                        "surface-container": "#eeeef0",
+                        "on-primary-fixed": "#001a41",
+                        "inverse-primary": "#adc6ff",
+                        "on-primary": "#ffffff",
+                        "secondary-container": "#a1befd",
+                        "on-tertiary-fixed": "#351000",
+                        "inverse-on-surface": "#f0f0f3",
+                        "on-primary-container": "#fefcff",
+                        "tertiary-fixed": "#ffdbcc",
+                        "tertiary-fixed-dim": "#ffb595",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed": "#001a41",
+                        "error-container": "#ffdad6",
+                        "on-surface": "#1a1c1e",
+                        "surface-container-high": "#e8e8ea",
+                        "tertiary": "#9e3d00",
+                        "on-error": "#ffffff",
+                        "on-tertiary-fixed-variant": "#7c2e00",
+                        "inverse-surface": "#2f3133",
+                        "surface-dim": "#dadadc",
+                        "primary-container": "#0070eb",
+                        "on-tertiary-container": "#fffbff",
+                        "surface-tint": "#005bc1",
+                        "surface": "#f9f9fc",
+                        "tertiary-container": "#c64f00",
+                        "primary-fixed": "#d8e2ff",
+                        "outline": "#717786",
+                        "surface-container-low": "#f3f3f6",
+                        "primary": "#0058bc",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface-variant": "#414755",
+                        "surface-bright": "#f9f9fc",
+                        "on-secondary-fixed-variant": "#26467d",
+                        "secondary": "#405e96",
+                        "on-error-container": "#93000a",
+                        "background": "#f9f9fc",
+                        "primary-fixed-dim": "#adc6ff",
+                        "on-background": "#1a1c1e",
+                        "outline-variant": "#c1c6d7"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0px",
+                        "lg": "2px",
+                        "xl": "4px",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope", "Noto Sans SC"],
+                        "body": ["Newsreader", "Noto Serif SC", "serif"],
+                        "label": ["Inter", "Noto Sans SC"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', 'Noto Sans SC', sans-serif; }
+        .font-academic { font-family: 'Newsreader', 'Noto Serif SC', serif; }
+        .abstract-clamp {
+            display: -webkit-box;
+            -webkit-line-clamp: 5;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface antialiased min-h-screen">
+<header class="bg-surface border-b border-outline-variant/30 sticky top-0 z-50 flex justify-between items-center px-6 py-4 w-full">
+<div class="flex items-center gap-4">
+<button class="hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+<h1 class="font-manrope font-extrabold text-xl tracking-tight text-primary uppercase">今日摘要</h1>
+</div>
+<div class="flex items-center gap-5">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer" data-icon="search">search</span>
+<div class="w-8 h-8 rounded-full overflow-hidden bg-surface-container-high border border-outline-variant">
+<img alt="用户头像" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBOSLnI3WzPCO9MP5jWgpqjuXsLszgyeUS6tUZT8NRS7itVMjlUs5UDpElc6xci0IaHMcNo-TWJdN2xRzjqpRRM_33yp8kEUVCkjIrkXHcv3iBHMHaUrxDTr1QzjHs1fED-ZUJveZlAgsTTeecnKKDtAgyWUB8LC2EJb8ucQFvFwCq2vQFabawrfTdwWrzgR3-_ibQjwnH5J6jkg6-IBk89kxEqXij8e_RaC_J_rMEaIWQ84OHzUyRvWygnlMiMUucMBMGKsli3FKh"/>
+</div>
+</div>
+</header>
+<main class="max-w-2xl mx-auto px-6 pb-32">
+<section class="mt-8 border-b border-outline-variant/50 pb-4">
+<div class="flex gap-6 items-center overflow-x-auto no-scrollbar">
+<button class="text-primary font-manrope text-sm font-bold border-b-2 border-primary pb-2 whitespace-nowrap">今日</button>
+<button class="text-on-surface-variant font-manrope text-sm font-medium pb-2 whitespace-nowrap">昨天</button>
+<button class="text-on-surface-variant font-manrope text-sm font-medium pb-2 whitespace-nowrap">本周</button>
+<div class="h-4 w-[1px] bg-outline-variant/50 mb-2"></div>
+<button class="text-on-surface-variant font-manrope text-sm font-medium pb-2 flex items-center gap-1 whitespace-nowrap">
+<span class="material-symbols-outlined text-xs" data-icon="sort">sort</span> 排序
+            </button>
+</div>
+</section>
+<section class="divide-y divide-outline-variant/30">
+<article class="py-10">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="star">star</span>
+<span class="font-manrope text-[10px] font-bold text-primary uppercase tracking-[0.15em]">精选推荐</span>
+<span class="text-on-surface-variant/60 text-[10px] ml-auto">阅读时间 12 分钟</span>
+</div>
+<h2 class="font-academic text-2xl md:text-3xl font-bold leading-tight mb-4 text-on-surface">
+                沉默的建筑师：设计没有视觉噪音的城市
+            </h2>
+<p class="font-academic text-on-surface-variant text-base leading-[1.8] abstract-clamp mb-6">
+                在持续连接的时代，新一代城市设计师正在优先考虑“宁静权”。我们探索了感官中性城市区域的革命性蓝图。本文深入探讨了声学景观设计如何影响城市居民的心理健康，以及为何通过减少视觉干扰可以提升整体生活质量。从北欧的极简主义社区到亚洲的高密度重建项目，建筑师们正在通过材料创新和空间布局重塑我们的感官体验。
+            </p>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 flex items-center justify-center border border-outline-variant bg-surface-container-low text-[10px] font-bold">ARC</div>
+<span class="text-xs font-semibold text-on-surface-variant">建筑评论</span>
+</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-xl" data-icon="bookmark">bookmark</span>
+</button>
+</div>
+</article>
+<article class="py-10">
+<div class="flex items-center gap-2 mb-3">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="article">article</span>
+<span class="font-manrope text-[10px] font-bold text-primary uppercase tracking-wider">纽约时报</span>
+<span class="text-on-surface-variant/60 text-[10px] ml-auto">2小时前</span>
+</div>
+<h3 class="font-academic text-xl font-bold leading-tight mb-3 text-on-surface">
+                全球经济：向再生金融模式的转型
+            </h3>
+<p class="font-academic text-on-surface-variant text-base leading-[1.8] abstract-clamp mb-6">
+                为什么全球最大的投资机构终于开始放弃季度增长，转而关注未来 50 年的生态系统稳定性。这种转变不仅仅是道德层面的，更是一种风险管理策略。随着气候变化和资源枯竭成为现实威胁，传统的榨取式经济模型正显露出其不可持续的本质。经济学家们提出了一系列新的指标，旨在衡量真实的财富创造，包括土壤健康、社区韧性和生物多样性。
+            </p>
+<div class="flex items-center justify-between">
+<div class="flex gap-4">
+<button class="text-xs text-primary font-semibold flex items-center gap-1">阅读全文 <span class="material-symbols-outlined text-sm">arrow_forward</span></button>
+</div>
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-xl text-on-surface-variant cursor-pointer" data-icon="ios_share">ios_share</span>
+<span class="material-symbols-outlined text-xl text-on-surface-variant cursor-pointer" data-icon="bookmark">bookmark</span>
+</div>
+</div>
+</article>
+<article class="py-10">
+<div class="flex items-center gap-2 mb-3">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="terminal">terminal</span>
+<span class="font-manrope text-[10px] font-bold text-primary uppercase tracking-wider">TechCrunch</span>
+<span class="text-on-surface-variant/60 text-[10px] ml-auto">4小时前</span>
+</div>
+<h3 class="font-academic text-xl font-bold leading-tight mb-3 text-on-surface">
+                超越硅基：首台碳纳米管计算机上线
+            </h3>
+<p class="font-academic text-on-surface-variant text-base leading-[1.8] abstract-clamp mb-6">
+                研究人员成功演示了一种计算机架构，其运行速度提高了 10 倍，而功耗仅为原来的 1%。这项突破标志着计算科学新纪元的到来。碳纳米管具有优异的导电性能和散热效率，能够克服目前硅芯片在微缩化过程中的量子极限。本文详细解释了制造过程中的关键工艺，以及这种新型硬件将如何从根本上改变从人工智能训练到边缘计算的每一个环节。
+            </p>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 border border-outline-variant text-[10px] font-medium text-on-surface-variant uppercase">基础研究</span>
+<span class="px-2 py-0.5 border border-outline-variant text-[10px] font-medium text-on-surface-variant uppercase">量子物理</span>
+</div>
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-xl text-on-surface-variant cursor-pointer" data-icon="bookmark">bookmark</span>
+</div>
+</div>
+</article>
+<article class="py-10">
+<div class="flex items-center gap-2 mb-3">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="architecture">architecture</span>
+<span class="font-manrope text-[10px] font-bold text-primary uppercase tracking-wider">Dezeen</span>
+<span class="text-on-surface-variant/60 text-[10px] ml-auto">5小时前</span>
+</div>
+<h3 class="font-academic text-xl font-bold leading-tight mb-3 text-on-surface">
+                粗野主义的伦理：为什么原始混凝土正在现代回归
+            </h3>
+<p class="font-academic text-on-surface-variant text-base leading-[1.8] abstract-clamp mb-6">
+                新一代建筑师正将这一极具争议的运动视为应对一次性设计的可持续方案。粗野主义对诚实表达材料和结构的坚持，在当今充满装饰性表皮的建筑界显得尤为珍贵。通过对混凝土寿命的重新评估，这种曾经被视为冷酷和官僚的风格，现在被赋予了耐用、恒定和诚实的新内涵。我们采访了三位前沿设计师，探讨他们如何利用现代技术改进混凝土的碳足迹，同时保留其震撼的力量感。
+            </p>
+<div class="flex items-center justify-between">
+<div class="text-xs text-on-surface-variant/80">关键词: 粗野主义, 环境可持续性, 建筑理论</div>
+<span class="material-symbols-outlined text-xl text-on-surface-variant cursor-pointer" data-icon="bookmark">bookmark</span>
+</div>
+</article>
+<article class="py-10">
+<div class="flex items-center gap-2 mb-3">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="history_edu">history_edu</span>
+<span class="font-manrope text-[10px] font-bold text-primary uppercase tracking-wider">大西洋月刊</span>
+<span class="text-on-surface-variant/60 text-[10px] ml-auto">8小时前</span>
+</div>
+<h3 class="font-academic text-xl font-bold leading-tight mb-3 text-on-surface">
+                慢读革命：深度专注的抗争
+            </h3>
+<p class="font-academic text-on-surface-variant text-base leading-[1.8] abstract-clamp mb-6">
+                在充斥着算法噪音和 15 秒注意力的世界里，深度专注正如何成为一种终极奢侈。心理学研究表明，长篇阅读不仅仅是信息的获取，更是认知连接和共情能力的锻炼。数字化碎片化正在重塑我们的大脑皮层，使我们更难进行复杂的逻辑推演。这场“慢读运动”不仅是关于阅读，更是关于夺回我们的注意力主权。
+            </p>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1 text-[10px] font-bold text-primary">
+<span class="material-symbols-outlined text-[12px]">verified</span> 深度解析
+                </div>
+<span class="material-symbols-outlined text-xl text-on-surface-variant cursor-pointer" data-icon="bookmark">bookmark</span>
+</div>
+</article>
+</section>
+</main>
+<nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface border-t border-outline-variant/30 shadow-lg">
+<div class="flex justify-around items-center h-16 px-4 w-full">
+<a class="flex flex-col items-center justify-center text-primary" href="#">
+<span class="material-symbols-outlined" data-icon="library_books" style="font-variation-settings: 'FILL' 1;">library_books</span>
+<span class="font-manrope text-[10px] font-bold uppercase tracking-widest mt-1">今日</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="explore">explore</span>
+<span class="font-manrope text-[10px] font-bold uppercase tracking-widest mt-1">发现</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="collections_bookmark">collections_bookmark</span>
+<span class="font-manrope text-[10px] font-bold uppercase tracking-widest mt-1">书架</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+<span class="font-manrope text-[10px] font-bold uppercase tracking-widest mt-1">我的</span>
+</a>
+</div>
+</nav>
+<button class="fixed bottom-24 right-6 w-12 h-12 bg-primary text-white shadow-xl flex items-center justify-center z-50">
+<span class="material-symbols-outlined text-2xl" data-icon="edit_note" style="font-variation-settings: 'wght' 400;">edit_note</span>
+</button>
+
+</body></html>

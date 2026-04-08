@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>发现与订阅 - The Curator</title>
+<!-- Fonts: Manrope for UI, Newsreader for Reading, Inter for Labels -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-variant": "#e2e2e5",
+                    "surface-container-highest": "#e2e2e5",
+                    "secondary-fixed": "#d8e2ff",
+                    "secondary-fixed-dim": "#adc6ff",
+                    "on-secondary-container": "#2d4c83",
+                    "on-primary-fixed-variant": "#004493",
+                    "on-secondary": "#ffffff",
+                    "surface-container": "#eeeef0",
+                    "on-primary-fixed": "#001a41",
+                    "inverse-primary": "#adc6ff",
+                    "on-primary": "#ffffff",
+                    "secondary-container": "#a1befd",
+                    "on-tertiary-fixed": "#351000",
+                    "inverse-on-surface": "#f0f0f3",
+                    "on-primary-container": "#fefcff",
+                    "tertiary-fixed": "#ffdbcc",
+                    "tertiary-fixed-dim": "#ffb595",
+                    "error": "#ba1a1a",
+                    "on-secondary-fixed": "#001a41",
+                    "error-container": "#ffdad6",
+                    "on-surface": "#1a1c1e",
+                    "surface-container-high": "#e8e8ea",
+                    "tertiary": "#9e3d00",
+                    "on-error": "#ffffff",
+                    "on-tertiary-fixed-variant": "#7c2e00",
+                    "inverse-surface": "#2f3133",
+                    "surface-dim": "#dadadc",
+                    "primary-container": "#0070eb",
+                    "on-tertiary-container": "#fffbff",
+                    "surface-tint": "#005bc1",
+                    "surface": "#f9f9fc",
+                    "tertiary-container": "#c64f00",
+                    "primary-fixed": "#d8e2ff",
+                    "outline": "#717786",
+                    "surface-container-low": "#f3f3f6",
+                    "primary": "#0058bc",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface-variant": "#414755",
+                    "surface-bright": "#f9f9fc",
+                    "on-secondary-fixed-variant": "#26467d",
+                    "secondary": "#405e96",
+                    "on-error-container": "#93000a",
+                    "background": "#f9f9fc",
+                    "primary-fixed-dim": "#adc6ff",
+                    "on-background": "#1a1c1e",
+                    "outline-variant": "#c1c6d7"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Newsreader"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        .font-headline { font-family: 'Manrope', sans-serif; }
+        .font-body { font-family: 'Newsreader', serif; }
+        .font-label { font-family: 'Inter', sans-serif; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="bg-surface/80 backdrop-blur-xl sticky top-0 z-50 flex justify-between items-center px-6 py-4 w-full">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#0058bc] cursor-pointer">menu</span>
+<h1 class="font-headline font-black text-2xl tracking-tight text-[#0058bc]">The Curator</h1>
+</div>
+<div class="h-10 w-10 rounded-full overflow-hidden bg-surface-container-high">
+<img alt="User profile photo" class="h-full w-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAAX9cDcOyjDPFMZZBgW5Di3K0euZtVxTN7pLYw3lgtzIuf1apP_eC9sNpgKxIlA_El3PNWHIMpmSkp_04RNoOvrJOQ4GcWVf44H_p7QOtsmh5bidW3Q5NqgLqcFfghnk7ZX9RwVk2MvFdGvmeOw4Buoy3_tt89iAxYynxvFWmnqZoBK3ofavDg0TbnLT5XWG1UaynHv2A3fN-9tCuOXkbEGuh34FT2NntKYp1V_5Ov_I7q6iqxhfN63j_jXZIzi0afkZ0lWf8ANXg_"/>
+</div>
+</header>
+<main class="max-w-screen-xl mx-auto px-4 pt-6">
+<!-- Search & Discovery Header -->
+<section class="mb-8">
+<h2 class="font-headline font-bold text-3xl mb-6 tracking-tight">发现源</h2>
+<!-- Search Bar -->
+<div class="relative group">
+<div class="absolute inset-y-0 left-4 flex items-center pointer-events-none text-on-surface-variant">
+<span class="material-symbols-outlined text-xl">link</span>
+</div>
+<input class="w-full h-14 pl-12 pr-28 bg-surface-container-highest border-none rounded-xl font-headline text-base focus:ring-0 transition-all placeholder:text-on-surface-variant/60" placeholder="添加 RSS 地址或搜索" type="text"/>
+<button class="absolute right-2 top-2 bottom-2 px-4 bg-primary text-on-primary rounded-lg font-label font-semibold text-sm">
+                    添加订阅
+                </button>
+</div>
+</section>
+<!-- Category Tabs -->
+<nav class="flex gap-2 mb-8 overflow-x-auto pb-2 scrollbar-hide">
+<button class="px-5 py-2 bg-primary text-on-primary font-label font-medium text-sm rounded-lg whitespace-nowrap">精选</button>
+<button class="px-5 py-2 bg-surface-container-high text-on-surface-variant font-label font-medium text-sm rounded-lg hover:bg-surface-container-highest transition-colors whitespace-nowrap">科技</button>
+<button class="px-5 py-2 bg-surface-container-high text-on-surface-variant font-label font-medium text-sm rounded-lg hover:bg-surface-container-highest transition-colors whitespace-nowrap">设计</button>
+<button class="px-5 py-2 bg-surface-container-high text-on-surface-variant font-label font-medium text-sm rounded-lg hover:bg-surface-container-highest transition-colors whitespace-nowrap">商业</button>
+</nav>
+<!-- Discovery Grid: 2 columns as requested -->
+<div class="grid grid-cols-2 gap-4">
+<!-- Source Card 1 -->
+<div class="bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-black/5 flex flex-col items-start gap-3">
+<div class="w-16 h-16 rounded-xl overflow-hidden bg-zinc-100">
+<img alt="TechCrunch" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAE-ta2S57fKuTKEAeBLvTNL1f1YP7tx8_gqYn4ZOK6cF-MlmWHqg4ePp5vJEy91XnEf5zVk7TA4avOovmNsiZGmeOh_4Utwz364QD9tPXw97wRe6uOaR9tE_d4bpKxsIc6x4JxytkhbK9MWrS3frL30GHpmvdnRc1CA-nxzwQZqalVCNP6QOtzhhyW4zYR2r0J_cijGfARsg6eLOJJ3GWqqZkDvmT7yj-UqGgha6CI4RyG8PMViAh7pRgGlssWetzQnFtwb2Y3lWIE"/>
+</div>
+<div>
+<h3 class="font-headline font-bold text-lg text-on-surface">TechCrunch</h3>
+<p class="font-label text-sm text-on-surface-variant/80 leading-snug line-clamp-2">最新科技新闻与洞察</p>
+</div>
+<button class="w-full py-2.5 bg-primary text-on-primary font-label font-bold text-sm rounded-xl flex items-center justify-center gap-1">
+<span class="material-symbols-outlined text-lg">check</span>
+                    已订阅
+                </button>
+</div>
+<!-- Source Card 2 -->
+<div class="bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-black/5 flex flex-col items-start gap-3">
+<div class="w-16 h-16 rounded-xl overflow-hidden bg-zinc-100">
+<img alt="The Verge" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuACNGO6mztpymOfaeA_nrL7ClnVvu3wrSmGhqq_Xvji5S5DufhKZj0hlicllgblQ0w5mUKCFyZqESdc9RaxMNbTeLp0gXxKjxrI7ro2Fkr05J-mlgKG-HeMXNsFpxdxd88NFU0ve3FqUJi5G3Rqut4Rxm1Yc-8LmF4Opvp021Jf2T2HVmTe0KFtbViKCEpT8Y2HrDgaPRvcAvg2XNQDLvwRSTWV3JvU3yKRJR5YEcb1RJQWbENepve8T8G18S6tRof5vPYp0bLyTvHm"/>
+</div>
+<div>
+<h3 class="font-headline font-bold text-lg text-on-surface">The Verge</h3>
+<p class="font-label text-sm text-on-surface-variant/80 leading-snug line-clamp-2">科技、科学和文化新闻</p>
+</div>
+<button class="w-full py-2.5 bg-surface-container-low text-primary font-label font-bold text-sm rounded-xl flex items-center justify-center gap-1">
+<span class="material-symbols-outlined text-lg">add</span>
+                    订阅
+                </button>
+</div>
+<!-- Source Card 3 -->
+<div class="bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-black/5 flex flex-col items-start gap-3">
+<div class="w-16 h-16 rounded-xl overflow-hidden bg-zinc-100">
+<img alt="Wired" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJOjJKINC_fwY7mGb0wd7O5FP7-oQ-0hVyEtW23vnN0lBu3L7LiE-hm_mcUPviFgCC9ByanJhyMH8Zsw4Lo9TkxYBxO42Q3kzMnnGvl48VFn-AfSJIU3KxfSRtyFpdn41XWYbHq7ogl6M-mPU-3yx4yNJ9aJOflAU1FKnphccQEJWdmonQ8zkfIA8LZGUhCJMpdoL1kJ6YppdzwXHHyqVAmDBwe4tss-mVcHncYWinsbPGUVm5g0IS0cSwe9xC-4OJCVjBqiLy0o51"/>
+</div>
+<div>
+<h3 class="font-headline font-bold text-lg text-on-surface">Wired</h3>
+<p class="font-label text-sm text-on-surface-variant/80 leading-snug line-clamp-2">前沿科技新闻报道</p>
+</div>
+<button class="w-full py-2.5 bg-surface-container-low text-primary font-label font-bold text-sm rounded-xl flex items-center justify-center gap-1">
+<span class="material-symbols-outlined text-lg">add</span>
+                    订阅
+                </button>
+</div>
+<!-- Source Card 4 -->
+<div class="bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-black/5 flex flex-col items-start gap-3">
+<div class="w-16 h-16 rounded-xl overflow-hidden bg-zinc-100">
+<img alt="Ars Technica" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCOUd4Hn9TvUhIGFzCxNDp2KGEDSbWax5KGNsM5uPMMAtW8oCcthhjM2Lxdgibtwsa07orPOUB_AWUEJvpPsBcx0M-lq4Gfq_rTH6xDuW4pGnoIrjHsAXksz-x_tCSz4B3rdpWjZEAKCeYf2XIAynK9jFnH7wZtBre3y1gM8u2t4OWgjjbBG00Pa9pVM8W_ants9xFFG4XUU_jP-EIhaIEs8oxb9dWNYrlgjrFuJRlXdfwgpbjJz4HXuX5HEjaHbBsc9ey0M_prNQdD"/>
+</div>
+<div>
+<h3 class="font-headline font-bold text-lg text-on-surface">Ars Technica</h3>
+<p class="font-label text-sm text-on-surface-variant/80 leading-snug line-clamp-2">深度科技分析</p>
+</div>
+<button class="w-full py-2.5 bg-surface-container-low text-primary font-label font-bold text-sm rounded-xl flex items-center justify-center gap-1">
+<span class="material-symbols-outlined text-lg">add</span>
+                    订阅
+                </button>
+</div>
+<!-- Source Card 5 -->
+<div class="bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-black/5 flex flex-col items-start gap-3">
+<div class="w-16 h-16 rounded-xl overflow-hidden bg-zinc-100">
+<img alt="Dezeen" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuALRuqkmw061d0myJ3L_XRMzUHZIQPLz8DhIouSbsZMpF_Vioel2-hb_HX2WWhLpKjQ0c37ODXkZ-6Fynu6KqjyTThakksmtz9FTXOzWzMoekRSL1gCoOEwsirP7XQrCYiSK0JK8w8Y3YkaGFkjvjQf6Coexoeh2iIvXcCWVC8vy74PbPSRe6uBVhHKuzbpi7I2MVEx0g_LDAKhsm-vLAgXh3WK6SrLNJJUrfoHvElRxjz3xDMrXDl3T-lhGr7fx1vAQUj6_9M0KOv4"/>
+</div>
+<div>
+<h3 class="font-headline font-bold text-lg text-on-surface">Dezeen</h3>
+<p class="font-label text-sm text-on-surface-variant/80 leading-snug line-clamp-2">最具影响力的建筑杂志</p>
+</div>
+<button class="w-full py-2.5 bg-surface-container-low text-primary font-label font-bold text-sm rounded-xl flex items-center justify-center gap-1">
+<span class="material-symbols-outlined text-lg">add</span>
+                    订阅
+                </button>
+</div>
+<!-- Source Card 6 -->
+<div class="bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-black/5 flex flex-col items-start gap-3">
+<div class="w-16 h-16 rounded-xl overflow-hidden bg-zinc-100">
+<img alt="Bloomberg" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAoyEbPUIMFSpJtMdMdldzDqZ_6d6WcoHrYh1Qh8KcswnfeS1YxT5atew-2mPJ68nh2k48vc4wKY7CsoQwiWOLZ09UmT04FtlS-hHN8lYWtR9rLA7xDEIIYDxjduBqi5l3Ny2KPL4ybYz3l-kaF1lFXtlakFaNJEl9IljzaLUDWk_68E786BaDjBAPydLszVYj2Bt1TMRcSjylw10Ll4U_3G6WqZpNopAsMGGrcUSPrNexz7ZAISq-P5SXJdeE10Bxyz3PZohdwc0hA"/>
+</div>
+<div>
+<h3 class="font-headline font-bold text-lg text-on-surface">Bloomberg</h3>
+<p class="font-label text-sm text-on-surface-variant/80 leading-snug line-clamp-2">全球金融市场实时新闻</p>
+</div>
+<button class="w-full py-2.5 bg-surface-container-low text-primary font-label font-bold text-sm rounded-xl flex items-center justify-center gap-1">
+<span class="material-symbols-outlined text-lg">add</span>
+                    订阅
+                </button>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/80 backdrop-blur-xl border-t border-zinc-200/10 shadow-[0_-4px_24px_rgba(0,0,0,0.04)] flex justify-around items-center h-20 px-4">
+<!-- Today Tab -->
+<a class="flex flex-col items-center justify-center text-zinc-400" href="#">
+<span class="material-symbols-outlined">auto_awesome</span>
+<span class="font-headline text-[11px] font-semibold uppercase tracking-widest mt-1">今日</span>
+</a>
+<!-- Discover Tab (ACTIVE) -->
+<a class="flex flex-col items-center justify-center text-[#0058bc] scale-110 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">explore</span>
+<span class="font-headline text-[11px] font-semibold uppercase tracking-widest mt-1">发现</span>
+</a>
+<!-- Library Tab -->
+<a class="flex flex-col items-center justify-center text-zinc-400" href="#">
+<span class="material-symbols-outlined">subscriptions</span>
+<span class="font-headline text-[11px] font-semibold uppercase tracking-widest mt-1">书架</span>
+</a>
+<!-- Profile Tab -->
+<a class="flex flex-col items-center justify-center text-zinc-400" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-headline text-[11px] font-semibold uppercase tracking-widest mt-1">我的</span>
+</a>
+</nav>
+</body></html>

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>个人中心与设置 - The Curator</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@400;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,700;1,6..72,400&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-variant": "#e2e2e5",
+                    "surface-container-highest": "#e2e2e5",
+                    "secondary-fixed": "#d8e2ff",
+                    "secondary-fixed-dim": "#adc6ff",
+                    "on-secondary-container": "#2d4c83",
+                    "on-primary-fixed-variant": "#004493",
+                    "on-secondary": "#ffffff",
+                    "surface-container": "#eeeef0",
+                    "on-primary-fixed": "#001a41",
+                    "inverse-primary": "#adc6ff",
+                    "on-primary": "#ffffff",
+                    "secondary-container": "#a1befd",
+                    "on-tertiary-fixed": "#351000",
+                    "inverse-on-surface": "#f0f0f3",
+                    "on-primary-container": "#fefcff",
+                    "tertiary-fixed": "#ffdbcc",
+                    "tertiary-fixed-dim": "#ffb595",
+                    "error": "#ba1a1a",
+                    "on-secondary-fixed": "#001a41",
+                    "error-container": "#ffdad6",
+                    "on-surface": "#1a1c1e",
+                    "surface-container-high": "#e8e8ea",
+                    "tertiary": "#9e3d00",
+                    "on-error": "#ffffff",
+                    "on-tertiary-fixed-variant": "#7c2e00",
+                    "inverse-surface": "#2f3133",
+                    "surface-dim": "#dadadc",
+                    "primary-container": "#0070eb",
+                    "on-tertiary-container": "#fffbff",
+                    "surface-tint": "#005bc1",
+                    "surface": "#f9f9fc",
+                    "tertiary-container": "#c64f00",
+                    "primary-fixed": "#d8e2ff",
+                    "outline": "#717786",
+                    "surface-container-low": "#f3f3f6",
+                    "primary": "#0058bc",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface-variant": "#414755",
+                    "surface-bright": "#f9f9fc",
+                    "on-secondary-fixed-variant": "#26467d",
+                    "secondary": "#405e96",
+                    "on-error-container": "#93000a",
+                    "background": "#f9f9fc",
+                    "primary-fixed-dim": "#adc6ff",
+                    "on-background": "#1a1c1e",
+                    "outline-variant": "#c1c6d7"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Newsreader"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        .bg-editorial-gradient {
+            background: linear-gradient(135deg, #0058bc 0%, #0070eb 100%);
+        }
+    </style>
+<style>
+        body {
+          min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-label antialiased min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="bg-surface/80 backdrop-blur-xl docked full-width top-0 sticky z-50 flex justify-between items-center px-6 py-4 w-full">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-zinc-500 hover:opacity-80 transition-opacity cursor-pointer">menu</span>
+<h1 class="font-['Manrope'] font-black text-[#0058bc] dark:text-[#0070eb] text-2xl tracking-tight">The Curator</h1>
+</div>
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/10">
+<img alt="User profile photo" class="w-full h-full object-cover" data-alt="Close-up portrait of a thoughtful person with soft natural lighting and a neutral studio background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBYrZRBy6lcnLz32bLk-fMXvu-s5bbIUiTWpHwLLb382rW_8sxqV6cgQzju-9QNRTsj3BPuRwUsIoQEhQP1a2UOrXQzQXUE_Zio2tR4hW8BYFEixa17ybsT5ZtiIp95zopdA-wrbzx0NVh-5tQSyT12E42Osjj90DlNKbEmzSn95PR0vo8VtmDybYYdR96eX8JxeBIWpK13G9SRqW_mYOLrJgOeTZBJ5ik5FpwbgoOdSy0pZnxC4ZMoER4QxOx_3A0vIdFm9zI3KdkS"/>
+</div>
+</header>
+<main class="max-w-screen-md mx-auto px-6 py-8 space-y-10">
+<!-- Profile Header -->
+<section class="flex flex-col items-center text-center space-y-4">
+<div class="relative">
+<div class="w-28 h-28 rounded-full overflow-hidden shadow-2xl shadow-[#005bc1]/10">
+<img alt="Reader 101" class="w-full h-full object-cover" data-alt="Professional studio headshot of a woman with a calm expression, soft lighting, and high-end editorial feel" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5TyUeGUezGxfEjFjzDwqdTDcwMfBR70QBCQjH0KwZQxjEbrNatuR-5Md-KdGlmsArPP8toZ-5HqLoOsdngVUzxz4Du0RCWlPSOevqrYIH_lfDOwSSIrqtjjK1lnNHIsKi1UMKGeEn5TcbGNQ7EUmfK62MzCe7oRO8S80fYah9Pr0PdnpYpieLYxQgJQJlXqS2lVUzufSSrLvljja2l4blGDhpG_UU0v3SjSR5Qoz268rEWks6j7xgRnz5qypvzsIXhsjQ1GsLEAVG"/>
+</div>
+<div class="absolute bottom-0 right-0 bg-editorial-gradient p-1.5 rounded-full border-4 border-surface">
+<span class="material-symbols-outlined text-white text-sm" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+</div>
+<div>
+<h2 class="font-headline font-extrabold text-3xl tracking-tight text-on-surface">Reader 101</h2>
+<span class="inline-flex items-center px-3 py-1 mt-2 rounded-full bg-surface-container-high text-primary font-headline text-xs font-bold uppercase tracking-widest">高级会员</span>
+</div>
+</section>
+<!-- Bento Stats Section -->
+<section class="grid grid-cols-3 gap-4">
+<div class="bg-surface-container-low p-6 rounded-xl flex flex-col items-center justify-center space-y-1">
+<span class="font-headline font-black text-2xl text-primary">42</span>
+<span class="text-[10px] font-bold uppercase tracking-tighter text-zinc-500">订阅源</span>
+</div>
+<div class="bg-surface-container-low p-6 rounded-xl flex flex-col items-center justify-center space-y-1">
+<span class="font-headline font-black text-2xl text-primary">1.2k</span>
+<span class="text-[10px] font-bold uppercase tracking-tighter text-zinc-500">已读</span>
+</div>
+<div class="bg-surface-container-low p-6 rounded-xl flex flex-col items-center justify-center space-y-1">
+<span class="font-headline font-black text-2xl text-primary">86</span>
+<span class="text-[10px] font-bold uppercase tracking-tighter text-zinc-500">收藏</span>
+</div>
+</section>
+<!-- Settings Section -->
+<section class="space-y-6">
+<h3 class="font-headline font-bold text-lg tracking-tight px-2">账户设置</h3>
+<div class="space-y-2">
+<!-- Reading Preferences -->
+<div class="flex items-center justify-between p-5 rounded-xl bg-surface-container-low hover:bg-surface-container-high transition-colors cursor-pointer group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-surface flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">menu_book</span>
+</div>
+<div>
+<p class="font-headline font-bold text-on-surface">阅读偏好</p>
+<p class="text-xs text-zinc-500">字体大小，行高，主题</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-zinc-400 group-hover:translate-x-1 transition-transform">chevron_right</span>
+</div>
+<!-- Notifications -->
+<div class="flex items-center justify-between p-5 rounded-xl bg-surface-container-low hover:bg-surface-container-high transition-colors cursor-pointer group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-surface flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">notifications_active</span>
+</div>
+<div>
+<p class="font-headline font-bold text-on-surface">通知设置</p>
+<p class="text-xs text-zinc-500">重大新闻，每日摘要</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-zinc-400 group-hover:translate-x-1 transition-transform">chevron_right</span>
+</div>
+<!-- Interface Language -->
+<div class="flex items-center justify-between p-5 rounded-xl bg-surface-container-low hover:bg-surface-container-high transition-colors cursor-pointer group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-surface flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">language</span>
+</div>
+<div>
+<p class="font-headline font-bold text-on-surface">界面语言</p>
+<p class="text-xs text-zinc-500">中文 (简体)</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-zinc-400 group-hover:translate-x-1 transition-transform">chevron_right</span>
+</div>
+<!-- Translation Language -->
+<div class="flex items-center justify-between p-5 rounded-xl bg-surface-container-low hover:bg-surface-container-high transition-colors cursor-pointer group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-surface flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">translate</span>
+</div>
+<div>
+<p class="font-headline font-bold text-on-surface">翻译语言</p>
+<p class="text-xs text-zinc-500">自动翻译为 法语</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-zinc-400 group-hover:translate-x-1 transition-transform">chevron_right</span>
+</div>
+</div>
+</section>
+<!-- Logout Action -->
+<section class="pt-8">
+<button class="w-full flex items-center justify-center gap-2 py-4 rounded-full border-2 border-error/10 text-error font-headline font-bold hover:bg-error/5 transition-colors">
+<span class="material-symbols-outlined">logout</span>
+                退出登录
+            </button>
+<p class="text-center text-[10px] text-zinc-400 mt-6 uppercase tracking-[0.2em]">THE CURATOR 版本 2.4.0</p>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="bg-surface/80 backdrop-blur-xl border-t border-zinc-200/10 fixed bottom-0 w-full z-50 pb-safe shadow-[0_-4px_24px_rgba(0,0,0,0.04)] flex justify-around items-center h-20 px-4">
+<a class="flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-600 hover:text-[#0058bc] transition-colors" href="#">
+<span class="material-symbols-outlined">auto_awesome</span>
+<span class="font-['Manrope'] text-[11px] font-semibold uppercase tracking-widest mt-1">今日</span>
+</a>
+<a class="flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-600 hover:text-[#0058bc] transition-colors" href="#">
+<span class="material-symbols-outlined">explore</span>
+<span class="font-['Manrope'] text-[11px] font-semibold uppercase tracking-widest mt-1">发现</span>
+</a>
+<a class="flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-600 hover:text-[#0058bc] transition-colors" href="#">
+<span class="material-symbols-outlined">subscriptions</span>
+<span class="font-['Manrope'] text-[11px] font-semibold uppercase tracking-widest mt-1">书架</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#0058bc] dark:text-[#0070eb] scale-110 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="font-['Manrope'] text-[11px] font-semibold uppercase tracking-widest mt-1">我的</span>
+</a>
+</nav>
+</body></html>

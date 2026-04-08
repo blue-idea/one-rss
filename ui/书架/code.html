@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>The Curator | 书架</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800;900&amp;family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;family=Inter:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-variant": "#e2e2e5",
+                    "surface-container-highest": "#e2e2e5",
+                    "secondary-fixed": "#d8e2ff",
+                    "secondary-fixed-dim": "#adc6ff",
+                    "on-secondary-container": "#2d4c83",
+                    "on-primary-fixed-variant": "#004493",
+                    "on-secondary": "#ffffff",
+                    "surface-container": "#eeeef0",
+                    "on-primary-fixed": "#001a41",
+                    "inverse-primary": "#adc6ff",
+                    "on-primary": "#ffffff",
+                    "secondary-container": "#a1befd",
+                    "on-tertiary-fixed": "#351000",
+                    "inverse-on-surface": "#f0f0f3",
+                    "on-primary-container": "#fefcff",
+                    "tertiary-fixed": "#ffdbcc",
+                    "tertiary-fixed-dim": "#ffb595",
+                    "error": "#ba1a1a",
+                    "on-secondary-fixed": "#001a41",
+                    "error-container": "#ffdad6",
+                    "on-surface": "#1a1c1e",
+                    "surface-container-high": "#e8e8ea",
+                    "tertiary": "#9e3d00",
+                    "on-error": "#ffffff",
+                    "on-tertiary-fixed-variant": "#7c2e00",
+                    "inverse-surface": "#2f3133",
+                    "surface-dim": "#dadadc",
+                    "primary-container": "#0070eb",
+                    "on-tertiary-container": "#fffbff",
+                    "surface-tint": "#005bc1",
+                    "surface": "#f9f9fc",
+                    "tertiary-container": "#c64f00",
+                    "primary-fixed": "#d8e2ff",
+                    "outline": "#717786",
+                    "surface-container-low": "#f3f3f6",
+                    "primary": "#0058bc",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface-variant": "#414755",
+                    "surface-bright": "#f9f9fc",
+                    "on-secondary-fixed-variant": "#26467d",
+                    "secondary": "#405e96",
+                    "on-error-container": "#93000a",
+                    "background": "#f9f9fc",
+                    "primary-fixed-dim": "#adc6ff",
+                    "on-background": "#1a1c1e",
+                    "outline-variant": "#c1c6d7"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Newsreader"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-label selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopAppBar -->
+<header class="bg-surface/80 backdrop-blur-xl dark:bg-zinc-950/80 docked full-width top-0 sticky z-50 flex justify-between items-center px-6 py-4 w-full">
+<div class="flex items-center gap-4">
+<button class="hover:opacity-80 transition-opacity text-zinc-500 dark:text-zinc-400">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+<h1 class="font-['Manrope'] font-black text-[#0058bc] dark:text-[#0070eb] text-2xl tracking-tight">The Curator</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-zinc-500 dark:text-zinc-400 hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden bg-surface-container-high">
+<img alt="用户头像" class="w-full h-full object-cover" data-alt="Professional studio headshot of a person with friendly expression, soft directional lighting, neutral grey background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBOe0QFA4uLFZtz3fKWVCfJU1Jz9EqCmMt-L7mf7AwMJ_k0qVFJOijpQ5MjkrkS9ewwgkoUZU12jVEc3H2CS-Pd8UfxLnXnwa84z0bpT_n7wmvk5TbWS8I916z6YPlXbE_H50lPO4KgkMtJiJAJkUW_QevRIEyUsbRujP67RjkQnC6w5ZMmxdCsLLCjNKBl6ZJ_KyVlURhBeAvhOccH_QQchngKDy6PqBJJSzwW3WVOAu6JvcddQhdg0uk7WdpqdCw-D4IekQz_0OwJ"/>
+</div>
+</div>
+</header>
+<main class="max-w-4xl mx-auto px-6 pt-8 pb-32">
+<!-- Section Header -->
+<div class="mb-10">
+<h2 class="font-headline font-extrabold text-4xl tracking-tight text-on-surface mb-2">书架</h2>
+<p class="font-body text-xl text-on-surface-variant italic">您收藏的数字之声。</p>
+</div>
+<!-- Filter Chips -->
+<div class="flex gap-2 mb-8 overflow-x-auto hide-scrollbar pb-2">
+<button class="px-6 py-2 bg-primary text-on-primary rounded-full font-label text-sm font-semibold whitespace-nowrap shadow-lg shadow-primary/20">
+                全部
+            </button>
+<button class="px-6 py-2 bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest transition-colors rounded-full font-label text-sm font-semibold whitespace-nowrap">
+                设计
+            </button>
+<button class="px-6 py-2 bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest transition-colors rounded-full font-label text-sm font-semibold whitespace-nowrap">
+                科技
+            </button>
+<button class="px-6 py-2 bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest transition-colors rounded-full font-label text-sm font-semibold whitespace-nowrap">
+                文化
+            </button>
+<button class="px-6 py-2 bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest transition-colors rounded-full font-label text-sm font-semibold whitespace-nowrap">
+                建筑
+            </button>
+<button class="px-6 py-2 bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest transition-colors rounded-full font-label text-sm font-semibold whitespace-nowrap">
+                商业
+            </button>
+</div>
+<!-- Subscription List -->
+<div class="space-y-4">
+<!-- Feed Row 1 -->
+<div class="group flex items-center justify-between p-5 bg-surface-container-low rounded-xl hover:bg-surface-container transition-all cursor-pointer">
+<div class="flex items-center gap-5">
+<div class="w-14 h-14 rounded-xl overflow-hidden bg-white shadow-sm flex items-center justify-center p-2">
+<img alt="Wallpaper* Feed Icon" class="w-full h-full object-contain" data-alt="Abstract minimalist graphic icon with bold geometric shapes in primary colors on a clean white background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBvhLCab4T6VKp3d1HHeUdcZuCOEYkXg4uZMuZ_ozua9ztYfAkHAqUDqEkkklSaC11hNLnY9iorx2WXNKVOiya3swzjywG22BuVkUSSdkvn5sEEprbxsc3rPZJWwdG_9oA9hRHjyRR3JYar92YEfzMzCnZ7WCtzCH69LrD0JvqF8Llp8eAtlvtp2LnjPD8raV0LMCKLUIX8FF1wTuV-7ybONB5yeL0vSGavw_opORGn1m39879h11cMRwKGld8pX8oACkGCc3HM37IH"/>
+</div>
+<div>
+<h3 class="font-headline font-bold text-lg text-on-surface group-hover:text-primary transition-colors">Wallpaper*</h3>
+<div class="flex items-center gap-2 mt-1">
+<span class="px-2 py-0.5 bg-surface-container-highest text-[10px] font-bold uppercase tracking-wider text-on-surface-variant rounded">设计</span>
+<span class="font-label text-xs text-on-surface-variant/60">12分钟前更新</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="flex items-center justify-center min-w-[24px] h-6 px-1.5 bg-primary/10 text-primary font-headline font-bold text-xs rounded-lg">24</span>
+<span class="material-symbols-outlined text-outline-variant opacity-0 group-hover:opacity-100 transition-opacity" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+<!-- Feed Row 2 -->
+<div class="group flex items-center justify-between p-5 bg-surface-container-low rounded-xl hover:bg-surface-container transition-all cursor-pointer">
+<div class="flex items-center gap-5">
+<div class="w-14 h-14 rounded-xl overflow-hidden bg-white shadow-sm flex items-center justify-center p-2">
+<img alt="The Verge Feed Icon" class="w-full h-full object-contain" data-alt="Sleek modern technology brand logo in high contrast black and white with minimalist aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBoVIR3FYI2p6sXeQTAI6q5TgAkheuzsL8qK_GO_jlsgeXQ2ZbM8fFHNUNd_yLEcoDRF0z5uqaJqXgiwuTmIyA18jjMBmLGKbr2RL0L273fdN3uhtAye_2HtPF57_ggsSuHLUggPipUANGdyR11Cf8mTNUOAX-LWdOd1ZbTbmeM90hKMDhNmrNh42PlMbwO4hivEe-S32J2GUl5nZuiNw5cqnWQoOD4tN0KNktKjLaVBKODutE5eez4SjSyWLyTmGTEOro6LeD_w_nv"/>
+</div>
+<div>
+<h3 class="font-headline font-bold text-lg text-on-surface group-hover:text-primary transition-colors">The Verge</h3>
+<div class="flex items-center gap-2 mt-1">
+<span class="px-2 py-0.5 bg-surface-container-highest text-[10px] font-bold uppercase tracking-wider text-on-surface-variant rounded">科技</span>
+<span class="font-label text-xs text-on-surface-variant/60">1小时前更新</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="flex items-center justify-center min-w-[24px] h-6 px-1.5 bg-primary/10 text-primary font-headline font-bold text-xs rounded-lg">156</span>
+<span class="material-symbols-outlined text-outline-variant opacity-0 group-hover:opacity-100 transition-opacity" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+<!-- Feed Row 3 -->
+<div class="group flex items-center justify-between p-5 bg-surface-container-low rounded-xl hover:bg-surface-container transition-all cursor-pointer">
+<div class="flex items-center gap-5">
+<div class="w-14 h-14 rounded-xl overflow-hidden bg-white shadow-sm flex items-center justify-center p-2">
+<img alt="National Geographic Feed Icon" class="w-full h-full object-contain" data-alt="Iconic yellow rectangular frame border on a vibrant nature photograph of a deep forest" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDA17fSUHKVCk1AkVj6jHJPs_Z0yZxN9x8RlPdyoyHom2JDLbsr_dJ2tXDUv7aHcUAIsoiPsNSKPUvvCmfKNHBsAswpwP3bDLO4keqBS9f6SkloZLh-Gh5jRh9cxhvTSPRRF4QxCgmqYDQLtHCGsL5GhfBtM3KPQcaArlh5Ti2a7vTS4bCovQGclIeox2cFF2Jog8HAceG5oj8eZ6hajdYWiIJygk7oXJuE8umYrsw3jdr-C7C9mUNYP12hlwg6XPY4xNjf947rHjKU"/>
+</div>
+<div>
+<h3 class="font-headline font-bold text-lg text-on-surface group-hover:text-primary transition-colors">National Geographic</h3>
+<div class="flex items-center gap-2 mt-1">
+<span class="px-2 py-0.5 bg-surface-container-highest text-[10px] font-bold uppercase tracking-wider text-on-surface-variant rounded">文化</span>
+<span class="font-label text-xs text-on-surface-variant/60">4小时前更新</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="flex items-center justify-center min-w-[24px] h-6 px-1.5 bg-primary/10 text-primary font-headline font-bold text-xs rounded-lg">8</span>
+<span class="material-symbols-outlined text-outline-variant opacity-0 group-hover:opacity-100 transition-opacity" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+<!-- Feed Row 4 -->
+<div class="group flex items-center justify-between p-5 bg-surface-container-low rounded-xl hover:bg-surface-container transition-all cursor-pointer">
+<div class="flex items-center gap-5">
+<div class="w-14 h-14 rounded-xl overflow-hidden bg-white shadow-sm flex items-center justify-center p-2">
+<img alt="Architectural Digest Feed Icon" class="w-full h-full object-contain" data-alt="Elegant monogram typography design in a classic serif font, sophisticated and luxury visual style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCNNXuL6lSSbJnv8Hay9RUKjrnLGOFcGsXk9XWXUEnySdp9yI-l0P1CpdmmJG9vh0Z1M5slABJaPzuLRRg5UYO-4fVZlpLmnBo-OtZeGkJW5U9HiX98rXBV52-RSRD6fxv0o7Ne2hm9p2WrWSFGlBoMkzg4s_8oJVlwHCMK-GNIYE2GEDrF3iKzIvd1AMlmFRchc9Pc-8rUQiZYeHDeYkHVqoMJntjj1cO4nWnskoWXjr6TAim7vdKpLibwetFhF7aHQl9JC2xm42B0"/>
+</div>
+<div>
+<h3 class="font-headline font-bold text-lg text-on-surface group-hover:text-primary transition-colors">Architectural Digest</h3>
+<div class="flex items-center gap-2 mt-1">
+<span class="px-2 py-0.5 bg-surface-container-highest text-[10px] font-bold uppercase tracking-wider text-on-surface-variant rounded">建筑</span>
+<span class="font-label text-xs text-on-surface-variant/60">1天前更新</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="flex items-center justify-center min-w-[24px] h-6 px-1.5 bg-primary/10 text-primary font-headline font-bold text-xs rounded-lg">31</span>
+<span class="material-symbols-outlined text-outline-variant opacity-0 group-hover:opacity-100 transition-opacity" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+<!-- Feed Row 5 -->
+<div class="group flex items-center justify-between p-5 bg-surface-container-low rounded-xl hover:bg-surface-container transition-all cursor-pointer">
+<div class="flex items-center gap-5">
+<div class="w-14 h-14 rounded-xl overflow-hidden bg-white shadow-sm flex items-center justify-center p-2">
+<img alt="Stripe Blog Feed Icon" class="w-full h-full object-contain" data-alt="Vibrant clean tech logo with purple and blue gradients and modern sans-serif typography" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDlX4BGUHPmwL65u6fGLiDe6O16S8yAUaYx3NjRyu8fHZ6jNAvHjBymixBQ0DPxfQXI_Iq6bCcR8-nhF0nY4kVQdTYDUbkUHRK_Ip_Kc5Sj13ulrStczCxbU8DQR5YUM6RLOOhW6nuwvXQ8h-_6NlKu-wZ9YtM19ShLTQs30_MPXV0mxPSi1j1W0gva6Ctk-fcPL2uGeJIulLgtVkDAt5kLH_-pBX1RrzOb7kq-zJj7hjZXQjpZIsXnRcgaZa7fLQYbGdnF8GUJX1JY"/>
+</div>
+<div>
+<h3 class="font-headline font-bold text-lg text-on-surface group-hover:text-primary transition-colors">Stripe Engineering</h3>
+<div class="flex items-center gap-2 mt-1">
+<span class="px-2 py-0.5 bg-surface-container-highest text-[10px] font-bold uppercase tracking-wider text-on-surface-variant rounded">科技</span>
+<span class="font-label text-xs text-on-surface-variant/60">3天前更新</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="flex items-center justify-center min-w-[24px] h-6 px-1.5 bg-primary/10 text-primary font-headline font-bold text-xs rounded-lg">2</span>
+<span class="material-symbols-outlined text-outline-variant opacity-0 group-hover:opacity-100 transition-opacity" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Empty State / Add Feed CTA -->
+<div class="mt-12 flex flex-col items-center justify-center p-12 border-2 border-dashed border-outline-variant/20 rounded-[2rem]">
+<div class="w-16 h-16 bg-surface-container-high rounded-full flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="rss_feed">rss_feed</span>
+</div>
+<h4 class="font-headline font-bold text-xl text-on-surface mb-1">发现更多声音</h4>
+<p class="font-body text-on-surface-variant text-center mb-6">寻找并关注世界上最优秀的作家和出版物。</p>
+<button class="bg-gradient-to-br from-primary to-primary-container text-on-primary px-8 py-3 rounded-full font-label font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform">
+                探索目录
+            </button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="bg-surface/80 backdrop-blur-xl dark:bg-zinc-950/80 fixed bottom-0 w-full z-50 pb-safe border-t border-zinc-200/10 dark:border-zinc-800/20 shadow-[0_-4px_24px_rgba(0,0,0,0.04)] flex justify-around items-center h-20 px-4">
+<!-- Today Tab -->
+<button class="flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-600 hover:text-[#0058bc] transition-colors">
+<span class="material-symbols-outlined" data-icon="auto_awesome">auto_awesome</span>
+<span class="font-['Manrope'] text-[11px] font-semibold uppercase tracking-widest mt-1">今日</span>
+</button>
+<!-- Discover Tab -->
+<button class="flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-600 hover:text-[#0058bc] transition-colors">
+<span class="material-symbols-outlined" data-icon="explore">explore</span>
+<span class="font-['Manrope'] text-[11px] font-semibold uppercase tracking-widest mt-1">发现</span>
+</button>
+<!-- Library Tab (Active) -->
+<button class="flex flex-col items-center justify-center text-[#0058bc] dark:text-[#0070eb] scale-110 transition-transform">
+<span class="material-symbols-outlined" data-icon="subscriptions" style="font-variation-settings: 'FILL' 1;">subscriptions</span>
+<span class="font-['Manrope'] text-[11px] font-semibold uppercase tracking-widest mt-1">书架</span>
+</button>
+<!-- Profile Tab -->
+<button class="flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-600 hover:text-[#0058bc] transition-colors">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-['Manrope'] text-[11px] font-semibold uppercase tracking-widest mt-1">我的</span>
+</button>
+</nav>
+</body></html>

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;family=Inter:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+          tailwind.config = {
+            darkMode: "class",
+            theme: {
+              extend: {
+                "colors": {
+                        "surface-variant": "#e2e2e5",
+                        "surface-container-highest": "#e2e2e5",
+                        "secondary-fixed": "#d8e2ff",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "on-secondary-container": "#2d4c83",
+                        "on-primary-fixed-variant": "#004493",
+                        "on-secondary": "#ffffff",
+                        "surface-container": "#eeeef0",
+                        "on-primary-fixed": "#001a41",
+                        "inverse-primary": "#adc6ff",
+                        "on-primary": "#ffffff",
+                        "secondary-container": "#a1befd",
+                        "on-tertiary-fixed": "#351000",
+                        "inverse-on-surface": "#f0f0f3",
+                        "on-primary-container": "#fefcff",
+                        "tertiary-fixed": "#ffdbcc",
+                        "tertiary-fixed-dim": "#ffb595",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed": "#001a41",
+                        "error-container": "#ffdad6",
+                        "on-surface": "#1a1c1e",
+                        "surface-container-high": "#e8e8ea",
+                        "tertiary": "#9e3d00",
+                        "on-error": "#ffffff",
+                        "on-tertiary-fixed-variant": "#7c2e00",
+                        "inverse-surface": "#2f3133",
+                        "surface-dim": "#dadadc",
+                        "primary-container": "#0070eb",
+                        "on-tertiary-container": "#fffbff",
+                        "surface-tint": "#005bc1",
+                        "surface": "#f9f9fc",
+                        "tertiary-container": "#c64f00",
+                        "primary-fixed": "#d8e2ff",
+                        "outline": "#717786",
+                        "surface-container-low": "#f3f3f6",
+                        "primary": "#0058bc",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface-variant": "#414755",
+                        "surface-bright": "#f9f9fc",
+                        "on-secondary-fixed-variant": "#26467d",
+                        "secondary": "#405e96",
+                        "on-error-container": "#93000a",
+                        "background": "#f9f9fc",
+                        "primary-fixed-dim": "#adc6ff",
+                        "on-background": "#1a1c1e",
+                        "outline-variant": "#c1c6d7"
+                },
+                "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                },
+                "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Newsreader"],
+                        "label": ["Inter"]
+                }
+              },
+            },
+          }
+        </script>
+<style>
+            .material-symbols-outlined {
+                font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+            }
+            .bg-editorial-gradient {
+                background: linear-gradient(135deg, #0058bc 0%, #0070eb 100%);
+            }
+            .glass-panel {
+                background: rgba(249, 249, 252, 0.8);
+                backdrop-filter: blur(20px);
+            }
+            body {
+              min-height: max(884px, 100dvh);
+            }
+        </style>
+</head>
+<body class="bg-surface font-label text-on-surface min-h-screen flex items-center justify-center p-4 md:p-8">
+<div class="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 bg-surface-container-low rounded-[2rem] overflow-hidden shadow-2xl shadow-primary/5">
+<!-- Left Side: Editorial Brand Visual -->
+<div class="hidden lg:flex flex-col justify-between p-12 relative overflow-hidden bg-zinc-950 text-white">
+<div class="absolute inset-0 opacity-40">
+<img class="w-full h-full object-cover" data-alt="Close-up of high-quality printed magazine pages with elegant typography and minimalist photography in a dark aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAWmMwaLHQjubebj0zFzPuhXBmEonEu3Wcz0DAVxb1pHFr6HVN3oh55bZpYZ9qLK2gfUDrFGCU1_eJTd8-mGatLjXUfAn669Fss4fOPl3tiAqHpe6tI3rvGRnLyER2qDlr_3qSOa4KW8b0yq3qJKi38Tz2b2INwFMuqKYcQU-9RXFMIafeBhqqMvxSmOmv08Hg7I8XPEU80_BUxMHItqTIx_Bfkhts_7nodACjX82nLz6_xwdv7DztKuhp-YxK4CveangQqOq1VZ876"/>
+</div>
+<div class="relative z-10">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-fixed" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<span class="font-headline font-black text-2xl tracking-tight">The Curator</span>
+</div>
+</div>
+<div class="relative z-10 space-y-6">
+<h1 class="font-body text-5xl leading-tight">Architecture for your <br/><span class="italic font-light">daily curiosity.</span></h1>
+<p class="font-body text-xl text-zinc-300 max-w-md">Join a community of readers who value depth over speed. Access premium journalism curated for the modern mind.</p>
+</div>
+<div class="relative z-10 flex items-center gap-8 text-zinc-400">
+<div class="flex flex-col">
+<span class="font-headline font-bold text-white text-2xl tracking-tighter">12k+</span>
+<span class="text-[10px] uppercase tracking-widest font-semibold">Premium Sources</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline font-bold text-white text-2xl tracking-tighter">4.9/5</span>
+<span class="text-[10px] uppercase tracking-widest font-semibold">Reader Rating</span>
+</div>
+</div>
+</div>
+<!-- Right Side: Interaction Form -->
+<div class="p-8 md:p-16 flex flex-col justify-center bg-surface-container-lowest">
+<div class="mb-12 text-center lg:text-left">
+<h2 class="font-headline font-extrabold text-4xl text-on-surface mb-2">开始阅读</h2>
+<p class="font-body text-lg text-on-surface-variant">创建您的档案或登录以继续</p>
+</div>
+<form class="space-y-6">
+<!-- Email Address Field -->
+<div class="space-y-2">
+<label class="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant px-1">电子邮箱</label>
+<div class="relative group">
+<div class="absolute left-4 top-1/2 -translate-y-1/2 flex items-center text-on-surface-variant">
+<span class="material-symbols-outlined text-xl">mail</span>
+</div>
+<input class="w-full pl-12 pr-4 py-4 bg-surface-container-highest rounded-xl border-none focus:ring-2 focus:ring-primary/20 transition-all font-label text-on-surface placeholder:text-outline/50" placeholder="example@email.com" type="email"/>
+</div>
+<!-- Error State Example -->
+<p class="text-error text-xs font-medium px-1 mt-1 hidden">该电子邮箱已被注册。</p>
+</div>
+<!-- OTP Input Area -->
+<div class="space-y-2">
+<div class="flex justify-between items-end px-1">
+<label class="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant">邮箱验证码</label>
+<button class="text-primary text-[11px] font-bold uppercase tracking-widest hover:opacity-70 transition-opacity" type="button">
+                            发送验证码 <span class="text-outline-variant ml-1">(60s)</span>
+</button>
+</div>
+<div class="relative">
+<input class="w-full px-4 py-4 bg-surface-container-highest rounded-xl border-none focus:ring-2 focus:ring-primary/20 transition-all font-label text-on-surface placeholder:text-outline/50 ring-2 ring-error/10" placeholder="请输入6位验证码" type="text"/>
+<span class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-error text-xl">error_outline</span>
+</div>
+<p class="text-error text-xs font-medium px-1">验证码错误或已过期。</p>
+</div>
+<!-- Password Field -->
+<div class="space-y-2">
+<label class="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant px-1">密码</label>
+<div class="relative group">
+<input class="w-full px-4 py-4 bg-surface-container-highest rounded-xl border-none focus:ring-2 focus:ring-primary/20 transition-all font-label text-on-surface placeholder:text-outline/50" placeholder="至少8个字符" type="password"/>
+<button class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant text-xl" type="button">visibility</button>
+</div>
+</div>
+<!-- Terms & Conditions -->
+<div class="flex items-start gap-3 py-2">
+<div class="relative flex items-center mt-0.5">
+<input class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary focus:ring-offset-0 bg-surface-container-highest cursor-pointer" id="terms" type="checkbox"/>
+</div>
+<label class="text-sm text-on-surface-variant leading-relaxed" for="terms">
+                        我同意<a class="text-primary font-semibold underline underline-offset-4 decoration-primary/20 hover:decoration-primary transition-all" href="#">服务条款</a>和<a class="text-primary font-semibold underline underline-offset-4 decoration-primary/20 hover:decoration-primary transition-all" href="#">隐私政策</a>。
+                    </label>
+</div>
+<!-- Actions -->
+<div class="pt-4 space-y-4">
+<button class="w-full py-4 bg-editorial-gradient text-white rounded-full font-headline font-bold text-lg shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                        创建账户
+                    </button>
+<p class="text-center text-sm text-on-surface-variant">
+                        已有账号？<a class="text-primary font-bold hover:underline" href="#">在此登录</a>
+</p>
+</div>
+</form>
+<!-- Social Logins -->
+<div class="mt-12 space-y-6">
+<div class="relative">
+<div class="absolute inset-0 flex items-center">
+<div class="w-full border-t border-outline-variant/30"></div>
+</div>
+<div class="relative flex justify-center text-xs uppercase tracking-widest font-bold text-outline">
+<span class="bg-surface-container-lowest px-4">或通过以下方式继续</span>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-4">
+<button class="flex items-center justify-center py-4 bg-surface-container-high rounded-xl hover:bg-surface-variant transition-colors group">
+<img alt="Apple logo" class="h-5 opacity-70 group-hover:opacity-100 transition-opacity" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3BSlE1zaK_0TSdouWbqw7V3IoJzvCHuBKB-FiqIn0T-EvbKu6ln8FFqwlAwEr9ErmPn8DRhrkJxEkSMynZG3HbX4pbfPLSX-PmthUppGzf2TPasyr84NFZk8fH6d4NbgQg0gyHqExAnmynB0_mvy2jEjwL_Yyik9p0zAU5umV-rpHo1v1DepG_h6wSks4cFj7jFxl-h7WM9G9hXx3mFxm2LFgPcllhqbrD3CEE9YskatTHAfGA4VxtamuM5mhtV_V8S8T2uqYkdrK"/>
+</button>
+<button class="flex items-center justify-center py-4 bg-surface-container-high rounded-xl hover:bg-surface-variant transition-colors group">
+<img alt="Google logo" class="h-5 opacity-70 group-hover:opacity-100 transition-opacity" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3Vk7KQ7i41CwVbPP3EiTqawdRRdSkMvIyjNszFhdOeMiYmjJtB0amrHhknDTF17Zb8fXBSw8PkUaI0xaI0xaI5CkPMUwGMnKoNGkj_6Up2guCK6CGyS8ECLeb7BE77Vmcg1A8jqemWS3SeiHuVSQNKNzzpJrYIlBCb-vmbc8s2CAJaCfpa7F0UoBpTNlpThhbSTJ9_FunlZxBdnoJwfQ4sBlH7P0ENI83jSqJYFfQhOgj8VZAqELS7jVJC1T0uxFIxmS918ddqMG-qT0w"/>
+</button>
+<button class="flex items-center justify-center py-4 bg-surface-container-high rounded-xl hover:bg-surface-variant transition-colors group">
+<span class="material-symbols-outlined text-on-surface-variant opacity-70 group-hover:opacity-100 group-hover:text-[#07C160] transition-all">chat</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Floating Legal & Language Toggle -->
+<div class="fixed bottom-8 left-8 hidden lg:flex gap-6 text-[10px] uppercase tracking-[0.2em] font-bold text-on-surface-variant/40">
+<a class="hover:text-primary transition-colors" href="#">帮助中心</a>
+<a class="hover:text-primary transition-colors" href="#">中文 (简体)</a>
+<span>© 2024 The Curator</span>
+</div>
+</body></html>

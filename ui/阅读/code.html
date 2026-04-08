@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>The Curator | 文章阅读器</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@400;500;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,700;1,6..72,400&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-variant": "#e2e2e5",
+                        "surface-container-highest": "#e2e2e5",
+                        "secondary-fixed": "#d8e2ff",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "on-secondary-container": "#2d4c83",
+                        "on-primary-fixed-variant": "#004493",
+                        "on-secondary": "#ffffff",
+                        "surface-container": "#eeeef0",
+                        "on-primary-fixed": "#001a41",
+                        "inverse-primary": "#adc6ff",
+                        "on-primary": "#ffffff",
+                        "secondary-container": "#a1befd",
+                        "on-tertiary-fixed": "#351000",
+                        "inverse-on-surface": "#f0f0f3",
+                        "on-primary-container": "#fefcff",
+                        "tertiary-fixed": "#ffdbcc",
+                        "tertiary-fixed-dim": "#ffb595",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed": "#001a41",
+                        "error-container": "#ffdad6",
+                        "on-surface": "#1a1c1e",
+                        "surface-container-high": "#e8e8ea",
+                        "tertiary": "#9e3d00",
+                        "on-error": "#ffffff",
+                        "on-tertiary-fixed-variant": "#7c2e00",
+                        "inverse-surface": "#2f3133",
+                        "surface-dim": "#dadadc",
+                        "primary-container": "#0070eb",
+                        "on-tertiary-container": "#fffbff",
+                        "surface-tint": "#005bc1",
+                        "surface": "#f9f9fc",
+                        "tertiary-container": "#c64f00",
+                        "primary-fixed": "#d8e2ff",
+                        "outline": "#717786",
+                        "surface-container-low": "#f3f3f6",
+                        "primary": "#0058bc",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface-variant": "#414755",
+                        "surface-bright": "#f9f9fc",
+                        "on-secondary-fixed-variant": "#26467d",
+                        "secondary": "#405e96",
+                        "on-error-container": "#93000a",
+                        "background": "#f9f9fc",
+                        "primary-fixed-dim": "#adc6ff",
+                        "on-background": "#1a1c1e",
+                        "outline-variant": "#c1c6d7"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope", "sans-serif"],
+                        "body": ["Newsreader", "serif"],
+                        "label": ["Inter", "sans-serif"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .reading-gradient {
+            background: linear-gradient(135deg, #0058bc 0%, #0070eb 100%);
+        }
+        .glass-toolbar {
+            background: rgba(249, 249, 252, 0.8);
+            backdrop-filter: blur(20px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-surface font-body text-on-surface selection:bg-primary/20">
+<!-- Top Navigation (TopAppBar Simplified for Focus) -->
+<header class="bg-surface/80 backdrop-blur-xl sticky top-0 z-50 flex justify-between items-center px-6 py-4 w-full">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors duration-200">
+<span class="material-symbols-outlined text-on-surface" data-icon="arrow_back">arrow_back</span>
+</button>
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="auto_stories">auto_stories</span>
+</div>
+<span class="font-headline font-bold text-sm tracking-tight text-on-surface">The Curator</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors duration-200">
+<span class="material-symbols-outlined text-on-surface" data-icon="bookmark">bookmark</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors duration-200">
+<span class="material-symbols-outlined text-on-surface" data-icon="share">share</span>
+</button>
+</div>
+</header>
+<main class="max-w-screen-md mx-auto px-6 pt-8 pb-32">
+<!-- Article Header Section -->
+<header class="mb-12">
+<div class="flex items-center gap-3 mb-6">
+<div class="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden flex items-center justify-center border border-outline-variant/15">
+<span class="material-symbols-outlined text-primary" data-icon="newspaper">newspaper</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label text-xs font-semibold uppercase tracking-widest text-primary">大西洋月刊 (The Atlantic)</span>
+<span class="font-label text-[11px] text-on-surface-variant">发布于 2023年10月24日 • 12分钟阅读</span>
+</div>
+</div>
+<h1 class="font-body text-[2.75rem] leading-[1.1] font-bold text-on-surface mb-8 tracking-tight">
+                宁静的建筑：为何现代城市正缺失静谧空间
+            </h1>
+<div class="relative w-full aspect-[16/10] rounded-3xl overflow-hidden bg-surface-container-low">
+<img alt="一座粗野主义风格的混凝土图书馆内部，阳光从天窗洒下，营造出静谧的氛围" class="w-full h-full object-cover" data-alt="Atmospheric perspective of a Brutalist concrete library interior with soft light beams falling through a skylight onto a quiet reading area" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDthO0lRqO5_hYl35LE4styW1Z8a1LksY_-CJAlOD6Do_jf74bbUmvwG3Y9ufMoDwMuTRA2z_HA1RA44gQpBGrhm-gfp1_k7-Z8HkH6JPizQKwkJqCXyTy1Wh20N-XqVTET-0s5YWipyYlEJdFEUqxr03ElicMWLGebUvInT-m8K38xrll0MKxSzmdrg-Z_h8MMVJPoAt-C0DkMeafEv8RFuTCR1I5aVL_cEZOW0wSGId13KTWDTx7b6FltPeh33-vMhxRclT-sGx_W"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+</div>
+<p class="font-label text-xs italic text-on-surface-variant mt-4 text-center">
+                摄影：Elena Krane。斯德哥尔摩公共图书馆中央中庭。
+            </p>
+</header>
+<!-- Article Content Body -->
+<article class="prose prose-zinc prose-lg max-w-none">
+<p class="font-body text-xl leading-relaxed text-on-surface/90 mb-8 first-letter:text-6xl first-letter:font-bold first-letter:text-primary first-letter:mr-3 first-letter:float-left first-letter:font-headline">
+                在城市的心脏地带，宁静已成为最昂贵的奢侈品。随着城市密度增加，数字连接的嗡嗡声渗透到最偏远的街道角落，建筑师们开始重新审视声学隔离的核心价值。过去的“安静地带”——图书馆、大教堂和画廊——正被重新设计，以适应当下的后分心时代。
+            </p>
+<p class="font-body text-xl leading-relaxed text-on-surface/90 mb-8">
+                几十年来，公共空间的设计一直由视觉主导。我们为美学、流动性和“网红打卡”时刻进行了优化。但随着神经科学家发现环境噪音对皮质醇水平和认知功能的深远影响，一场修复性建筑的新运动正将声音置于蓝图的中心。
+            </p>
+<blockquote class="my-12 pl-8 border-l-4 border-primary/20 italic">
+<p class="font-body text-2xl leading-snug text-primary font-medium">
+                    “真正的宁静并非声音的缺失，而是空间的呈现，在其中思想终能听见自己的声音。”
+                </p>
+<cite class="font-label text-sm uppercase tracking-wider text-on-surface-variant mt-4 block">— 安藤忠雄，建筑师</cite>
+</blockquote>
+<p class="font-body text-xl leading-relaxed text-on-surface/90 mb-8">
+                当代城市规划通常将安静视为隔离的副产品——即远离噪音源。然而，下一代策展人正将宁静融入结构本身。通过使用多孔材料、算法几何图案和动力学隔音墙，这些新空间不仅阻挡噪音，还主动中和噪音。
+            </p>
+<div class="my-12 p-8 bg-surface-container-low rounded-3xl">
+<h3 class="font-headline font-bold text-lg mb-4 text-on-surface">声学圣殿的三大支柱</h3>
+<ul class="space-y-4 font-body text-lg text-on-surface/80">
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary mt-1" data-icon="check_circle">check_circle</span>
+<span><strong>材料孔隙率：</strong> 摆脱传统的混凝土，转向能吸收而非反射声波的有机纹理。</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary mt-1" data-icon="check_circle">check_circle</span>
+<span><strong>地下容积：</strong> 利用大地的自然热能和声学质量打造冥想室。</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary mt-1" data-icon="check_circle">check_circle</span>
+<span><strong>主动扩散：</strong> 集成能与城市混乱频率相协调的白噪音发生器。</span>
+</li>
+</ul>
+</div>
+<p class="font-body text-xl leading-relaxed text-on-surface/90">
+                展望2030年代，“静默图书馆”可能不再仅是一座建筑，而是一种哲学。我们正在学习，要策划一个有意识的生活，首先必须策划我们周围振动的空气。
+            </p>
+</article>
+</main>
+<!-- Contextual Overlays (Hidden by default) -->
+<div class="fixed bottom-24 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-sm glass-toolbar rounded-3xl shadow-2xl shadow-primary/10 border border-outline-variant/15 p-6 z-[60] hidden">
+<div class="flex flex-col gap-6">
+<div>
+<h4 class="font-headline font-bold text-sm mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-xs" data-icon="format_size">format_size</span>
+                    文字大小
+                </h4>
+<div class="relative w-full h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="absolute top-0 left-0 h-full w-2/3 reading-gradient"></div>
+<div class="absolute top-1/2 left-2/3 -translate-y-1/2 -translate-x-1/2 w-5 h-5 bg-white rounded-full shadow-md border-2 border-primary"></div>
+</div>
+<div class="flex justify-between mt-2 font-label text-[10px] uppercase font-bold text-on-surface-variant">
+<span>小</span>
+<span>默认</span>
+<span>大</span>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-3">
+<button class="flex flex-col items-center gap-2 p-3 bg-on-surface text-surface rounded-xl">
+<span class="material-symbols-outlined" data-icon="light_mode">light_mode</span>
+<span class="font-label text-[10px] font-bold uppercase">日间</span>
+</button>
+<button class="flex flex-col items-center gap-2 p-3 bg-surface-container-high text-on-surface-variant rounded-xl">
+<span class="material-symbols-outlined" data-icon="bedtime">bedtime</span>
+<span class="font-label text-[10px] font-bold uppercase">夜间</span>
+</button>
+<button class="flex flex-col items-center gap-2 p-3 bg-zinc-900 text-zinc-400 rounded-xl">
+<span class="material-symbols-outlined" data-icon="contrast">contrast</span>
+<span class="font-label text-[10px] font-bold uppercase">深邃</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Bottom Tool Bar (Floating Reader Controls) -->
+<footer class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-lg z-50">
+<div class="glass-toolbar rounded-full shadow-lg shadow-black/5 border border-outline-variant/10 flex items-center justify-between px-2 py-2">
+<div class="flex gap-1">
+<!-- Theme Toggle -->
+<button class="w-12 h-12 flex flex-col items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-low transition-all active:scale-95">
+<span class="material-symbols-outlined" data-icon="palette">palette</span>
+<span class="text-[8px] font-bold">主题</span>
+</button>
+<!-- Font Size -->
+<button class="w-12 h-12 flex flex-col items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-low transition-all active:scale-95">
+<span class="material-symbols-outlined" data-icon="format_size">format_size</span>
+<span class="text-[8px] font-bold">字体</span>
+</button>
+</div>
+<!-- Main Action: Read Aloud -->
+<button class="reading-gradient w-14 h-14 flex flex-col items-center justify-center rounded-full text-white shadow-lg shadow-primary/20 hover:scale-105 transition-transform active:scale-95 group">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" data-icon="volume_up" data-weight="fill" style="font-variation-settings: 'FILL' 1;">volume_up</span>
+<span class="text-[8px] font-bold">朗读</span>
+</button>
+<div class="flex gap-1">
+<!-- Translate -->
+<button class="w-12 h-12 flex flex-col items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-low transition-all active:scale-95">
+<span class="material-symbols-outlined" data-icon="translate">translate</span>
+<span class="text-[8px] font-bold">翻译</span>
+</button>
+<!-- More -->
+<button class="w-12 h-12 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-low transition-all active:scale-95">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</div>
+</footer>
+<!-- Progress Indicator -->
+<div class="fixed bottom-0 left-0 w-full h-1 bg-surface-container-low z-50">
+<div class="h-full bg-primary w-1/3 transition-all duration-300"></div>
+</div>
+</body></html>
