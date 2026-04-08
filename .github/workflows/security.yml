@@ -9,7 +9,6 @@ on:
     - cron: "0 0 * * 0" # 每周日运行
 
 jobs:
-  # 1. 依赖审计与 Snyk 扫描
   dependency-audit:
     name: Dependency Audit
     runs-on: ubuntu-latest
@@ -20,6 +19,10 @@ jobs:
         with:
           node-version: 24
           cache: "pnpm"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
       - run: pnpm install --frozen-lockfile
 
@@ -38,7 +41,6 @@ jobs:
         with:
           args: --severity-threshold=high
 
-  # 2. SAST 静态代码分析 (CodeQL)
   codeql:
     name: CodeQL Analysis
     runs-on: ubuntu-latest
@@ -61,7 +63,6 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
 
-  # 3. Semgrep 扫描 (Next.js 专项)
   semgrep:
     name: Semgrep Scan
     runs-on: ubuntu-latest
@@ -78,7 +79,6 @@ jobs:
             p/jwt
             p/secrets
 
-  # 4. Secret 泄露检测
   secret-scan:
     name: Secret Scan
     runs-on: ubuntu-latest
@@ -90,7 +90,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # 5. Next.js 增强检查
   nextjs-security:
     name: Next.js Security Check
     runs-on: ubuntu-latest
@@ -100,9 +99,11 @@ jobs:
         with:
           node-version: 24
           cache: "pnpm"
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - run: pnpm install --frozen-lockfile
 
-      # 检查 .env 文件未被提交
       - name: Check .env not committed
         run: |
           if git ls-files | grep -E '^\.env$|^\.env\.local$|^\.env\.production$'; then
@@ -111,7 +112,6 @@ jobs:
           fi
           echo "✅ No .env files committed"
 
-  # 6. 安全门禁 (Security Gate)
   security-gate:
     name: Security Gate
     needs: [dependency-audit, codeql, semgrep, secret-scan, nextjs-security]
