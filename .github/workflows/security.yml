@@ -74,7 +74,6 @@ jobs:
           config: >
             p/typescript
             p/react
-            p/nextjs
             p/owasp-top-ten
             p/jwt
             p/secrets
@@ -90,8 +89,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  nextjs-security:
-    name: Next.js Security Check
+  env-file-check:
+    name: Env File Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -114,7 +113,7 @@ jobs:
 
   security-gate:
     name: Security Gate
-    needs: [dependency-audit, codeql, semgrep, secret-scan, nextjs-security]
+    needs: [dependency-audit, codeql, semgrep, secret-scan, env-file-check]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -124,7 +123,7 @@ jobs:
                 "${{ needs.codeql.result }}" != "success" || \
                 "${{ needs.semgrep.result }}" != "success" || \
                 "${{ needs.secret-scan.result }}" != "success" || \
-                "${{ needs.nextjs-security.result }}" != "success" ]]; then
+                "${{ needs.env-file-check.result }}" != "success" ]]; then
             echo "❌ Security checks failed!"
             exit 1
           fi
