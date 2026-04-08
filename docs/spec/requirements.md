@@ -1,132 +1,151 @@
 # 需求文档
 
 ## 介绍
+
 本文档用于定义 RSS 阅读器 **OneRss** 的产品需求，范围基于 `ui` 目录下原型页面（注册、今日、订阅源、书架、阅读、个人设置）及视觉策略文档。  
 本文档当前版本为**定稿版 v1.2**，作为产品、设计与研发协同实现的统一基线。
 
 ## 需求
 
 ### 需求 1 - 账号注册与登录
+
 **用户故事：** 作为新用户，我希望通过邮箱验证码注册并登录，以便安全地使用我的个性化阅读空间。
 
 #### 验收标准
-1. When 用户输入邮箱并点击发送验证码, the OneRss shall 向该邮箱发送 6 位验证码并展示倒计时状态。  
-2. While 验证码未过期, when 用户提交正确验证码, the OneRss shall 允许进入密码设置步骤。  
-3. When 用户提交错误或过期验证码, the OneRss shall 拒绝通过并提示“验证码错误或已过期”。  
-4. While 用户未勾选服务条款与隐私政策, when 用户点击创建账户, the OneRss shall 阻止注册并提示需先同意协议。  
-5. When 用户已完成验证码校验并提交有效密码, the OneRss shall 创建账户并建立登录会话。  
-6. When 已注册用户输入邮箱和密码且凭证正确, the OneRss shall 建立登录会话并进入应用首页。  
-7. When 已注册用户输入错误邮箱或密码, the OneRss shall 拒绝登录并提示凭证无效。  
-8. When 用户选择 Apple、Google 或微信登录, the OneRss shall 完成第三方身份认证并建立应用会话。  
-9. While 第三方认证失败或用户中止授权, when 登录流程结束, the OneRss shall 保持未登录状态并提示可重试。  
-10. When 应用首次启动且用户未登录, the OneRss shall 默认进入注册登录页并禁止访问业务页面。  
-11. While 用户未登录, when 用户尝试访问今日、发现、书架、阅读或我的页面, the OneRss shall 拦截访问并跳转到登录入口。  
-12. While 第三方账号返回的邮箱与现有账号邮箱一致, when 用户完成第三方登录, the OneRss shall 自动合并到同一账号并保留既有数据。  
-13. While 第三方账号未返回可用邮箱, when 用户首次尝试第三方登录, the OneRss shall 要求用户补充并验证邮箱后再完成登录。  
+
+1. When 用户输入邮箱并点击发送验证码, the OneRss shall 向该邮箱发送 6 位验证码并展示倒计时状态。
+2. While 验证码未过期, when 用户提交正确验证码, the OneRss shall 允许进入密码设置步骤。
+3. When 用户提交错误或过期验证码, the OneRss shall 拒绝通过并提示“验证码错误或已过期”。
+4. While 用户未勾选服务条款与隐私政策, when 用户点击创建账户, the OneRss shall 阻止注册并提示需先同意协议。
+5. When 用户已完成验证码校验并提交有效密码, the OneRss shall 创建账户并建立登录会话。
+6. When 已注册用户输入邮箱和密码且凭证正确, the OneRss shall 建立登录会话并进入应用首页。
+7. When 已注册用户输入错误邮箱或密码, the OneRss shall 拒绝登录并提示凭证无效。
+8. When 用户选择 Apple、Google 或微信登录, the OneRss shall 完成第三方身份认证并建立应用会话。
+9. While 第三方认证失败或用户中止授权, when 登录流程结束, the OneRss shall 保持未登录状态并提示可重试。
+10. When 应用首次启动且用户未登录, the OneRss shall 默认进入注册登录页并禁止访问业务页面。
+11. While 用户未登录, when 用户尝试访问今日、发现、书架、阅读或我的页面, the OneRss shall 拦截访问并跳转到登录入口。
+12. While 第三方账号返回的邮箱与现有账号邮箱一致, when 用户完成第三方登录, the OneRss shall 自动合并到同一账号并保留既有数据。
+13. While 第三方账号未返回可用邮箱, when 用户首次尝试第三方登录, the OneRss shall 要求用户补充并验证邮箱后再完成登录。
 14. While 发生账号合并冲突或异常, when 登录流程结束, the OneRss shall 保持未登录状态并提示通过邮箱登录后发起账号绑定。
 
 ### 需求 2 - 订阅源发现与添加
+
 **用户故事：** 作为读者，我希望通过搜索或 RSS 链接快速发现并订阅内容源，以便构建自己的信息输入。
 
 #### 验收标准
-1. When 用户在发现页浏览公开目录推荐, the OneRss shall 展示可订阅源列表并提供分类筛选。  
-2. When 用户在发现页输入关键词, the OneRss shall 返回匹配的订阅源列表并展示名称、简介、订阅状态。  
-3. When 用户输入合法 RSS 地址并点击添加订阅, the OneRss shall 校验地址可用性并创建订阅关系。  
-4. When 用户点击未订阅源的“订阅”, the OneRss shall 将该源状态更新为“已订阅”。  
-5. When 用户点击已订阅源的按钮, the OneRss shall 允许取消订阅并同步更新状态。  
-6. While 网络异常或地址无效, when 用户提交添加订阅, the OneRss shall 给出明确失败原因。  
+
+1. When 用户在发现页浏览公开目录推荐, the OneRss shall 展示可订阅源列表并提供分类筛选。
+2. When 用户在发现页输入关键词, the OneRss shall 返回匹配的订阅源列表并展示名称、简介、订阅状态。
+3. When 用户输入合法 RSS 地址并点击添加订阅, the OneRss shall 校验地址可用性并创建订阅关系。
+4. When 用户点击未订阅源的“订阅”, the OneRss shall 将该源状态更新为“已订阅”。
+5. When 用户点击已订阅源的按钮, the OneRss shall 允许取消订阅并同步更新状态。
+6. While 网络异常或地址无效, when 用户提交添加订阅, the OneRss shall 给出明确失败原因。
 7. While 当前用户为普通登录用户且订阅数量已达到 10 个, when 用户尝试新增订阅, the OneRss shall 拒绝新增并提示升级高级会员。
 
 ### 需求 3 - 今日聚合流
+
 **用户故事：** 作为读者，我希望在“今日”中集中查看重点文章，以便快速获取当天值得阅读的内容。
 
 #### 验收标准
-1. When 用户进入今日页, the OneRss shall 展示来自已订阅源的聚合文章列表。  
-2. When 用户切换时间范围（今日/昨天/本周）, the OneRss shall 按选择范围刷新文章结果。  
-3. When 用户选择“按发布时间排序”, the OneRss shall 按发布时间倒序展示文章。  
-4. When 用户点击文章卡片, the OneRss shall 跳转到文章阅读页。  
-5. When 用户点击收藏按钮, the OneRss shall 更新文章收藏状态并在书架中可见。  
-6. When 用户进入“精选推荐”栏目, the OneRss shall 展示来自精选订阅栏目的文章并按发布时间倒序展示（最新在前）。
+
+1. When 用户进入今日页, the OneRss shall 展示来自已订阅源的聚合文章列表。
+2. When 用户切换时间范围（今日/昨天/本周）, the OneRss shall 按选择范围刷新文章结果。
+3. When 用户选择“按发布时间排序”, the OneRss shall 按发布时间倒序展示文章。
+4. When 用户点击文章卡片, the OneRss shall 跳转到文章阅读页。
+5. When 用户点击收藏按钮, the OneRss shall 更新文章收藏状态并在书架中可见。
+6. When 用户进入“精选推荐”栏目, the OneRss shall 优先展示来自 `is_featured = true` 订阅源的文章，并在同优先级内按发布时间倒序展示（最新在前）。
 
 ### 需求 4 - 书架与收藏管理
+
 **用户故事：** 作为读者，我希望按主题管理已关注内容和收藏，以便持续追踪感兴趣的信息源。
 
 #### 验收标准
-1. When 用户进入书架页, the OneRss shall 展示已订阅源列表及每个源的未读数量。  
-2. When 用户选择分类标签（如设计/科技/文化）, the OneRss shall 仅展示对应分类的源或内容。  
-3. When 某订阅源存在新文章, the OneRss shall 更新该源的未读计数与最近更新时间。  
-4. While 用户没有更多可展示订阅源, when 用户查看书架页底部, the OneRss shall 展示“探索目录”入口以引导新增订阅。  
+
+1. When 用户进入书架页, the OneRss shall 展示已订阅源列表及每个源的未读数量。
+2. When 用户选择分类标签（如设计/科技/文化）, the OneRss shall 仅展示对应分类的源或内容。
+3. When 某订阅源存在新文章, the OneRss shall 更新该源的未读计数与最近更新时间。
+4. While 用户没有更多可展示订阅源, when 用户查看书架页底部, the OneRss shall 展示“探索目录”入口以引导新增订阅。
 5. When 用户进入某订阅源详情, the OneRss shall 展示该源文章列表并支持继续阅读。
 
 ### 需求 5 - 文章阅读体验
+
 **用户故事：** 作为深度阅读用户，我希望在阅读页获得沉浸、可调节、可操作的阅读体验，以便高效理解内容。
 
 #### 验收标准
-1. When 用户进入阅读页, the OneRss shall 展示文章标题、来源、发布时间、预计阅读时长与正文内容。  
-2. When 用户点击收藏或分享, the OneRss shall 分别执行收藏切换与系统分享动作。  
-3. When 用户调整字体大小, the OneRss shall 即时更新正文排版并持久化该偏好。  
-4. When 用户切换阅读主题（如日间/夜间/深邃）, the OneRss shall 即时切换配色并持久化该偏好。  
-5. While 当前用户为高级会员, when 用户点击朗读, the OneRss shall 启动文章朗读并提供可感知的朗读状态。  
-6. While 当前用户为高级会员, when 用户点击翻译, the OneRss shall 按用户设置的目标语言生成译文视图或段落翻译。  
+
+1. When 用户进入阅读页, the OneRss shall 展示文章标题、来源、发布时间、预计阅读时长与正文内容。
+2. When 用户点击收藏或分享, the OneRss shall 分别执行收藏切换与系统分享动作。
+3. When 用户调整字体大小, the OneRss shall 即时更新正文排版并持久化该偏好。
+4. When 用户切换阅读主题（如日间/夜间/深邃）, the OneRss shall 即时切换配色并持久化该偏好。
+5. While 当前用户为高级会员, when 用户点击朗读, the OneRss shall 启动文章朗读并提供可感知的朗读状态。
+6. While 当前用户为高级会员, when 用户点击翻译, the OneRss shall 按用户设置的目标语言生成译文视图或段落翻译。
 7. While 用户阅读进度发生变化, the OneRss shall 更新底部阅读进度指示。
 8. While 当前用户为普通登录用户, when 用户点击朗读或翻译, the OneRss shall 阻止执行并提示升级高级会员。
 
 ### 需求 6 - 个人中心与偏好设置
+
 **用户故事：** 作为用户，我希望在个人中心统一管理账户与阅读偏好，以便持续获得一致体验。
 
 #### 验收标准
-1. When 用户进入个人中心, the OneRss shall 展示账户信息与核心统计（订阅源数、已读数、收藏数）。  
-2. When 用户进入阅读偏好设置, the OneRss shall 支持配置字体大小、行高与主题并即时预览。  
-3. When 用户进入通知设置, the OneRss shall 在首版提供设置入口与说明文案（通知开关能力预留，非首版 P0）。  
-4. When 用户设置界面语言, the OneRss shall 更新应用文案语言。  
-5. When 用户设置翻译语言, the OneRss shall 将其作为默认翻译目标语言。  
+
+1. When 用户进入个人中心, the OneRss shall 展示账户信息与核心统计（订阅源数、已读数、收藏数）。
+2. When 用户进入阅读偏好设置, the OneRss shall 支持配置字体大小、行高与主题并即时预览。
+3. When 用户进入通知设置, the OneRss shall 在首版提供设置入口与说明文案（通知开关能力预留，非首版 P0）。
+4. When 用户设置界面语言, the OneRss shall 更新应用文案语言。
+5. When 用户设置翻译语言, the OneRss shall 将其作为默认翻译目标语言。
 6. When 用户点击退出登录, the OneRss shall 清除本地会话并返回登录入口。
 
 ### 需求 7 - 会员与计费
+
 **用户故事：** 作为用户，我希望通过月付或年付升级高级会员，以便解锁更高订阅上限和增值阅读能力。
 
 #### 验收标准
-1. When 用户进入会员购买页, the OneRss shall 展示月付与年付两种付费方案。  
-2. When 用户完成月付或年付支付, the OneRss shall 将账户状态更新为高级会员并即时生效。  
-3. While 用户为高级会员, when 用户使用订阅、翻译、朗读能力, the OneRss shall 按高级会员规则执行。  
+
+1. When 用户进入会员购买页, the OneRss shall 展示月付与年付两种付费方案。
+2. When 用户完成月付或年付支付, the OneRss shall 将账户状态更新为高级会员并即时生效。
+3. While 用户为高级会员, when 用户使用订阅、翻译、朗读能力, the OneRss shall 按高级会员规则执行。
 4. While 会员状态失效或支付未完成, when 用户访问高级能力, the OneRss shall 按普通用户规则限制并提示续费或重试支付。
 
 ### 需求 8 - 导航与信息架构
+
 **用户故事：** 作为用户，我希望通过一致的全局导航在核心页面间快速切换，以便降低学习成本。
 
 #### 验收标准
-1. When 用户在底部导航点击“今日/发现/书架/我的”, the OneRss shall 跳转到对应一级页面。  
-2. While 用户位于某一级页面, the OneRss shall 高亮当前导航项。  
-3. When 用户从列表进入文章详情并执行返回, the OneRss shall 返回原来源页面并保留滚动位置与筛选状态。  
+
+1. When 用户在底部导航点击“今日/发现/书架/我的”, the OneRss shall 跳转到对应一级页面。
+2. While 用户位于某一级页面, the OneRss shall 高亮当前导航项。
+3. When 用户从列表进入文章详情并执行返回, the OneRss shall 返回原来源页面并保留滚动位置与筛选状态。
 4. While 用户已登录, when 用户进入应用, the OneRss shall 默认进入“今日”页面。
 
 ### 需求 9 - 非功能与视觉一致性
+
 **用户故事：** 作为用户，我希望界面风格统一且性能稳定，以便长期舒适使用。
 
 #### 验收标准
-1. While 系统渲染核心页面, the OneRss shall 遵循统一设计令牌（颜色、字体、圆角、层级）。  
-2. While 页面进行分组和分隔, the OneRss shall 优先使用色块层次而非 1px 分割线。  
-3. When 渲染核心列表（今日、发现、书架）, the OneRss shall 在常见移动设备上保持流畅滚动体验。  
-4. When 网络请求失败或超时, the OneRss shall 提供可恢复的错误提示与重试入口。  
-5. When 用户打开文章详情页, the OneRss shall 自动缓存该文章正文与图片用于离线阅读。  
-6. When 用户离线进入已缓存内容, the OneRss shall 支持查看已成功缓存的正文、图片与基本元数据。  
-7. While 用户处于离线状态, when 用户尝试执行收藏、订阅、偏好更新等写操作, the OneRss shall 在客户端阻止执行并提示联网后重试。  
-8. While 写请求在异常场景下仍到达服务端, the OneRss shall 返回通用写失败语义并提示用户重试。  
-9. When 用户在 4G 或更优网络环境首次进入今日页, the OneRss shall 在 2 秒内完成首屏可见内容加载。  
-10. When 用户在 Wi-Fi 环境滚动今日、发现或书架列表, the OneRss shall 保持列表滚动帧率不低于 45 FPS。  
-11. When 用户使用系统动态字体放大至 200%, the OneRss shall 保证核心阅读与导航内容可见且可操作。  
-12. When 用户启用系统读屏功能, the OneRss shall 为核心控件提供可识别名称并可完成主流程操作。  
+
+1. While 系统渲染核心页面, the OneRss shall 遵循统一设计令牌（颜色、字体、圆角、层级）。
+2. While 页面进行分组和分隔, the OneRss shall 优先使用色块层次而非 1px 分割线。
+3. When 渲染核心列表（今日、发现、书架）, the OneRss shall 在常见移动设备上保持流畅滚动体验。
+4. When 网络请求失败或超时, the OneRss shall 提供可恢复的错误提示与重试入口。
+5. When 用户打开文章详情页, the OneRss shall 自动缓存该文章正文与图片用于离线阅读。
+6. When 用户离线进入已缓存内容, the OneRss shall 支持查看已成功缓存的正文、图片与基本元数据。
+7. While 用户处于离线状态, when 用户尝试执行收藏、订阅、偏好更新等写操作, the OneRss shall 在客户端阻止执行并提示联网后重试。
+8. While 写请求在异常场景下仍到达服务端, the OneRss shall 返回通用写失败语义并提示用户重试。
+9. When 用户在 4G 或更优网络环境首次进入今日页, the OneRss shall 在 2 秒内完成首屏可见内容加载。
+10. When 用户在 Wi-Fi 环境滚动今日、发现或书架列表, the OneRss shall 保持列表滚动帧率不低于 45 FPS。
+11. When 用户使用系统动态字体放大至 200%, the OneRss shall 保证核心阅读与导航内容可见且可操作。
+12. When 用户启用系统读屏功能, the OneRss shall 为核心控件提供可识别名称并可完成主流程操作。
 13. While 核心文本与背景同时可见, the OneRss shall 保证文本对比度不低于 WCAG AA 要求。
 
 ## 已确认结论
-1. 产品名称确定为 `OneRss`。  
-2. 首版包含第三方登录（Apple / Google / 微信）。  
-3. 发现页首版同时支持“公开目录推荐”与“RSS URL 添加订阅”。  
-4. 阅读页“朗读、翻译”均为首版 P0 能力。  
-5. 首版要求支持离线缓存阅读能力。  
-6. 所有用户必须登录后使用业务页面；首次启动进入注册登录页。  
-7. 存在高级会员，支持月付与年付；普通用户订阅上限 10，且无翻译和朗读能力。  
-8. 今日排序按发布时间；精选推荐展示精选订阅栏目下文章并按发布时间倒序（最新在前）。  
-9. 账号策略：同邮箱自动合并；第三方无邮箱需补充并验证；合并异常需回退到未登录并引导绑定。  
-10. 非功能阈值：首屏 2 秒、列表滚动不低于 45 FPS、支持 200% 动态字体、支持读屏主流程、文本对比度满足 WCAG AA。
 
+1. 产品名称确定为 `OneRss`。
+2. 首版包含第三方登录（Apple / Google / 微信）。
+3. 发现页首版同时支持“公开目录推荐”与“RSS URL 添加订阅”。
+4. 阅读页“朗读、翻译”均为首版 P0 能力。
+5. 首版要求支持离线缓存阅读能力。
+6. 所有用户必须登录后使用业务页面；首次启动进入注册登录页。
+7. 存在高级会员，支持月付与年付；普通用户订阅上限 10，且无翻译和朗读能力。
+8. 今日/精选推荐内容流优先展示 `is_featured = true` 订阅源文章；同优先级按发布时间倒序（最新在前）。
+9. 账号策略：同邮箱自动合并；第三方无邮箱需补充并验证；合并异常需回退到未登录并引导绑定。
+10. 非功能阈值：首屏 2 秒、列表滚动不低于 45 FPS、支持 200% 动态字体、支持读屏主流程、文本对比度满足 WCAG AA。
