@@ -1,6 +1,9 @@
+import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { Tabs } from "expo-router";
 
 import { AppTabBar } from "@/components/app-tab-bar";
+
+type TabRouteName = "index" | "explore" | "shelf" | "profile";
 
 export default function TabLayout() {
   return (
@@ -8,14 +11,10 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
       }}
-      tabBar={({ state }) => (
+      tabBar={(props: BottomTabBarProps) => (
         <AppTabBar
           activeKey={
-            state.routes[state.index]?.name as
-              | "index"
-              | "explore"
-              | "shelf"
-              | "profile"
+            props.state.routes[props.state.index]?.name as TabRouteName
           }
         />
       )}
