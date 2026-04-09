@@ -15,8 +15,6 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/auth-context";
 import { Colors, Spacing } from "@/constants/theme";
 
@@ -33,9 +31,7 @@ const SOCIAL_GOOGLE_URI =
 type AuthMode = "login" | "register";
 
 export default function LoginScreen() {
-  const router = useRouter();
   const { signIn } = useAuth();
-  const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
   const colorScheme = "light";
   const colors = Colors[colorScheme];
@@ -140,21 +136,9 @@ export default function LoginScreen() {
     scrollContent: {
       flexGrow: 1,
       paddingHorizontal: Spacing.lg,
-      paddingTop: insets.top + Spacing.md,
-      paddingBottom: insets.bottom + Spacing.xl,
-      alignItems: "center",
-    },
-    backRow: {
-      alignSelf: "stretch",
-      marginBottom: Spacing.md,
-    },
-    backButton: {
-      width: 44,
-      height: 44,
-      borderRadius: 22,
-      backgroundColor: "rgba(255,255,255,0.55)",
       justifyContent: "center",
       alignItems: "center",
+      paddingVertical: Spacing.xl,
     },
     glassCard: {
       width: cardMaxWidth,
@@ -169,13 +153,14 @@ export default function LoginScreen() {
       shadowRadius: 24,
       elevation: 8,
     },
-    headline: {
-      fontSize: 30,
-      fontWeight: "800",
-      color: colors.onSurface,
-      letterSpacing: -0.5,
-      marginBottom: Spacing.sm,
-      fontFamily: Platform.OS === "ios" ? "System" : "sans-serif",
+    logoContainer: {
+      alignItems: "center",
+      marginBottom: Spacing.xxl,
+    },
+    logoImage: {
+      width: 160,
+      height: 160,
+      borderRadius: 40,
     },
     subhead: {
       fontSize: 17,
@@ -358,28 +343,13 @@ export default function LoginScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.backRow}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.back()}
-              accessibilityRole="button"
-              accessibilityLabel="返回"
-            >
-              <MaterialIcons
-                name="arrow-back-ios"
-                size={20}
-                color={colors.onSurface}
-              />
-            </TouchableOpacity>
-          </View>
-
           <View style={styles.glassCard}>
-            <Text style={styles.headline}>开始阅读</Text>
-            <Text style={styles.subhead}>
-              {mode === "register"
-                ? "创建您的档案或登录以继续"
-                : "登录以继续探索精选内容"}
-            </Text>
+            <View style={styles.logoContainer}>
+              <Image
+                source={require("@/assets/images/logo.png")}
+                style={styles.logoImage}
+              />
+            </View>
 
             <View style={styles.fieldGap}>
               <Text style={styles.label}>电子邮箱</Text>
