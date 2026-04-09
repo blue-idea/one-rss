@@ -391,7 +391,7 @@ export default function TodayScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View testID="screen-today" style={styles.container}>
       <Header title="今日摘要" />
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.content}>

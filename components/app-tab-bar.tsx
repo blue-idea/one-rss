@@ -72,6 +72,7 @@ export function AppTabBar({ activeKey }: AppTabBarProps) {
         return (
           <Pressable
             key={item.key}
+            testID={`app-tab-${item.key}`}
             style={styles.item}
             onPress={() => router.replace(item.href)}
           >

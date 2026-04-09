@@ -1,0 +1,12 @@
+# Supabase 本地/部署用；project_id 部署后由 CLI 同步
+# 与线上 Dashboard 项目 ref 对齐（MCP 已创建 OneRss 项目）
+project_id = "xwjqiuychlokthyocybf"
+
+[api]
+enabled = true
+
+[functions]
+enabled = true
+
+[functions.send-email-code]
+verify_jwt = false

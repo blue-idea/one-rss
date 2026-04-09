@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -12,11 +12,15 @@ import {
   ImageBackground,
   Image,
   useWindowDimensions,
+  ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useAuth } from "@/contexts/auth-context";
 import { Colors, Spacing } from "@/constants/theme";
+import { AuthApiError } from "@/modules/auth/api/authApiError";
+import { sendEmailCode } from "@/modules/auth/api/sendEmailCode";
+import { useOtpCooldown } from "@/modules/auth/hooks/useOtpCooldown";
 
 /** Stitch 原型「登录与注册」资源（projects/11408602597176940484） */
 const HERO_BACKGROUND_URI =
@@ -44,7 +48,10 @@ export default function LoginScreen() {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [otpSecondsLeft, setOtpSecondsLeft] = useState(0);
+  const { secondsLeft: otpSecondsLeft, start: startOtpCooldown } =
+    useOtpCooldown();
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [sendOtpError, setSendOtpError] = useState<string | null>(null);
 
   const [emailError, setEmailError] = useState<string | null>(null);
   const [otpError, setOtpError] = useState<string | null>(null);
@@ -52,34 +59,53 @@ export default function LoginScreen() {
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [termsError, setTermsError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (otpSecondsLeft <= 0) return;
-    const id = setInterval(() => {
-      setOtpSecondsLeft((s) => (s <= 1 ? 0 : s - 1));
-    }, 1000);
-    return () => clearInterval(id);
-  }, [otpSecondsLeft]);
-
   const resetFieldErrors = useCallback(() => {
     setEmailError(null);
     setOtpError(null);
     setPasswordError(null);
     setConfirmError(null);
     setTermsError(null);
+    setSendOtpError(null);
   }, []);
 
   const isValidEmail = (value: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 
-  const handleSendOtp = useCallback(() => {
+  const handleSendOtp = useCallback(async () => {
     resetFieldErrors();
     if (!isValidEmail(email)) {
       setEmailError("请输入有效的电子邮箱。");
       return;
     }
-    setOtpSecondsLeft(60);
-    setOtpError(null);
-  }, [email, resetFieldErrors]);
+    if (isSendingOtp || otpSecondsLeft > 0) return;
+
+    setIsSendingOtp(true);
+    try {
+      const { cooldownSeconds } = await sendEmailCode(email);
+      startOtpCooldown(Math.max(1, cooldownSeconds));
+      setOtpError(null);
+    } catch (err) {
+      if (err instanceof AuthApiError) {
+        setSendOtpError(err.message);
+        const raw = err.details?.cooldownSeconds;
+        const cool =
+          typeof raw === "number"
+            ? raw
+            : typeof raw === "string"
+              ? Number(raw)
+              : NaN;
+        if (err.code === "RATE_LIMITED" && Number.isFinite(cool) && cool > 0) {
+          startOtpCooldown(Math.ceil(cool));
+        } else if (err.code === "RATE_LIMITED") {
+          startOtpCooldown(60);
+        }
+      } else {
+        setSendOtpError("Unexpected error. Please try again.");
+      }
+    } finally {
+      setIsSendingOtp(false);
+    }
+  }, [email, isSendingOtp, otpSecondsLeft, resetFieldErrors, startOtpCooldown]);
 
   const handleSubmit = useCallback(() => {
     resetFieldErrors();
@@ -366,6 +392,7 @@ export default function LoginScreen() {
                   color={colors.onSurfaceVariant}
                 />
                 <TextInput
+                  testID="auth-email"
                   style={styles.input}
                   placeholder="example@email.com"
                   placeholderTextColor={`${colors.outline}99`}
@@ -389,24 +416,37 @@ export default function LoginScreen() {
                 <View style={styles.labelRow}>
                   <Text style={styles.label}>邮箱验证码</Text>
                   <TouchableOpacity
-                    onPress={handleSendOtp}
-                    disabled={otpSecondsLeft > 0}
+                    onPress={() => void handleSendOtp()}
+                    disabled={isSendingOtp || otpSecondsLeft > 0}
                     accessibilityRole="button"
                   >
-                    <Text
-                      style={[
-                        styles.otpSend,
-                        otpSecondsLeft > 0 && { opacity: 0.5 },
-                      ]}
+                    <View
+                      style={{ flexDirection: "row", alignItems: "center" }}
                     >
-                      发送验证码
-                      {otpSecondsLeft > 0 ? (
-                        <Text style={styles.otpSendMuted}>
-                          {" "}
-                          ({otpSecondsLeft}s)
-                        </Text>
+                      {isSendingOtp ? (
+                        <ActivityIndicator
+                          size="small"
+                          color={colors.primary}
+                          style={{ marginRight: 6 }}
+                        />
                       ) : null}
-                    </Text>
+                      <Text
+                        style={[
+                          styles.otpSend,
+                          (isSendingOtp || otpSecondsLeft > 0) && {
+                            opacity: 0.5,
+                          },
+                        ]}
+                      >
+                        发送验证码
+                        {otpSecondsLeft > 0 ? (
+                          <Text style={styles.otpSendMuted}>
+                            {" "}
+                            ({otpSecondsLeft}s)
+                          </Text>
+                        ) : null}
+                      </Text>
+                    </View>
                   </TouchableOpacity>
                 </View>
                 <View
@@ -438,6 +478,9 @@ export default function LoginScreen() {
                 {otpError ? (
                   <Text style={styles.errorText}>{otpError}</Text>
                 ) : null}
+                {sendOtpError ? (
+                  <Text style={styles.errorText}>{sendOtpError}</Text>
+                ) : null}
               </View>
             ) : null}
 
@@ -450,6 +493,7 @@ export default function LoginScreen() {
                 ]}
               >
                 <TextInput
+                  testID="auth-password"
                   style={styles.input}
                   placeholder={
                     mode === "register" ? "至少8个字符" : "请输入密码"
@@ -555,6 +599,7 @@ export default function LoginScreen() {
             ) : null}
 
             <TouchableOpacity
+              testID="auth-submit"
               style={styles.primaryButton}
               onPress={handleSubmit}
               activeOpacity={0.92}
@@ -574,13 +619,14 @@ export default function LoginScreen() {
             <View style={styles.switchRow}>
               {mode === "register" ? (
                 <Pressable
+                  testID="auth-switch-to-login"
                   onPress={() => {
                     resetFieldErrors();
                     setMode("login");
                     setOtp("");
                     setConfirmPassword("");
                     setAgreeTerms(false);
-                    setOtpSecondsLeft(0);
+                    startOtpCooldown(0);
                   }}
                 >
                   <Text style={styles.switchText}>

@@ -132,9 +132,39 @@
 
 ### 8.1 Auth（认证与账户）
 
-- `POST /auth/email/send-code`
-  - 用途：发送邮箱验证码
-  - 权限：匿名可用
+#### `POST /api/v1/auth/email/send-code`
+
+- 用途：向指定邮箱发送 **6 位数字**注册验证码，并触发服务端节流（单邮箱最小间隔与小时额度）。
+- 权限：匿名可用（客户端需配置可调用该端点的网关地址，如 Supabase Edge Function URL）。
+- Request：
+
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+- Response `200`：
+
+```json
+{
+  "success": true,
+  "data": {
+    "cooldownSeconds": 60
+  },
+  "meta": {
+    "requestId": "uuid",
+    "timestamp": "2026-04-09T12:00:00Z"
+  }
+}
+```
+
+- 失败示例 `422 VALIDATION_FAILED`：邮箱格式非法。
+- 失败示例 `429 RATE_LIMITED`：请求过频；`error.details.cooldownSeconds` 可为剩余冷却秒数（可选）。
+- 失败示例 `502 INTERNAL_ERROR` 或 `500 INTERNAL_ERROR`：SMTP/持久化异常，消息为英文通用描述。
+
+> 实现映射：当前仓库对应 Edge Function `send-email-code`（路径以部署为准，例如 `/functions/v1/send-email-code`），契约字段与上文一致。
+
 - `POST /auth/email/verify`
   - 用途：校验注册验证码并换取注册凭证
   - 权限：匿名可用

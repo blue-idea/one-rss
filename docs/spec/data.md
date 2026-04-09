@@ -46,6 +46,19 @@ erDiagram
   - `created_at timestamptz`
   - `updated_at timestamptz`
 
+### 4.1.1 `email_otp_challenges`（邮箱注册 OTP）
+
+- 用途：注册流程中的邮箱 OTP 挑战记录；仅存验证码哈希与过期时间，明文验证码仅通过邮件触达用户。
+- 关键字段：
+  - `id uuid pk`
+  - `email text not null`（小写规范化邮箱）
+  - `code_hash text not null`（`SHA-256(email:code:OTP_PEPPER)` 十六进制）
+  - `expires_at timestamptz not null`
+  - `consumed_at timestamptz`（校验成功后由后续流程写入，任务 5）
+  - `created_at timestamptz`
+- 访问控制：启用 RLS；不授予 `anon` / `authenticated` 策略；仅服务端 service role（Edge Function 等）可读写。
+- 清理：过期数据可由定时任务归档/删除（可延后）。
+
 ### 4.2 `plans`（会员套餐）
 
 - 用途：定义月付/年付套餐。

@@ -7,6 +7,10 @@ node_modules/
 .expo/
 dist/
 web-build/
+
+# Playwright
+test-results/
+playwright-report/
 expo-env.d.ts
 
 # Native

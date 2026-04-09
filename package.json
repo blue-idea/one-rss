@@ -12,7 +12,9 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test:unit": "pnpm lint",
+    "test:unit": "vitest run",
+    "build:web": "pnpm exec expo export --platform web --output-dir dist",
+    "test:e2e": "pnpm exec playwright test",
     "test:visual:today": "node ./scripts/visual-regression-today.mjs",
     "test:visual:read": "node ./scripts/visual-regression-read.mjs",
     "test:visual:explore": "node ./scripts/visual-regression-explore.mjs",
@@ -50,6 +52,7 @@
     "react-native-worklets": "0.5.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@types/react": "~19.1.0",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
@@ -59,11 +62,12 @@
     "playwright": "^1.59.1",
     "pngjs": "^7.0.0",
     "prettier": "^3.8.1",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "vitest": "^3.2.4"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "eslint --max-warnings=0 --fix",
+      "eslint --max-warnings=0 --fix --no-warn-ignored",
       "prettier --write"
     ],
     "*.{json,md,css,scss,yml,yaml}": [
