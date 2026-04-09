@@ -198,12 +198,57 @@
 
 > 实现映射：当前仓库对应 Edge Function `verify-email-code`（路径以部署为准，例如 `/functions/v1/verify-email-code`）。
 
-- `POST /auth/register`
-  - 用途：基于已校验验证码完成邮箱密码注册并建立会话
-  - 权限：匿名可用
-- `POST /auth/password/sign-in`
-  - 用途：使用邮箱与密码登录
-  - 权限：匿名可用
+#### `POST /api/v1/auth/register`
+
+- 用途：基于已校验验证码完成邮箱密码注册。
+- 权限：匿名可用。
+- Request：
+
+```json
+{
+  "email": "user@example.com",
+  "password": "your_password",
+  "registrationCredential": "<opaque-ticket>"
+}
+```
+
+- Response `200`：
+
+```json
+{
+  "success": true,
+  "data": {
+    "email": "user@example.com"
+  },
+  "meta": {
+    "requestId": "uuid",
+    "timestamp": "2026-04-09T12:00:00Z"
+  }
+}
+```
+
+- 失败示例 `422 INVALID_OTP`：`registrationCredential` 无效或过期。
+- 失败示例 `409 CONFLICT`：邮箱已注册。
+
+> 实现映射：当前仓库对应 Edge Function `register-email-password`（路径以部署为准，例如 `/functions/v1/register-email-password`）。
+
+#### `POST /api/v1/auth/password/sign-in`
+
+- 用途：使用邮箱与密码登录并建立会话。
+- 权限：匿名可用。
+- Request：
+
+```json
+{
+  "email": "user@example.com",
+  "password": "your_password"
+}
+```
+
+- 失败示例：凭证错误时返回 `INVALID_CREDENTIALS` 语义（客户端统一提示“凭证无效”）。
+
+> 实现映射：当前仓库客户端通过 Supabase Auth REST `POST /auth/v1/token?grant_type=password` 调用。
+
 - `POST /auth/oauth/sign-in`
   - 用途：第三方登录（Apple/Google/WeChat）
   - 权限：匿名可用

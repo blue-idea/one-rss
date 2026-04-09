@@ -1,27 +1,29 @@
+import { Colors, Spacing } from "@/constants/theme";
+import { useAuth } from "@/contexts/auth-context";
+import { AuthApiError } from "@/modules/auth/api/authApiError";
+import { registerWithEmailPassword } from "@/modules/auth/api/registerWithEmailPassword";
+import { sendEmailCode } from "@/modules/auth/api/sendEmailCode";
+import { signInWithEmailPassword } from "@/modules/auth/api/signInWithEmailPassword";
+import { verifyEmailCode } from "@/modules/auth/api/verifyEmailCode";
+import { useOtpCooldown } from "@/modules/auth/hooks/useOtpCooldown";
+import { MaterialIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useCallback, useState } from "react";
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
+  ActivityIndicator,
+  Image,
+  ImageBackground,
   KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
-  ImageBackground,
-  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
   useWindowDimensions,
-  ActivityIndicator,
+  View,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { MaterialIcons } from "@expo/vector-icons";
-import { useAuth } from "@/contexts/auth-context";
-import { Colors, Spacing } from "@/constants/theme";
-import { AuthApiError } from "@/modules/auth/api/authApiError";
-import { sendEmailCode } from "@/modules/auth/api/sendEmailCode";
-import { verifyEmailCode } from "@/modules/auth/api/verifyEmailCode";
-import { useOtpCooldown } from "@/modules/auth/hooks/useOtpCooldown";
 
 /** Stitch 原型「登录与注册」资源（projects/11408602597176940484） */
 const HERO_BACKGROUND_URI =
@@ -58,6 +60,7 @@ export default function LoginScreen() {
     useOtpCooldown();
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [isSubmittingAuth, setIsSubmittingAuth] = useState(false);
   const [sendOtpError, setSendOtpError] = useState<string | null>(null);
 
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -157,6 +160,10 @@ export default function LoginScreen() {
         if (!registrationCredential || !registrationCredentialExpiresAt) {
           setOtpError("验证码错误或已过期。");
           ok = false;
+        } else if (new Date(registrationCredentialExpiresAt) <= new Date()) {
+          clearRegisterVerification();
+          setOtpError("验证已过期，请重新验证邮箱。");
+          ok = false;
         }
       }
     } else {
@@ -190,9 +197,40 @@ export default function LoginScreen() {
       return;
     }
 
-    // TODO: 接入真实鉴权 API；成功后由根布局根据 isAuthenticated 进入主栈
-    void signIn();
+    if (isSubmittingAuth) return;
+    setIsSubmittingAuth(true);
+    try {
+      if (mode === "register") {
+        await registerWithEmailPassword(
+          email,
+          password,
+          registrationCredential,
+        );
+      }
+      await signInWithEmailPassword(email, password);
+      await signIn();
+      setSendOtpError(null);
+    } catch (err) {
+      if (err instanceof AuthApiError) {
+        if (err.code === "INVALID_CREDENTIALS") {
+          setPasswordError("邮箱或密码错误。");
+        } else if (err.code === "CONFLICT") {
+          setEmailError("该邮箱已注册，请直接登录。");
+        } else if (err.code === "INVALID_OTP") {
+          setOtpError("验证码错误或已过期。");
+          clearRegisterVerification();
+        } else {
+          setSendOtpError(err.message);
+        }
+      } else {
+        setSendOtpError("Unexpected error. Please try again.");
+      }
+    } finally {
+      setIsSubmittingAuth(false);
+    }
   }, [
+    clearRegisterVerification,
+    isSubmittingAuth,
     isVerifyingOtp,
     agreeTerms,
     confirmPassword,
@@ -680,6 +718,7 @@ export default function LoginScreen() {
               testID="auth-submit"
               style={styles.primaryButton}
               onPress={handleSubmit}
+              disabled={isVerifyingOtp || isSubmittingAuth}
               activeOpacity={0.92}
             >
               <LinearGradient
@@ -694,8 +733,12 @@ export default function LoginScreen() {
                       ? isVerifyingOtp
                         ? "验证中..."
                         : "验证验证码"
-                      : "创建账户"
-                    : "登录"}
+                      : isSubmittingAuth
+                        ? "提交中..."
+                        : "创建账户"
+                    : isSubmittingAuth
+                      ? "登录中..."
+                      : "登录"}
                 </Text>
               </LinearGradient>
             </TouchableOpacity>

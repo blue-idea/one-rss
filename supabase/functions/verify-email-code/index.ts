@@ -202,7 +202,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
     .is("consumed_at", null)
     .order("created_at", { ascending: false })
     .limit(1)
-    .maybeSingle<OtpChallengeRow>();
+    .maybeSingle();
+
+  const typedChallenge = challenge as OtpChallengeRow | null;
 
   if (challengeErr) {
     console.error("verify-email-code: read challenge failed");
@@ -217,24 +219,24 @@ Deno.serve(async (req: Request): Promise<Response> => {
     );
   }
 
-  if (!challenge) {
+  if (!typedChallenge) {
     return verificationError();
   }
 
   const now = Date.now();
-  if (new Date(challenge.expires_at).getTime() <= now) {
+  if (new Date(typedChallenge.expires_at).getTime() <= now) {
     return verificationError();
   }
 
   const expectedHash = await hashOtp(email, code, pepper);
-  if (expectedHash !== challenge.code_hash) {
+  if (expectedHash !== typedChallenge.code_hash) {
     return verificationError();
   }
 
   const { error: consumeErr } = await supabase
     .from("email_otp_challenges")
     .update({ consumed_at: new Date().toISOString() })
-    .eq("id", challenge.id)
+    .eq("id", typedChallenge.id)
     .is("consumed_at", null);
 
   if (consumeErr) {
@@ -251,7 +253,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   const registrationCredential = await createRegistrationCredential(
     email,
-    challenge.id,
+    typedChallenge.id,
     ticketSecret,
   );
 

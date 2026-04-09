@@ -1,35 +1,27 @@
 import { AuthApiError } from "@/modules/auth/api/authApiError";
 
-function getVerifyUrl(): string | undefined {
-  const u = process.env.EXPO_PUBLIC_AUTH_VERIFY_CODE_URL;
-  if (typeof u === "string" && u.trim().length > 0) {
-    return u.trim();
+function getRegisterUrl(): string | undefined {
+  const direct = process.env.EXPO_PUBLIC_AUTH_REGISTER_URL;
+  if (typeof direct === "string" && direct.trim().length > 0) {
+    return direct.trim();
   }
 
-  // Backward-compatible fallback: derive verify endpoint from send endpoint.
   const send = process.env.EXPO_PUBLIC_AUTH_SEND_CODE_URL;
   if (typeof send !== "string" || send.trim().length === 0) return undefined;
-  const trimmed = send.trim();
-  const replaced = trimmed.replace(
-    /\/send-email-code\/?$/i,
-    "/verify-email-code",
-  );
-  // Only use fallback if the pattern was actually matched
-  return replaced !== trimmed ? replaced : undefined;
+  return send
+    .trim()
+    .replace(/\/send-email-code\/?$/i, "/register-email-password");
 }
 
 function getSupabaseAnonKey(): string | undefined {
-  const k = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
-  return typeof k === "string" && k.trim().length > 0 ? k.trim() : undefined;
+  const key = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+  return typeof key === "string" && key.trim().length > 0
+    ? key.trim()
+    : undefined;
 }
 
-export type VerifyEmailCodeResult = {
-  registrationCredential: string;
-  expiresAt: string;
-};
-
-export function parseVerifyCodeResponse(body: unknown):
-  | { ok: true; data: VerifyEmailCodeResult }
+export function parseRegisterResponse(body: unknown):
+  | { ok: true }
   | {
       ok: false;
       code: string;
@@ -37,29 +29,12 @@ export function parseVerifyCodeResponse(body: unknown):
       details?: Record<string, unknown>;
     } {
   if (!body || typeof body !== "object") {
-    return {
-      ok: false,
-      code: "INTERNAL_ERROR",
-      message: "Invalid response.",
-    };
+    return { ok: false, code: "INTERNAL_ERROR", message: "Invalid response." };
   }
 
   const rec = body as Record<string, unknown>;
   if (rec.success === true) {
-    const data = rec.data as Record<string, unknown> | undefined;
-    const registrationCredential =
-      typeof data?.registrationCredential === "string"
-        ? data.registrationCredential
-        : "";
-    const expiresAt = typeof data?.expiresAt === "string" ? data.expiresAt : "";
-    if (!registrationCredential || !expiresAt) {
-      return {
-        ok: false,
-        code: "INTERNAL_ERROR",
-        message: "Invalid response.",
-      };
-    }
-    return { ok: true, data: { registrationCredential, expiresAt } };
+    return { ok: true };
   }
 
   const err = rec.error as Record<string, unknown> | undefined;
@@ -77,12 +52,13 @@ export function parseVerifyCodeResponse(body: unknown):
   return { ok: false, code, message, details };
 }
 
-export async function verifyEmailCode(
+export async function registerWithEmailPassword(
   email: string,
-  code: string,
+  password: string,
+  registrationCredential: string,
   options?: { signal?: AbortSignal },
-): Promise<VerifyEmailCodeResult> {
-  const url = getVerifyUrl();
+): Promise<void> {
+  const url = getRegisterUrl();
   if (!url) {
     throw new AuthApiError(
       "Auth service is not configured.",
@@ -107,7 +83,8 @@ export async function verifyEmailCode(
       headers,
       body: JSON.stringify({
         email: email.trim(),
-        code: code.trim(),
+        password,
+        registrationCredential,
       }),
       signal: options?.signal,
     });
@@ -119,9 +96,9 @@ export async function verifyEmailCode(
     );
   }
 
-  let jsonBody: unknown;
+  let body: unknown;
   try {
-    jsonBody = await res.json();
+    body = await res.json();
   } catch {
     throw new AuthApiError(
       "Invalid response from server.",
@@ -130,8 +107,8 @@ export async function verifyEmailCode(
     );
   }
 
-  const parsed = parseVerifyCodeResponse(jsonBody);
-  if (parsed.ok) return parsed.data;
+  const parsed = parseRegisterResponse(body);
+  if (parsed.ok) return;
 
   throw new AuthApiError(
     parsed.message,
