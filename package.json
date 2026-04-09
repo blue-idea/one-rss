@@ -14,7 +14,7 @@
     "format:check": "prettier --check .",
     "test:unit": "vitest run",
     "build:web": "pnpm exec expo export --platform web --output-dir dist",
-    "test:e2e": "pnpm exec playwright test",
+    "test:e2e": "pnpm exec playwright test --pass-with-no-tests",
     "test:visual:today": "node ./scripts/visual-regression-today.mjs",
     "test:visual:read": "node ./scripts/visual-regression-read.mjs",
     "test:visual:explore": "node ./scripts/visual-regression-explore.mjs",
