@@ -165,9 +165,39 @@
 
 > 实现映射：当前仓库对应 Edge Function `send-email-code`（路径以部署为准，例如 `/functions/v1/send-email-code`），契约字段与上文一致。
 
-- `POST /auth/email/verify`
-  - 用途：校验注册验证码并换取注册凭证
-  - 权限：匿名可用
+#### `POST /api/v1/auth/email/verify`
+
+- 用途：校验注册验证码并换取一次性注册凭证（`registrationCredential`），用于后续注册接口提交。
+- 权限：匿名可用（客户端需配置可调用该端点的网关地址，如 Supabase Edge Function URL）。
+- Request：
+
+```json
+{
+  "email": "user@example.com",
+  "code": "123456"
+}
+```
+
+- Response `200`：
+
+```json
+{
+  "success": true,
+  "data": {
+    "registrationCredential": "<opaque-ticket>",
+    "expiresAt": "2026-04-09T12:10:00Z"
+  },
+  "meta": {
+    "requestId": "uuid",
+    "timestamp": "2026-04-09T12:00:00Z"
+  }
+}
+```
+
+- 失败示例 `422 INVALID_OTP`：验证码错误或已过期，消息统一为 `Verification code is invalid or expired.`。
+
+> 实现映射：当前仓库对应 Edge Function `verify-email-code`（路径以部署为准，例如 `/functions/v1/verify-email-code`）。
+
 - `POST /auth/register`
   - 用途：基于已校验验证码完成邮箱密码注册并建立会话
   - 权限：匿名可用

@@ -20,6 +20,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { Colors, Spacing } from "@/constants/theme";
 import { AuthApiError } from "@/modules/auth/api/authApiError";
 import { sendEmailCode } from "@/modules/auth/api/sendEmailCode";
+import { verifyEmailCode } from "@/modules/auth/api/verifyEmailCode";
 import { useOtpCooldown } from "@/modules/auth/hooks/useOtpCooldown";
 
 /** Stitch 原型「登录与注册」资源（projects/11408602597176940484） */
@@ -33,6 +34,7 @@ const SOCIAL_GOOGLE_URI =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuA3Vk7KQ7i41CwVbPP3EiTqawdRRdSkMvIyjNszFhdOeMiYmjJtB0amrHhknDTF17Zb8fXBSw8PkUaI0xaI0xaI5CkPMUwGMnKoNGkj_6Up2guCK6CGyS8ECLeb7BE77Vmcg1A8jqemWS3SeiHuVSQNKNzzpJrYIlBCb-vmbc8s2CAJaCfpa7F0UoBpTNlpThhbSTJ9_FunlZxBdnoJwfQ4sBlH7P0ENI83jSqJYFfQhOgj8VZAqELS7jVJC1T0uxFIxmS918ddqMG-qT0w";
 
 type AuthMode = "login" | "register";
+type RegisterStep = "verify" | "setPassword";
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
@@ -48,9 +50,14 @@ export default function LoginScreen() {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [registerStep, setRegisterStep] = useState<RegisterStep>("verify");
+  const [registrationCredential, setRegistrationCredential] = useState("");
+  const [registrationCredentialExpiresAt, setRegistrationCredentialExpiresAt] =
+    useState("");
   const { secondsLeft: otpSecondsLeft, start: startOtpCooldown } =
     useOtpCooldown();
   const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [sendOtpError, setSendOtpError] = useState<string | null>(null);
 
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -66,6 +73,18 @@ export default function LoginScreen() {
     setConfirmError(null);
     setTermsError(null);
     setSendOtpError(null);
+  }, []);
+
+  const clearRegisterVerification = useCallback(() => {
+    setRegisterStep("verify");
+    setRegistrationCredential("");
+    setRegistrationCredentialExpiresAt("");
+    setPassword("");
+    setConfirmPassword("");
+    setAgreeTerms(false);
+    setTermsError(null);
+    setPasswordError(null);
+    setConfirmError(null);
   }, []);
 
   const isValidEmail = (value: string) =>
@@ -107,7 +126,7 @@ export default function LoginScreen() {
     }
   }, [email, isSendingOtp, otpSecondsLeft, resetFieldErrors, startOtpCooldown]);
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     resetFieldErrors();
     let ok = true;
 
@@ -117,21 +136,28 @@ export default function LoginScreen() {
     }
 
     if (mode === "register") {
-      if (otp.trim().length !== 6) {
-        setOtpError("验证码错误或已过期。");
-        ok = false;
-      }
-      if (password.length < 8) {
-        setPasswordError("密码至少 8 个字符。");
-        ok = false;
-      }
-      if (password !== confirmPassword) {
-        setConfirmError("两次输入的密码不一致。");
-        ok = false;
-      }
-      if (!agreeTerms) {
-        setTermsError("请阅读并同意服务条款与隐私政策。");
-        ok = false;
+      if (registerStep === "verify") {
+        if (otp.trim().length !== 6) {
+          setOtpError("验证码错误或已过期。");
+          ok = false;
+        }
+      } else {
+        if (password.length < 8) {
+          setPasswordError("密码至少 8 个字符。");
+          ok = false;
+        }
+        if (password !== confirmPassword) {
+          setConfirmError("两次输入的密码不一致。");
+          ok = false;
+        }
+        if (!agreeTerms) {
+          setTermsError("请阅读并同意服务条款与隐私政策。");
+          ok = false;
+        }
+        if (!registrationCredential || !registrationCredentialExpiresAt) {
+          setOtpError("验证码错误或已过期。");
+          ok = false;
+        }
       }
     } else {
       if (password.length < 1) {
@@ -141,15 +167,42 @@ export default function LoginScreen() {
     }
 
     if (!ok) return;
+    if (mode === "register" && registerStep === "verify") {
+      if (isVerifyingOtp) return;
+      setIsVerifyingOtp(true);
+      try {
+        const out = await verifyEmailCode(email, otp);
+        setRegistrationCredential(out.registrationCredential);
+        setRegistrationCredentialExpiresAt(out.expiresAt);
+        setRegisterStep("setPassword");
+        setSendOtpError(null);
+        setOtpError(null);
+      } catch (err) {
+        if (err instanceof AuthApiError) {
+          setOtpError("验证码错误或已过期。");
+          setSendOtpError(err.message);
+        } else {
+          setSendOtpError("Unexpected error. Please try again.");
+        }
+      } finally {
+        setIsVerifyingOtp(false);
+      }
+      return;
+    }
+
     // TODO: 接入真实鉴权 API；成功后由根布局根据 isAuthenticated 进入主栈
     void signIn();
   }, [
+    isVerifyingOtp,
     agreeTerms,
     confirmPassword,
     email,
     mode,
     otp,
     password,
+    registerStep,
+    registrationCredential,
+    registrationCredentialExpiresAt,
     resetFieldErrors,
     signIn,
   ]);
@@ -248,6 +301,12 @@ export default function LoginScreen() {
       fontSize: 12,
       fontWeight: "500",
       color: colors.error,
+      marginTop: Spacing.xs,
+    },
+    successText: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: colors.primary,
       marginTop: Spacing.xs,
     },
     termsRow: {
@@ -398,6 +457,9 @@ export default function LoginScreen() {
                   placeholderTextColor={`${colors.outline}99`}
                   value={email}
                   onChangeText={(t) => {
+                    if (mode === "register" && registerStep === "setPassword") {
+                      clearRegisterVerification();
+                    }
                     setEmail(t);
                     if (emailError) setEmailError(null);
                   }}
@@ -461,11 +523,15 @@ export default function LoginScreen() {
                     placeholderTextColor={`${colors.outline}99`}
                     value={otp}
                     onChangeText={(t) => {
+                      if (registerStep === "setPassword") {
+                        clearRegisterVerification();
+                      }
                       setOtp(t.replace(/\D/g, "").slice(0, 6));
                       if (otpError) setOtpError(null);
                     }}
                     keyboardType="number-pad"
                     maxLength={6}
+                    editable={registerStep === "verify"}
                   />
                   {otpError ? (
                     <MaterialIcons
@@ -481,10 +547,22 @@ export default function LoginScreen() {
                 {sendOtpError ? (
                   <Text style={styles.errorText}>{sendOtpError}</Text>
                 ) : null}
+                {registerStep === "setPassword" ? (
+                  <Text style={styles.successText}>
+                    验证成功，请设置账户密码。
+                  </Text>
+                ) : null}
               </View>
             ) : null}
 
-            <View style={styles.fieldGap}>
+            <View
+              style={[
+                styles.fieldGap,
+                mode === "register" && registerStep === "verify"
+                  ? { display: "none" }
+                  : null,
+              ]}
+            >
               <Text style={styles.label}>密码</Text>
               <View
                 style={[
@@ -526,7 +604,7 @@ export default function LoginScreen() {
               ) : null}
             </View>
 
-            {mode === "register" ? (
+            {mode === "register" && registerStep === "setPassword" ? (
               <View style={styles.fieldGap}>
                 <Text style={styles.label}>确认密码</Text>
                 <View
@@ -566,7 +644,7 @@ export default function LoginScreen() {
               </View>
             ) : null}
 
-            {mode === "register" ? (
+            {mode === "register" && registerStep === "setPassword" ? (
               <>
                 <Pressable
                   style={styles.termsRow}
@@ -611,7 +689,13 @@ export default function LoginScreen() {
                 style={styles.primaryGradient}
               >
                 <Text style={styles.primaryLabel}>
-                  {mode === "register" ? "创建账户" : "登录"}
+                  {mode === "register"
+                    ? registerStep === "verify"
+                      ? isVerifyingOtp
+                        ? "验证中..."
+                        : "验证验证码"
+                      : "创建账户"
+                    : "登录"}
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -624,6 +708,7 @@ export default function LoginScreen() {
                     resetFieldErrors();
                     setMode("login");
                     setOtp("");
+                    clearRegisterVerification();
                     setConfirmPassword("");
                     setAgreeTerms(false);
                     startOtpCooldown(0);
@@ -639,6 +724,7 @@ export default function LoginScreen() {
                   onPress={() => {
                     resetFieldErrors();
                     setMode("register");
+                    setRegisterStep("verify");
                   }}
                 >
                   <Text style={styles.switchText}>
