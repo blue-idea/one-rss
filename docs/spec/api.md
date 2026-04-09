@@ -247,6 +247,28 @@
 
 - 失败示例：凭证错误时返回 `INVALID_CREDENTIALS` 语义（客户端统一提示“凭证无效”）。
 
+- Response `200`：
+
+```json
+{
+  "success": true,
+  "data": {
+    "accessToken": "<jwt-access-token>",
+    "refreshToken": "<refresh-token>",
+    "tokenType": "bearer",
+    "expiresIn": 3600,
+    "user": {
+      "id": "user-uuid",
+      "email": "user@example.com"
+    }
+  },
+  "meta": {
+    "requestId": "uuid",
+    "timestamp": "2026-04-09T12:00:00Z"
+  }
+}
+```
+
 > 实现映射：当前仓库客户端通过 Supabase Auth REST `POST /auth/v1/token?grant_type=password` 调用。
 
 - `POST /auth/oauth/sign-in`

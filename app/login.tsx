@@ -160,10 +160,16 @@ export default function LoginScreen() {
         if (!registrationCredential || !registrationCredentialExpiresAt) {
           setOtpError("验证码错误或已过期。");
           ok = false;
-        } else if (new Date(registrationCredentialExpiresAt) <= new Date()) {
-          clearRegisterVerification();
-          setOtpError("验证已过期，请重新验证邮箱。");
-          ok = false;
+        } else {
+          const parsedExpiry = new Date(registrationCredentialExpiresAt);
+          if (
+            Number.isNaN(parsedExpiry.getTime()) ||
+            parsedExpiry <= new Date()
+          ) {
+            clearRegisterVerification();
+            setOtpError("验证已过期，请重新验证邮箱。");
+            ok = false;
+          }
         }
       }
     } else {
