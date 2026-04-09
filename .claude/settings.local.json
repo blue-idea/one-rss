@@ -1,0 +1,5 @@
+{
+  "permissions": {
+    "allow": ["WebFetch(domain:www.stitch.anthropic.com)"]
+  }
+}

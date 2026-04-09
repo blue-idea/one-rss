@@ -1,105 +1,450 @@
-import { Image } from "expo-image";
-import { Platform, StyleSheet } from "react-native";
+import { Header } from "@/components/header";
+import { Colors, Spacing } from "@/constants/theme";
+import { MaterialIcons } from "@expo/vector-icons";
+import {
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-import { HelloWave } from "@/components/hello-wave";
-import ParallaxScrollView from "@/components/parallax-scroll-view";
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
-import { Link } from "expo-router";
+type Article = {
+  id: string;
+  source: string;
+  time: string;
+  title: string;
+  summary: string;
+  featured?: boolean;
+  sourceBadge?: string;
+  tags?: string[];
+  actionLabel?: string;
+  showDeepTag?: boolean;
+};
 
-export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
-      headerImage={
-        <Image
-          source={require("@/assets/images/partial-react-logo.png")}
-          style={styles.reactLogo}
+const timelineTabs = ["今日", "昨天", "本周"];
+
+const todayArticles: Article[] = [
+  {
+    id: "1",
+    source: "建筑评论",
+    time: "阅读时间 12 分钟",
+    title: "沉默的建筑师：设计没有视觉噪音的城市",
+    summary:
+      "在持续连接的时代，新一代城市设计师正在优先考虑“宁静权”。本文探讨声学景观设计如何影响心理健康，并分析减少视觉干扰对生活质量的提升。",
+    featured: true,
+    sourceBadge: "ARC",
+  },
+  {
+    id: "2",
+    source: "纽约时报",
+    time: "2小时前",
+    title: "全球经济：向再生金融模式的转型",
+    summary:
+      "全球投资机构开始放弃季度增长，转而关注未来 50 年的生态系统稳定性。再生金融不仅是道德选择，也正在成为新的风险管理框架。",
+    actionLabel: "阅读全文",
+  },
+  {
+    id: "3",
+    source: "TechCrunch",
+    time: "4小时前",
+    title: "超越硅基：首台碳纳米管计算机上线",
+    summary:
+      "新型计算架构实现更高性能和更低功耗，标志着计算科学进入新阶段，并有望从底层改写 AI 训练与边缘计算的硬件版图。",
+    tags: ["基础研究", "量子物理"],
+  },
+  {
+    id: "4",
+    source: "Dezeen",
+    time: "5小时前",
+    title: "粗野主义的伦理：为什么原始混凝土正在现代回归",
+    summary:
+      "新一代建筑师将粗野主义重新定义为可持续方案，通过材料寿命与结构诚实性回应“一次性设计”文化，探索更长期的建筑价值。",
+  },
+  {
+    id: "5",
+    source: "大西洋月刊",
+    time: "8小时前",
+    title: "慢读革命：深度专注的抗争",
+    summary:
+      "在碎片化信息流中，深度阅读正在成为稀缺能力。研究表明，长篇阅读不仅提升认知连接能力，也帮助我们重新夺回注意力主权。",
+    showDeepTag: true,
+  },
+];
+
+export default function TodayScreen() {
+  const colorScheme = "light";
+  const colors = Colors[colorScheme];
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.surface,
+    },
+    content: {
+      paddingHorizontal: Spacing.xl,
+      paddingBottom: 132,
+    },
+    tabsSection: {
+      marginTop: Spacing.lg,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.outlineVariant,
+      paddingBottom: Spacing.sm,
+    },
+    tabsRow: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    timelineTabButton: {
+      marginRight: Spacing.xl,
+      paddingBottom: Spacing.sm,
+    },
+    timelineTabActive: {
+      borderBottomWidth: 2,
+      borderBottomColor: colors.primary,
+    },
+    timelineTabText: {
+      fontSize: 14,
+      color: colors.onSurfaceVariant,
+      fontWeight: "500",
+    },
+    timelineTabTextActive: {
+      color: colors.primary,
+      fontWeight: "700",
+    },
+    divider: {
+      width: 1,
+      height: 16,
+      marginRight: Spacing.md,
+      backgroundColor: colors.outlineVariant,
+    },
+    sortButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingBottom: Spacing.sm,
+      gap: Spacing.xs,
+    },
+    sortIcon: {
+      fontSize: 14,
+      color: colors.onSurfaceVariant,
+    },
+    sortText: {
+      fontSize: 14,
+      color: colors.onSurfaceVariant,
+      fontWeight: "500",
+    },
+    articleList: {
+      marginTop: Spacing.md,
+    },
+    articleItem: {
+      paddingVertical: 26,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.outlineVariant,
+    },
+    articleMetaRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: Spacing.md,
+      gap: Spacing.xs,
+    },
+    metaIcon: {
+      fontSize: 14,
+      color: colors.onSurfaceVariant,
+    },
+    featuredIcon: {
+      color: colors.primary,
+    },
+    sourceUpper: {
+      fontSize: 10,
+      fontWeight: "700",
+      color: colors.primary,
+      letterSpacing: 1.2,
+      textTransform: "uppercase",
+    },
+    timeText: {
+      marginLeft: "auto",
+      fontSize: 10,
+      color: colors.onSurfaceVariant,
+    },
+    articleTitle: {
+      fontSize: 28,
+      lineHeight: 34,
+      fontWeight: "700",
+      color: colors.onSurface,
+      fontFamily: Platform.OS === "ios" ? "Georgia" : "serif",
+      marginBottom: Spacing.md,
+    },
+    articleSummary: {
+      fontSize: 16,
+      lineHeight: 28,
+      color: colors.onSurfaceVariant,
+      fontFamily: Platform.OS === "ios" ? "Georgia" : "serif",
+      marginBottom: Spacing.lg,
+    },
+    bottomRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    sourceInfo: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: Spacing.sm,
+    },
+    sourceBadge: {
+      width: 24,
+      height: 24,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+      backgroundColor: colors.surfaceContainerLow,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    sourceBadgeText: {
+      fontSize: 10,
+      fontWeight: "700",
+      color: colors.onSurfaceVariant,
+    },
+    sourceName: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: colors.onSurfaceVariant,
+    },
+    actionText: {
+      fontSize: 12,
+      color: colors.primary,
+      fontWeight: "600",
+    },
+    tagsRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: Spacing.sm,
+    },
+    tag: {
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+      paddingHorizontal: Spacing.sm,
+      paddingVertical: 2,
+    },
+    tagText: {
+      fontSize: 10,
+      color: colors.onSurfaceVariant,
+      textTransform: "uppercase",
+    },
+    deepTag: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 2,
+    },
+    deepTagText: {
+      fontSize: 10,
+      color: colors.primary,
+      fontWeight: "700",
+      letterSpacing: 0.4,
+    },
+    bookmarkButton: {
+      padding: Spacing.xs,
+    },
+    fab: {
+      position: "absolute",
+      right: Spacing.xl,
+      bottom: 108,
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: colors.primary,
+      justifyContent: "center",
+      alignItems: "center",
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.35,
+      shadowRadius: 8,
+      elevation: 8,
+    },
+  });
+
+  const renderArticleMeta = (article: Article) => {
+    if (article.featured) {
+      return (
+        <View style={styles.articleMetaRow}>
+          <MaterialIcons name="star" size={14} color={colors.primary} />
+          <Text style={styles.sourceUpper}>精选推荐</Text>
+          <Text style={styles.timeText}>{article.time}</Text>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.articleMetaRow}>
+        <MaterialIcons
+          name="article"
+          size={14}
+          color={colors.onSurfaceVariant}
         />
-      }
-    >
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit{" "}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText>{" "}
-          to see changes. Press{" "}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: "cmd + d",
-              android: "cmd + m",
-              web: "F12",
-            })}
-          </ThemedText>{" "}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction
-              title="Action"
-              icon="cube"
-              onPress={() => alert("Action pressed")}
-            />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert("Share pressed")}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert("Delete pressed")}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+        <Text style={styles.sourceUpper}>{article.source}</Text>
+        <Text style={styles.timeText}>{article.time}</Text>
+      </View>
+    );
+  };
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">pnpm reset-project</ThemedText> to
-          get a fresh <ThemedText type="defaultSemiBold">app</ThemedText>{" "}
-          directory. This will move the current{" "}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{" "}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const renderBottomRow = (article: Article) => {
+    if (article.featured) {
+      return (
+        <View style={styles.bottomRow}>
+          <View style={styles.sourceInfo}>
+            <View style={styles.sourceBadge}>
+              <Text style={styles.sourceBadgeText}>
+                {article.sourceBadge ?? "ARC"}
+              </Text>
+            </View>
+            <Text style={styles.sourceName}>{article.source}</Text>
+          </View>
+          <TouchableOpacity style={styles.bookmarkButton}>
+            <MaterialIcons
+              name="bookmark-border"
+              size={20}
+              color={colors.onSurfaceVariant}
+            />
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    if (article.actionLabel) {
+      return (
+        <View style={styles.bottomRow}>
+          <TouchableOpacity>
+            <Text style={styles.actionText}>{article.actionLabel} →</Text>
+          </TouchableOpacity>
+          <View style={styles.sourceInfo}>
+            <TouchableOpacity style={styles.bookmarkButton}>
+              <MaterialIcons
+                name="ios-share"
+                size={20}
+                color={colors.onSurfaceVariant}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.bookmarkButton}>
+              <MaterialIcons
+                name="bookmark-border"
+                size={20}
+                color={colors.onSurfaceVariant}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
+    }
+
+    if (article.tags && article.tags.length > 0) {
+      return (
+        <View style={styles.bottomRow}>
+          <View style={styles.tagsRow}>
+            {article.tags.map((tag) => (
+              <View key={tag} style={styles.tag}>
+                <Text style={styles.tagText}>{tag}</Text>
+              </View>
+            ))}
+          </View>
+          <TouchableOpacity style={styles.bookmarkButton}>
+            <MaterialIcons
+              name="bookmark-border"
+              size={20}
+              color={colors.onSurfaceVariant}
+            />
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    if (article.showDeepTag) {
+      return (
+        <View style={styles.bottomRow}>
+          <View style={styles.deepTag}>
+            <MaterialIcons name="verified" size={12} color={colors.primary} />
+            <Text style={styles.deepTagText}>深度解析</Text>
+          </View>
+          <TouchableOpacity style={styles.bookmarkButton}>
+            <MaterialIcons
+              name="bookmark-border"
+              size={20}
+              color={colors.onSurfaceVariant}
+            />
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.bottomRow}>
+        <View />
+        <TouchableOpacity style={styles.bookmarkButton}>
+          <MaterialIcons
+            name="bookmark-border"
+            size={20}
+            color={colors.onSurfaceVariant}
+          />
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
+  return (
+    <View style={styles.container}>
+      <Header title="今日摘要" />
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
+          <View style={styles.tabsSection}>
+            <View style={styles.tabsRow}>
+              {timelineTabs.map((tab, index) => (
+                <TouchableOpacity
+                  key={tab}
+                  style={[
+                    styles.timelineTabButton,
+                    index === 0 && styles.timelineTabActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.timelineTabText,
+                      index === 0 && styles.timelineTabTextActive,
+                    ]}
+                  >
+                    {tab}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+              <View style={styles.divider} />
+              <TouchableOpacity style={styles.sortButton}>
+                <MaterialIcons
+                  name="sort"
+                  size={14}
+                  color={colors.onSurfaceVariant}
+                />
+                <Text style={styles.sortText}>排序</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={styles.articleList}>
+            {todayArticles.map((article) => (
+              <View key={article.id} style={styles.articleItem}>
+                {renderArticleMeta(article)}
+                <Text style={styles.articleTitle}>{article.title}</Text>
+                <Text style={styles.articleSummary} numberOfLines={5}>
+                  {article.summary}
+                </Text>
+                {renderBottomRow(article)}
+              </View>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+
+      <TouchableOpacity style={styles.fab}>
+        <MaterialIcons name="edit-note" size={26} color={colors.onPrimary} />
+      </TouchableOpacity>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: "absolute",
-  },
-});

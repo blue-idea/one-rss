@@ -1,112 +1,342 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { MaterialIcons } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import { useMemo, useState } from "react";
+import {
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-import { Collapsible } from '@/components/ui/collapsible';
-import { ExternalLink } from '@/components/external-link';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Fonts } from '@/constants/theme';
+import { Header } from "@/components/header";
+import { Colors, Spacing } from "@/constants/theme";
 
-export default function TabTwoScreen() {
+const categories = ["精选", "科技", "设计", "商业"];
+
+type FeedSource = {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  logo: string;
+  subscribed?: boolean;
+};
+
+const sourceList: FeedSource[] = [
+  {
+    id: "1",
+    name: "TechCrunch",
+    description: "最新科技新闻与洞察",
+    category: "科技",
+    logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuAE-ta2S57fKuTKEAeBLvTNL1f1YP7tx8_gqYn4ZOK6cF-MlmWHqg4ePp5vJEy91XnEf5zVk7TA4avOovmNsiZGmeOh_4Utwz364QD9tPXw97wRe6uOaR9tE_d4bpKxsIc6x4JxytkhbK9MWrS3frL30GHpmvdnRc1CA-nxzwQZqalVCNP6QOtzhhyW4zYR2r0J_cijGfARsg6eLOJJ3GWqqZkDvmT7yj-UqGgha6CI4RyG8PMViAh7pRgGlssWetzQnFtwb2Y3lWIE",
+    subscribed: true,
+  },
+  {
+    id: "2",
+    name: "The Verge",
+    description: "科技、科学和文化新闻",
+    category: "科技",
+    logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuACNGO6mztpymOfaeA_nrL7ClnVvu3wrSmGhqq_Xvji5S5DufhKZj0hlicllgblQ0w5mUKCFyZqESdc9RaxMNbTeLp0gXxKjxrI7ro2Fkr05J-mlgKG-HeMXNsFpxdxd88NFU0ve3FqUJi5G3Rqut4Rxm1Yc-8LmF4Opvp021Jf2T2HVmTe0KFtbViKCEpT8Y2HrDgaPRvcAvg2XNQDLvwRSTWV3JvU3yKRJR5YEcb1RJQWbENepve8T8G18S6tRof5vPYp0bLyTvHm",
+  },
+  {
+    id: "3",
+    name: "Wired",
+    description: "前沿科技新闻报道",
+    category: "科技",
+    logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuBJOjJKINC_fwY7mGb0wd7O5FP7-oQ-0hVyEtW23vnN0lBu3L7LiE-hm_mcUPviFgCC9ByanJhyMH8Zsw4Lo9TkxYBxO42Q3kzMnnGvl48VFn-AfSJIU3KxfSRtyFpdn41XWYbHq7ogl6M-mPU-3yx4yNJ9aJOflAU1FKnphccQEJWdmonQ8zkfIA8LZGUhCJMpdoL1kJ6YppdzwXHHyqVAmDBwe4tss-mVcHncYWinsbPGUVm5g0IS0cSwe9xC-4OJCVjBqiLy0o51",
+  },
+  {
+    id: "4",
+    name: "Ars Technica",
+    description: "深度科技分析",
+    category: "科技",
+    logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuCOUd4Hn9TvUhIGFzCxNDp2KGEDSbWax5KGNsM5uPMMAtW8oCcthhjM2Lxdgibtwsa07orPOUB_AWUEJvpPsBcx0M-lq4Gfq_rTH6xDuW4pGnoIrjHsAXksz-x_tCSz4B3rdpWjZEAKCeYf2XIAynK9jFnH7wZtBre3y1gM8u2t4OWgjjbBG00Pa9pVM8W_ants9xFFG4XUU_jP-EIhaIEs8oxb9dWNYrlgjrFuJRlXdfwgpbjJz4HXuX5HEjaHbBsc9ey0M_prNQdD",
+  },
+  {
+    id: "5",
+    name: "Dezeen",
+    description: "最具影响力的建筑杂志",
+    category: "设计",
+    logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuALRuqkmw061d0myJ3L_XRMzUHZIQPLz8DhIouSbsZMpF_Vioel2-hb_HX2WWhLpKjQ0c37ODXkZ-6Fynu6KqjyTThakksmtz9FTXOzWzMoekRSL1gCoOEwsirP7XQrCYiSK0JK8w8Y3YkaGFkjvjQf6Coexoeh2iIvXcCWVC8vy74PbPSRe6uBVhHKuzbpi7I2MVEx0g_LDAKhsm-vLAgXh3WK6SrLNJJUrfoHvElRxjz3xDMrXDl3T-lhGr7fx1vAQUj6_9M0KOv4",
+  },
+  {
+    id: "6",
+    name: "Bloomberg",
+    description: "全球金融市场实时新闻",
+    category: "商业",
+    logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuAoyEbPUIMFSpJtMdMdldzDqZ_6d6WcoHrYh1Qh8KcswnfeS1YxT5atew-2mPJ68nh2k48vc4wKY7CsoQwiWOLZ09UmT04FtlS-hHN8lYWtR9rLA7xDEIIYDxjduBqi5l3Ny2KPL4ybYz3l-kaF1lFXtlakFaNJEl9IljzaLUDWk_68E786BaDjBAPydLszVYj2Bt1TMRcSjylw10Ll4U_3G6WqZpNopAsMGGrcUSPrNexz7ZAISq-P5SXJdeE10Bxyz3PZohdwc0hA",
+  },
+];
+
+export default function ExploreScreen() {
+  const [selectedCategory, setSelectedCategory] = useState("精选");
+  const [searchQuery, setSearchQuery] = useState("");
+  const colorScheme = "light";
+  const colors = Colors[colorScheme];
+
+  const filteredSources = useMemo(() => {
+    return sourceList.filter((source) => {
+      const matchesCategory =
+        selectedCategory === "精选" || source.category === selectedCategory;
+      const q = searchQuery.trim().toLowerCase();
+      const matchesSearch =
+        q.length === 0 ||
+        source.name.toLowerCase().includes(q) ||
+        source.description.toLowerCase().includes(q);
+      return matchesCategory && matchesSearch;
+    });
+  }, [searchQuery, selectedCategory]);
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.surface,
+    },
+    content: {
+      paddingHorizontal: Spacing.xl,
+      paddingBottom: 104,
+    },
+    title: {
+      fontSize: 34,
+      lineHeight: 40,
+      fontWeight: "700",
+      color: colors.onSurface,
+      fontFamily: Platform.OS === "ios" ? "Georgia" : "serif",
+      marginBottom: Spacing.lg,
+    },
+    searchContainer: {
+      position: "relative",
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.surfaceContainerHighest,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      height: 56,
+      marginBottom: Spacing.xl,
+    },
+    searchIconWrap: {
+      marginRight: Spacing.sm,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 16,
+      color: colors.onSurface,
+      paddingVertical: 0,
+      paddingRight: 106,
+    },
+    addButton: {
+      position: "absolute",
+      right: 8,
+      top: 8,
+      bottom: 8,
+      borderRadius: 9,
+      backgroundColor: colors.primary,
+      paddingHorizontal: Spacing.md,
+      justifyContent: "center",
+    },
+    addButtonText: {
+      color: colors.onPrimary,
+      fontSize: 13,
+      fontWeight: "700",
+    },
+    categoriesContainer: {
+      marginBottom: Spacing.xl,
+    },
+    categoryScroll: {
+      paddingRight: Spacing.xs,
+    },
+    categoryTag: {
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 10,
+      marginRight: Spacing.sm,
+      backgroundColor: colors.surfaceContainerHigh,
+    },
+    categoryTagActive: {
+      backgroundColor: colors.primary,
+    },
+    categoryText: {
+      fontSize: 13,
+      color: colors.onSurfaceVariant,
+      fontWeight: "500",
+    },
+    categoryTextActive: {
+      color: colors.onPrimary,
+    },
+    grid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      marginHorizontal: -Spacing.xs,
+    },
+    gridItem: {
+      width: "50%",
+      paddingHorizontal: Spacing.xs,
+      marginBottom: Spacing.sm,
+    },
+    card: {
+      backgroundColor: colors.surfaceContainerLowest,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: "rgba(0,0,0,0.06)",
+      padding: Spacing.md,
+      minHeight: 198,
+    },
+    logoWrap: {
+      width: 64,
+      height: 64,
+      borderRadius: 12,
+      backgroundColor: colors.surfaceContainerLow,
+      overflow: "hidden",
+      marginBottom: Spacing.md,
+    },
+    logo: {
+      width: "100%",
+      height: "100%",
+    },
+    cardTitle: {
+      fontSize: 20,
+      lineHeight: 24,
+      fontWeight: "700",
+      color: colors.onSurface,
+      marginBottom: 4,
+      fontFamily: Platform.OS === "ios" ? "Georgia" : "serif",
+    },
+    cardDescription: {
+      fontSize: 13,
+      lineHeight: 18,
+      color: colors.onSurfaceVariant,
+      minHeight: 38,
+      marginBottom: Spacing.md,
+    },
+    subscribeBtn: {
+      marginTop: "auto",
+      borderRadius: 12,
+      paddingVertical: 10,
+      alignItems: "center",
+      justifyContent: "center",
+      flexDirection: "row",
+      gap: 4,
+      backgroundColor: colors.surfaceContainerLow,
+    },
+    subscribeBtnActive: {
+      backgroundColor: colors.primary,
+    },
+    subscribeBtnText: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: colors.primary,
+    },
+    subscribeBtnTextActive: {
+      color: colors.onPrimary,
+    },
+    menuIcon: {
+      color: colors.onSurfaceVariant,
+      fontSize: 24,
+    },
+    categorySection: {
+      marginBottom: Spacing.lg,
+    },
+  });
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText
-          type="title"
-          style={{
-            fontFamily: Fonts.rounded,
-          }}>
-          Explore
-        </ThemedText>
-      </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image
-          source={require('@/assets/images/react-logo.png')}
-          style={{ width: 100, height: 100, alignSelf: 'center' }}
-        />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful{' '}
-          <ThemedText type="defaultSemiBold" style={{ fontFamily: Fonts.mono }}>
-            react-native-reanimated
-          </ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
+    <View style={styles.container}>
+      <Header title="The Curator" />
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
+          <View style={styles.categorySection}>
+            <Text style={styles.title}>发现源</Text>
+            <View style={styles.searchContainer}>
+              <View style={styles.searchIconWrap}>
+                <MaterialIcons name="link" size={20} style={styles.menuIcon} />
+              </View>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="添加 RSS 地址或搜索"
+                placeholderTextColor={`${colors.onSurfaceVariant}99`}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+              <TouchableOpacity style={styles.addButton}>
+                <Text style={styles.addButtonText}>添加订阅</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoryScroll}
+            >
+              {categories.map((category) => (
+                <TouchableOpacity
+                  key={category}
+                  style={[
+                    styles.categoryTag,
+                    selectedCategory === category && styles.categoryTagActive,
+                  ]}
+                  onPress={() => setSelectedCategory(category)}
+                >
+                  <Text
+                    style={[
+                      styles.categoryText,
+                      selectedCategory === category &&
+                        styles.categoryTextActive,
+                    ]}
+                  >
+                    {category}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
+          <View style={styles.grid}>
+            {filteredSources.map((source) => (
+              <View key={source.id} style={styles.gridItem}>
+                <View style={styles.card}>
+                  <View style={styles.logoWrap}>
+                    <Image
+                      source={{ uri: source.logo }}
+                      style={styles.logo}
+                      contentFit="cover"
+                    />
+                  </View>
+                  <Text style={styles.cardTitle} numberOfLines={1}>
+                    {source.name}
+                  </Text>
+                  <Text style={styles.cardDescription} numberOfLines={2}>
+                    {source.description}
+                  </Text>
+                  <TouchableOpacity
+                    style={[
+                      styles.subscribeBtn,
+                      source.subscribed && styles.subscribeBtnActive,
+                    ]}
+                  >
+                    <MaterialIcons
+                      name={source.subscribed ? "check" : "add"}
+                      size={16}
+                      color={
+                        source.subscribed ? colors.onPrimary : colors.primary
+                      }
+                    />
+                    <Text
+                      style={[
+                        styles.subscribeBtnText,
+                        source.subscribed && styles.subscribeBtnTextActive,
+                      ]}
+                    >
+                      {source.subscribed ? "已订阅" : "订阅"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
-  },
-  titleContainer: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-});
