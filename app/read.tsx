@@ -1,19 +1,27 @@
-import { useState } from "react";
+import { useState, useCallback, useRef } from "react";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { showMessage } from "react-native-flash-message";
+import * as Sharing from "expo-sharing";
+import * as WebBrowser from "expo-web-browser";
 import {
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
 } from "react-native";
 import { Colors, Spacing } from "@/constants/theme";
 import { useBookmarks } from "@/contexts/bookmark-context";
+import { updateReadProgress } from "@/modules/article/api/updateReadProgress";
 
 const articleData = {
   source: "大西洋月刊 (The Atlantic)",
+  sourceUrl:
+    "https://www.theatlantic.com/magazine/archive/2023/10/architecture-silence-cities/674768/",
   meta: "发布于 2023年10月24日 • 12分钟阅读",
   title: "宁静的建筑：为何现代城市正缺失静谧空间",
   imageUrl:
@@ -44,6 +52,11 @@ export default function ReadScreen() {
   // Get initial bookmark state from context based on article ID
   const initialBookmarked = params.id ? isBookmarked(params.id) : false;
   const [localBookmarked, setLocalBookmarked] = useState(initialBookmarked);
+  const [readProgress, setReadProgress] = useState(0);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollContentHeight = useRef(0);
+  const scrollViewHeight = useRef(0);
+  const lastReportedProgress = useRef(0);
 
   const handleBookmarkToggle = () => {
     if (params.id) {
@@ -51,6 +64,83 @@ export default function ReadScreen() {
       setLocalBookmarked((prev) => !prev);
     }
   };
+
+  const handleShare = useCallback(async () => {
+    const shareUrl = articleData.sourceUrl || articleData.source;
+
+    const isAvailable = await Sharing.isAvailableAsync();
+
+    if (isAvailable) {
+      try {
+        await Sharing.shareAsync(shareUrl, {
+          dialogTitle: "分享文章",
+          mimeType: "text/plain",
+        });
+        return;
+      } catch {
+        console.error("Share error");
+      }
+    }
+
+    // Fallback: open URL in browser if sharing is not available
+    try {
+      if (articleData.sourceUrl) {
+        await WebBrowser.openBrowserAsync(articleData.sourceUrl);
+      } else {
+        // Show fallback message
+        showMessage({
+          message: "分享功能暂时不可用",
+          description: "您可以复制文章链接在浏览器中打开",
+          type: "warning",
+          duration: 3000,
+        });
+      }
+    } catch {
+      showMessage({
+        message: "分享失败",
+        description: "请稍后重试",
+        type: "danger",
+        duration: 3000,
+      });
+    }
+  }, []);
+
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { contentOffset, contentSize, layoutMeasurement } =
+        event.nativeEvent;
+
+      // Store measurements for progress calculation
+      scrollContentHeight.current = contentSize.height;
+      scrollViewHeight.current = layoutMeasurement.height;
+
+      const scrollableHeight = contentSize.height - layoutMeasurement.height;
+      if (scrollableHeight <= 0) {
+        return;
+      }
+
+      const currentScroll = contentOffset.y;
+      const progress = Math.min(
+        100,
+        Math.max(0, Math.round((currentScroll / scrollableHeight) * 100)),
+      );
+
+      setReadProgress(progress);
+
+      // Throttle API calls - only report every 5% change
+      if (Math.abs(progress - lastReportedProgress.current) >= 5) {
+        lastReportedProgress.current = progress;
+        if (params.id) {
+          updateReadProgress({ articleId: params.id, progress }).catch(
+            (err) => {
+              console.warn("Failed to report progress:", err);
+            },
+          );
+        }
+      }
+    },
+    [params.id],
+  );
 
   // Use local state for immediate UI update, synced with context
   const displayBookmarked = params.id ? localBookmarked : false;
@@ -279,7 +369,7 @@ export default function ReadScreen() {
       backgroundColor: colors.surfaceContainerLow,
     },
     progressFill: {
-      width: "33%",
+      width: `${readProgress}%`,
       height: "100%",
       backgroundColor: colors.primary,
     },
@@ -305,19 +395,28 @@ export default function ReadScreen() {
           <Text style={styles.topTitle}>The Curator</Text>
         </View>
         <View style={styles.topRightActions}>
-          <TouchableOpacity style={styles.topAction} onPress={handleBookmarkToggle}>
+          <TouchableOpacity
+            style={styles.topAction}
+            onPress={handleBookmarkToggle}
+          >
             <MaterialIcons
               name={displayBookmarked ? "bookmark" : "bookmark-border"}
               size={22}
               color={displayBookmarked ? colors.primary : colors.onSurface}
             />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.topAction}>
+          <TouchableOpacity style={styles.topAction} onPress={handleShare}>
             <MaterialIcons name="share" size={22} color={colors.onSurface} />
           </TouchableOpacity>
         </View>
       </View>
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={100}
+      >
         <View style={styles.content}>
           <View style={styles.headerMetaRow}>
             <View style={styles.sourceIconWrap}>

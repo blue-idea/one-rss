@@ -12,6 +12,7 @@ import {
 } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
+import FlashMessage from "react-native-flash-message";
 import { useEffect } from "react";
 import "react-native-reanimated";
 
@@ -108,6 +109,7 @@ export default function RootLayout() {
     <AuthProvider>
       <BookmarkProvider>
         <AuthRedirectRoot />
+        <FlashMessage position="top" />
       </BookmarkProvider>
     </AuthProvider>
   );
