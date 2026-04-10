@@ -466,8 +466,8 @@ export default function ReadScreen() {
   });
 
   const progressFillStyle = {
-    width: `${scrollProgress}%`,
-    height: "100%",
+    width: `${scrollProgress}%` as const,
+    height: "100%" as const,
     backgroundColor: theme.accent,
   };
 
