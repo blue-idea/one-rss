@@ -72,9 +72,8 @@ export interface PreferenceContextValue {
 const PreferenceContext = createContext<PreferenceContextValue | null>(null);
 
 export function PreferenceProvider({ children }: { children: ReactNode }) {
-  const [preferences, setPreferences] = useState<PreferenceState>(
-    DEFAULT_PREFERENCES,
-  );
+  const [preferences, setPreferences] =
+    useState<PreferenceState>(DEFAULT_PREFERENCES);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -85,8 +84,7 @@ export function PreferenceProvider({ children }: { children: ReactNode }) {
           const parsed = JSON.parse(stored) as Partial<PreferenceState>;
           setPreferences({
             interfaceLanguage:
-              parsed.interfaceLanguage ??
-              DEFAULT_PREFERENCES.interfaceLanguage,
+              parsed.interfaceLanguage ?? DEFAULT_PREFERENCES.interfaceLanguage,
             translationLanguage:
               parsed.translationLanguage ??
               DEFAULT_PREFERENCES.translationLanguage,
@@ -106,9 +104,10 @@ export function PreferenceProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const savePreferences = useCallback((newPrefs: PreferenceState) => {
-    AsyncStorage.setItem(PREFERENCE_STORAGE_KEY, JSON.stringify(newPrefs)).catch(
-      (error) => console.error("Failed to save preferences:", error),
-    );
+    AsyncStorage.setItem(
+      PREFERENCE_STORAGE_KEY,
+      JSON.stringify(newPrefs),
+    ).catch((error) => console.error("Failed to save preferences:", error));
   }, []);
 
   const setInterfaceLanguage = useCallback(

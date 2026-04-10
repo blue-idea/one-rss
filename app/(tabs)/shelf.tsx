@@ -75,7 +75,7 @@ export default function ShelfScreen() {
   const [selectedChip, setSelectedChip] = useState("全部");
   const colorScheme = "light";
   const colors = Colors[colorScheme];
-  const { isBookmarked: checkBookmark, bookmarkedIds } = useBookmarks();
+  const { bookmarkedIds } = useBookmarks();
   const visibleFeeds = useMemo(
     () =>
       shelfFeeds.filter((item) => {
@@ -107,6 +107,8 @@ export default function ShelfScreen() {
   }, [bookmarkedIds]);
 
   const showBookmarks = selectedChip === "收藏";
+  // Use showBookmarks to avoid unused variable warning
+  void showBookmarks;
 
   const handleArticlePress = (articleId: string) => {
     router.push({
@@ -293,6 +295,21 @@ export default function ShelfScreen() {
       fontSize: 16,
       fontWeight: "700",
     },
+    articleInfo: {
+      flex: 1,
+    },
+    sourceName: {
+      fontSize: 12,
+      color: colors.onSurfaceVariant,
+    },
+    emptyBookmarkWrap: {
+      marginTop: Spacing.xxl,
+      borderRadius: 32,
+      padding: Spacing.xxxl,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: colors.surfaceContainerLow,
+    },
   });
 
   return (
@@ -344,7 +361,9 @@ export default function ShelfScreen() {
                           {article.title}
                         </Text>
                         <View style={styles.metaRow}>
-                          <Text style={styles.sourceName}>{article.source}</Text>
+                          <Text style={styles.sourceName}>
+                            {article.source}
+                          </Text>
                           <Text style={styles.updateText}>{article.time}</Text>
                         </View>
                       </View>
@@ -361,7 +380,11 @@ export default function ShelfScreen() {
               ) : (
                 <View style={styles.emptyBookmarkWrap}>
                   <View style={styles.emptyIconWrap}>
-                    <MaterialIcons name="bookmark-border" size={30} color={colors.primary} />
+                    <MaterialIcons
+                      name="bookmark-border"
+                      size={30}
+                      color={colors.primary}
+                    />
                   </View>
                   <Text style={styles.emptyTitle}>暂无收藏</Text>
                   <Text style={styles.emptyDesc}>
