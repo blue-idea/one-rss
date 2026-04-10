@@ -1,9 +1,11 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { MaterialIcons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Share, Alert } from "react-native";
 import {
+  Alert,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -23,6 +25,11 @@ import {
 } from "@/contexts/preference-context";
 import { fetchArticle, type Article } from "@/modules/article/api/fetchArticle";
 import { updateReadingProgress } from "@/modules/article/api/updateReadingProgress";
+import {
+  cacheArticleForOffline,
+  type CachedArticleImage,
+} from "@/modules/article/offline/articleOfflineCache";
+import { parseArticleContent } from "@/modules/article/offline/articleContent";
 
 // 主题配色
 const themeColors = {
@@ -81,6 +88,7 @@ export default function ReadScreen() {
   const [article, setArticle] = useState<Article | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isCachedOffline, setIsCachedOffline] = useState(false);
 
   // 偏好面板状态
   const [showThemePanel, setShowThemePanel] = useState(false);
@@ -106,6 +114,7 @@ export default function ReadScreen() {
     fetchArticle(params.id)
       .then((data) => {
         setArticle(data);
+        setIsCachedOffline(data.offlineSource === "cache");
       })
       .catch((err) => {
         console.error("Failed to fetch article:", err);
@@ -116,39 +125,62 @@ export default function ReadScreen() {
       });
   }, [params.id]);
 
+  useEffect(() => {
+    if (!article || article.offlineSource === "cache") {
+      return;
+    }
+
+    cacheArticleForOffline(article).catch((cacheError) => {
+      console.error("Failed to cache article offline:", cacheError);
+    });
+  }, [article]);
+
   // 报告阅读进度
-  const reportProgress = useCallback(async (progress: number) => {
-    if (params.id) {
-      try {
-        await updateReadingProgress({ articleId: params.id, progress });
-      } catch (error) {
-        console.log("Failed to report progress:", error);
+  const reportProgress = useCallback(
+    async (progress: number) => {
+      if (params.id) {
+        try {
+          await updateReadingProgress({ articleId: params.id, progress });
+        } catch (error) {
+          console.log("Failed to report progress:", error);
+        }
       }
-    }
-  }, [params.id]);
+    },
+    [params.id],
+  );
 
-  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-    const scrollableHeight = contentSize.height - layoutMeasurement.height;
-    if (scrollableHeight > 0) {
-      const progress = Math.min(
-        Math.round((contentOffset.y / scrollableHeight) * 100),
-        100
-      );
-      setScrollProgress(progress);
-      if (progress % 10 === 0 || progress === 100) {
-        reportProgress(progress);
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { contentOffset, contentSize, layoutMeasurement } =
+        event.nativeEvent;
+      const scrollableHeight = contentSize.height - layoutMeasurement.height;
+      if (scrollableHeight > 0) {
+        const progress = Math.min(
+          Math.round((contentOffset.y / scrollableHeight) * 100),
+          100,
+        );
+        setScrollProgress(progress);
+        if (progress % 10 === 0 || progress === 100) {
+          reportProgress(progress);
+        }
       }
-    }
-  }, [reportProgress]);
+    },
+    [reportProgress],
+  );
 
-  const handleContentSizeChange = useCallback((_width: number, height: number) => {
-    contentHeightRef.current = height;
-  }, []);
+  const handleContentSizeChange = useCallback(
+    (_width: number, height: number) => {
+      contentHeightRef.current = height;
+    },
+    [],
+  );
 
-  const handleLayout = useCallback((event: { nativeEvent: { layout: { height: number } } }) => {
-    scrollViewHeightRef.current = event.nativeEvent.layout.height;
-  }, []);
+  const handleLayout = useCallback(
+    (event: { nativeEvent: { layout: { height: number } } }) => {
+      scrollViewHeightRef.current = event.nativeEvent.layout.height;
+    },
+    [],
+  );
 
   const handleBookmarkToggle = useCallback(() => {
     if (params.id) {
@@ -166,11 +198,9 @@ export default function ReadScreen() {
         url: params.id ? `one-rss://article/${params.id}` : undefined,
       });
     } catch {
-      Alert.alert(
-        "无法分享",
-        "请尝试通过系统分享菜单手动分享这篇文章。",
-        [{ text: "确定" }]
-      );
+      Alert.alert("无法分享", "请尝试通过系统分享菜单手动分享这篇文章。", [
+        { text: "确定" },
+      ]);
     }
   };
 
@@ -180,9 +210,16 @@ export default function ReadScreen() {
   const theme = themeColors[readerTheme];
 
   // 解析正文内容为段落
-  const contentParagraphs = useMemo(() => {
-    if (!article?.content) return [];
-    return article.content.split(/\n+/).filter((p) => p.trim());
+  const cachedImageMap = useMemo(() => {
+    const entries = (
+      (article as { cachedImages?: CachedArticleImage[] } | null)
+        ?.cachedImages ?? []
+    ).map((image) => [image.originalUrl, image] as const);
+    return new Map(entries);
+  }, [article]);
+
+  const contentBlocks = useMemo(() => {
+    return parseArticleContent(article?.content);
   }, [article?.content]);
 
   // 格式化发布时间
@@ -199,9 +236,10 @@ export default function ReadScreen() {
     ? `${article.readTimeMinutes}分钟阅读`
     : "";
 
-  const metaText = formattedDate && readTime
-    ? `发布于 ${formattedDate} • ${readTime}`
-    : formattedDate || readTime || "";
+  const metaText =
+    formattedDate && readTime
+      ? `发布于 ${formattedDate} • ${readTime}`
+      : formattedDate || readTime || "";
 
   const styles = StyleSheet.create({
     container: {
@@ -301,11 +339,39 @@ export default function ReadScreen() {
       color: theme.secondary,
       marginBottom: Spacing.xl,
     },
+    offlineBadge: {
+      alignSelf: "flex-start",
+      marginBottom: Spacing.lg,
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.xs,
+      borderRadius: 999,
+      backgroundColor: theme.accent + "15",
+      borderWidth: 1,
+      borderColor: theme.accent + "35",
+    },
+    offlineBadgeText: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: theme.accent,
+    },
     paragraph: {
       fontSize: readerFontSize,
       lineHeight: Math.round(readerFontSize * readerLineHeight),
       color: theme.text,
       marginBottom: Math.round(readerFontSize * readerLineHeight),
+    },
+    articleImage: {
+      width: "100%",
+      aspectRatio: 16 / 9,
+      borderRadius: 20,
+      marginBottom: Spacing.xl,
+      backgroundColor: theme.surfaceHigh,
+    },
+    imageCaption: {
+      fontSize: 12,
+      color: theme.secondary,
+      marginTop: -Spacing.md,
+      marginBottom: Spacing.xl,
     },
     readerToolbarWrap: {
       position: "absolute",
@@ -483,7 +549,10 @@ export default function ReadScreen() {
         style={styles.modalOverlay}
         onPress={() => setShowThemePanel(false)}
       >
-        <Pressable style={styles.panelContainer} onPress={(e) => e.stopPropagation()}>
+        <Pressable
+          style={styles.panelContainer}
+          onPress={(e) => e.stopPropagation()}
+        >
           <Text style={styles.panelTitle}>选择阅读主题</Text>
           <View style={styles.optionGrid}>
             {(["light", "dark", "deep"] as ReaderTheme[]).map((t) => (
@@ -526,7 +595,10 @@ export default function ReadScreen() {
         style={styles.modalOverlay}
         onPress={() => setShowFontPanel(false)}
       >
-        <Pressable style={styles.panelContainer} onPress={(e) => e.stopPropagation()}>
+        <Pressable
+          style={styles.panelContainer}
+          onPress={(e) => e.stopPropagation()}
+        >
           <Text style={styles.panelTitle}>阅读设置</Text>
 
           {/* 字号设置 */}
@@ -547,7 +619,8 @@ export default function ReadScreen() {
                 style={styles.sliderButton}
                 onPress={() => {
                   const idx = fontSizes.indexOf(readerFontSize);
-                  if (idx < fontSizes.length - 1) setReaderFontSize(fontSizes[idx + 1]);
+                  if (idx < fontSizes.length - 1)
+                    setReaderFontSize(fontSizes[idx + 1]);
                 }}
               >
                 <MaterialIcons name="add" size={20} color={theme.text} />
@@ -622,16 +695,15 @@ export default function ReadScreen() {
         </TouchableOpacity>
         <View style={styles.topCenter}>
           <View style={styles.topCenterIcon}>
-            <MaterialIcons
-              name="auto-stories"
-              size={16}
-              color={theme.accent}
-            />
+            <MaterialIcons name="auto-stories" size={16} color={theme.accent} />
           </View>
           <Text style={styles.topTitle}>{article.feed.title}</Text>
         </View>
         <View style={styles.topRightActions}>
-          <TouchableOpacity style={styles.topAction} onPress={handleBookmarkToggle}>
+          <TouchableOpacity
+            style={styles.topAction}
+            onPress={handleBookmarkToggle}
+          >
             <MaterialIcons
               name={displayBookmarked ? "bookmark" : "bookmark-border"}
               size={22}
@@ -658,11 +730,7 @@ export default function ReadScreen() {
           {/* 元信息 */}
           <View style={styles.headerMetaRow}>
             <View style={styles.sourceIconWrap}>
-              <MaterialIcons
-                name="newspaper"
-                size={18}
-                color={theme.accent}
-              />
+              <MaterialIcons name="newspaper" size={18} color={theme.accent} />
             </View>
             <View style={styles.sourceBlock}>
               <Text style={styles.sourceName}>{article.feed.title}</Text>
@@ -678,12 +746,39 @@ export default function ReadScreen() {
             <Text style={styles.summaryText}>{article.summary}</Text>
           )}
 
-          {/* 正文段落 */}
-          {contentParagraphs.map((paragraph, index) => (
-            <Text key={index} style={styles.paragraph}>
-              {paragraph}
-            </Text>
-          ))}
+          {isCachedOffline && (
+            <View style={styles.offlineBadge}>
+              <Text style={styles.offlineBadgeText}>离线缓存</Text>
+            </View>
+          )}
+
+          {/* 正文段落与图片 */}
+          {contentBlocks.map((block, index) => {
+            if (block.type === "text") {
+              return (
+                <Text key={`text-${index}`} style={styles.paragraph}>
+                  {block.text}
+                </Text>
+              );
+            }
+
+            const cachedImage = cachedImageMap.get(block.image.url);
+            const imageUri = cachedImage?.offlineUri || block.image.url;
+
+            return (
+              <View key={`image-${index}`}>
+                <Image
+                  source={imageUri}
+                  cachePolicy="disk"
+                  contentFit="cover"
+                  style={styles.articleImage}
+                />
+                {block.image.alt && (
+                  <Text style={styles.imageCaption}>{block.image.alt}</Text>
+                )}
+              </View>
+            );
+          })}
         </View>
       </ScrollView>
 
@@ -694,11 +789,7 @@ export default function ReadScreen() {
             style={styles.toolButton}
             onPress={() => setShowThemePanel(true)}
           >
-            <MaterialIcons
-              name="palette"
-              size={22}
-              color={theme.secondary}
-            />
+            <MaterialIcons name="palette" size={22} color={theme.secondary} />
             <Text style={styles.toolLabel}>主题</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -719,19 +810,11 @@ export default function ReadScreen() {
         </TouchableOpacity>
         <View style={styles.toolbarGroup}>
           <TouchableOpacity style={styles.toolButton}>
-            <MaterialIcons
-              name="translate"
-              size={22}
-              color={theme.secondary}
-            />
+            <MaterialIcons name="translate" size={22} color={theme.secondary} />
             <Text style={styles.toolLabel}>翻译</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.toolButton}>
-            <MaterialIcons
-              name="more-vert"
-              size={22}
-              color={theme.secondary}
-            />
+            <MaterialIcons name="more-vert" size={22} color={theme.secondary} />
           </TouchableOpacity>
         </View>
       </View>

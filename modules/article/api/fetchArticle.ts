@@ -1,7 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
 
 import { AuthApiError } from "@/modules/auth/api/authApiError";
-import { getSupabaseUrl, getSupabaseAnonKey } from "@/modules/today/api/getSupabaseConfig";
+import {
+  getCachedArticle,
+  type CachedArticle,
+} from "@/modules/article/offline/articleOfflineCache";
+import {
+  getSupabaseUrl,
+  getSupabaseAnonKey,
+} from "@/modules/today/api/getSupabaseConfig";
 
 function getSupabaseClient() {
   const supabaseUrl = getSupabaseUrl();
@@ -17,7 +24,7 @@ function getSupabaseClient() {
 export type Feed = {
   id: string;
   title: string;
-  logo: string | null;
+  imageUrl: string | null;
   siteUrl: string | null;
   isFeatured: boolean;
 };
@@ -33,6 +40,7 @@ export type Article = {
   feed: Feed;
   isRead: boolean;
   isFavorited: boolean;
+  offlineSource?: "remote" | "cache";
 };
 
 function parseArticleResponse(
@@ -67,7 +75,43 @@ function parseArticleResponse(
   return { ok: false, code, message };
 }
 
-export async function fetchArticle(articleId: string): Promise<Article> {
+type FetchArticleDependencies = {
+  fetchRemoteArticle: (articleId: string) => Promise<Article>;
+  getCachedArticle: (articleId: string) => Promise<CachedArticle | null>;
+};
+
+export function createArticleFetcher(dependencies: FetchArticleDependencies) {
+  return async function fetchArticleWithFallback(
+    articleId: string,
+  ): Promise<Article> {
+    try {
+      const article = await dependencies.fetchRemoteArticle(articleId);
+      return {
+        ...article,
+        offlineSource: "remote",
+      };
+    } catch (error) {
+      const authError = error instanceof AuthApiError ? error : null;
+      const shouldTryCache =
+        authError?.code === "NETWORK_ERROR" ||
+        authError?.code === "NOT_CONFIGURED" ||
+        authError?.httpStatus === 0;
+
+      if (!shouldTryCache) {
+        throw error;
+      }
+
+      const cachedArticle = await dependencies.getCachedArticle(articleId);
+      if (cachedArticle) {
+        return cachedArticle;
+      }
+
+      throw error;
+    }
+  };
+}
+
+async function fetchRemoteArticle(articleId: string): Promise<Article> {
   const supabase = getSupabaseClient();
 
   // Get current session to extract access token
@@ -76,11 +120,7 @@ export async function fetchArticle(articleId: string): Promise<Article> {
 
   if (sessionError) {
     console.error("fetchArticle: getSession error", sessionError);
-    throw new AuthApiError(
-      "Failed to get user session.",
-      "SESSION_ERROR",
-      0,
-    );
+    throw new AuthApiError("Failed to get user session.", "SESSION_ERROR", 0);
   }
 
   const accessToken = sessionData?.session?.access_token;
@@ -153,12 +193,13 @@ export async function fetchArticle(articleId: string): Promise<Article> {
     );
   }
   if (res.status === 404) {
-    throw new AuthApiError(
-      parsed.message,
-      "NOT_FOUND",
-      res.status,
-    );
+    throw new AuthApiError(parsed.message, "NOT_FOUND", res.status);
   }
 
   throw new AuthApiError(parsed.message, parsed.code, res.status);
 }
+
+export const fetchArticle = createArticleFetcher({
+  fetchRemoteArticle,
+  getCachedArticle,
+});

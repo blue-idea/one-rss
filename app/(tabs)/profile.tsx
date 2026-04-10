@@ -13,29 +13,21 @@ import { useRouter } from "expo-router";
 
 import { Header } from "@/components/header";
 import { useAuth } from "@/contexts/auth-context";
-import { usePreferences, INTERFACE_LANGUAGES, TRANSLATION_LANGUAGES } from "@/contexts/preference-context";
+import {
+  INTERFACE_LANGUAGES,
+  TRANSLATION_LANGUAGES,
+  usePreferences,
+} from "@/contexts/preference-context";
 import { Colors, Spacing } from "@/constants/theme";
-import { fetchUserProfileStats, type UserProfileStats } from "@/modules/profile/api/fetchUserProfileStats";
+import {
+  fetchUserProfileStats,
+  type UserProfileStats,
+} from "@/modules/profile/api/fetchUserProfileStats";
 
 const profileStats = [
   { id: "sources", value: "0", label: "订阅源" },
   { id: "read", value: "0", label: "已读" },
   { id: "fav", value: "0", label: "收藏" },
-];
-
-const settingsItems = [
-  {
-    id: "reading",
-    icon: "menu-book",
-    title: "阅读偏好",
-    desc: "字体大小，行高，主题",
-  },
-  {
-    id: "notify",
-    icon: "notifications-active",
-    title: "通知设置",
-    desc: "重大新闻，每日摘要",
-  },
 ];
 
 export default function ProfileScreen() {
@@ -47,8 +39,13 @@ export default function ProfileScreen() {
   const [stats, setStats] = useState<UserProfileStats | null>(null);
 
   // Get display labels for current languages
-  const interfaceLangLabel = INTERFACE_LANGUAGES.find(l => l.value === interfaceLanguage)?.label ?? "中文 (简体)";
-  const translationLangLabel = TRANSLATION_LANGUAGES.find(l => l.value === translationLanguage)?.label ?? "English";
+  const interfaceLangLabel =
+    INTERFACE_LANGUAGES.find((language) => language.value === interfaceLanguage)
+      ?.label ?? "中文 (简体)";
+  const translationLangLabel =
+    TRANSLATION_LANGUAGES.find(
+      (language) => language.value === translationLanguage,
+    )?.label ?? "English";
 
   // Dynamic settings items based on preferences
   const dynamicSettingsItems = [
@@ -64,11 +61,23 @@ export default function ProfileScreen() {
       title: "通知设置",
       desc: "重大新闻，每日摘要",
     },
-    { id: "lang", icon: "language", title: "界面语言", desc: interfaceLangLabel, route: "/language-settings?type=interface" },
-    { id: "translation", icon: "translate", title: "翻译语言", desc: translationLangLabel, route: "/language-settings?type=translation" },
+    {
+      id: "lang",
+      icon: "language",
+      title: "界面语言",
+      desc: interfaceLangLabel,
+      route: "/language-settings?type=interface",
+    },
+    {
+      id: "translation",
+      icon: "translate",
+      title: "翻译语言",
+      desc: translationLangLabel,
+      route: "/language-settings?type=translation",
+    },
   ];
 
-  const handleSettingPress = (item: typeof dynamicSettingsItems[0]) => {
+  const handleSettingPress = (item: (typeof dynamicSettingsItems)[0]) => {
     if (item.id === "lang" || item.id === "translation") {
       router.push(item.route as any);
     }
@@ -94,11 +103,17 @@ export default function ProfileScreen() {
   }, []);
 
   // Update stats display when fetched
-  const displayStats = stats ? [
-    { id: "sources", value: String(stats.subscriptionCount), label: "订阅源" },
-    { id: "read", value: String(stats.readCount), label: "已读" },
-    { id: "fav", value: String(stats.bookmarkCount), label: "收藏" },
-  ] : profileStats;
+  const displayStats = stats
+    ? [
+        {
+          id: "sources",
+          value: String(stats.subscriptionCount),
+          label: "订阅源",
+        },
+        { id: "read", value: String(stats.readCount), label: "已读" },
+        { id: "fav", value: String(stats.bookmarkCount), label: "收藏" },
+      ]
+    : profileStats;
 
   const styles = StyleSheet.create({
     container: {
@@ -316,7 +331,11 @@ export default function ProfileScreen() {
           <Text style={styles.sectionTitle}>账户设置</Text>
           <View style={styles.settingsList}>
             {dynamicSettingsItems.map((item) => (
-              <TouchableOpacity key={item.id} style={styles.settingsItem} onPress={() => handleSettingPress(item)}>
+              <TouchableOpacity
+                key={item.id}
+                style={styles.settingsItem}
+                onPress={() => handleSettingPress(item)}
+              >
                 <View style={styles.settingLeft}>
                   <View style={styles.settingIconWrap}>
                     <MaterialIcons
