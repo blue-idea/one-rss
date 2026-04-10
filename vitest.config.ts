@@ -10,7 +10,7 @@ export default defineConfig({
     environment: "node",
     passWithNoTests: true,
     include: ["**/*.{test,spec}.ts"],
-    exclude: ["node_modules", "e2e", "dist", "supabase"],
+    exclude: ["node_modules", "e2e", "dist", "supabase", ".agent"],
   },
   resolve: {
     alias: {

@@ -51,7 +51,7 @@ export type FetchTodayArticlesOptions = {
   offset?: number;
 };
 
-function parseTodayArticlesResponse(body: unknown):
+export function parseTodayArticlesResponse(body: unknown):
   | { ok: true; data: TodayArticlesResponse }
   | {
       ok: false;

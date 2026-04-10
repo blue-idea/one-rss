@@ -24,7 +24,7 @@ export type UpdateReadingProgressResponse =
     };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function parseUpdateReadingProgressResponse(
+export function parseUpdateReadingProgressResponse(
   body: unknown,
   status: number,
 ): UpdateReadingProgressResponse {

@@ -35,7 +35,7 @@ export type Article = {
   isFavorited: boolean;
 };
 
-function parseArticleResponse(
+export function parseArticleResponse(
   body: unknown,
 ): { ok: true; data: Article } | { ok: false; code: string; message: string } {
   if (!body || typeof body !== "object") {
