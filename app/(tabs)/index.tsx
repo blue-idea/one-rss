@@ -4,6 +4,7 @@ import { Colors, Spacing } from "@/constants/theme";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter, type Href } from "expo-router";
 import {
+  Alert,
   Platform,
   Pressable,
   ScrollView,
@@ -18,8 +19,12 @@ import {
   type TimeRange,
   type TodayArticle,
 } from "@/modules/today/api/fetchTodayArticles";
-import { fetchCuratedArticles, type CuratedArticle } from "@/modules/curated/api/fetchCuratedArticles";
+import {
+  fetchCuratedArticles,
+  type CuratedArticle,
+} from "@/modules/curated/api/fetchCuratedArticles";
 import { useBookmarks } from "@/contexts/bookmark-context";
+import { getWriteActionMessage } from "@/modules/write/write-action";
 
 type Article = {
   id: string;
@@ -113,30 +118,30 @@ export default function TodayScreen() {
   }, [selectedTab]);
 
   // Helper: 将 TodayArticle 转换为 Article 格式（用于时间范围过滤）
-const todayToArticle = (today: TodayArticle): Article => ({
-  id: today.id,
-  source: today.feed.title,
-  time: today.readTimeMinutes
-    ? `阅读时间 ${today.readTimeMinutes} 分钟`
-    : formatRelativeTime(today.publishedAt),
-  title: today.title,
-  summary: today.summary,
-  featured: today.feed.isFeatured,
-  sourceBadge: today.feed.title.substring(0, 3).toUpperCase(),
-});
+  const todayToArticle = (today: TodayArticle): Article => ({
+    id: today.id,
+    source: today.feed.title,
+    time: today.readTimeMinutes
+      ? `阅读时间 ${today.readTimeMinutes} 分钟`
+      : formatRelativeTime(today.publishedAt),
+    title: today.title,
+    summary: today.summary,
+    featured: today.feed.isFeatured,
+    sourceBadge: today.feed.title.substring(0, 3).toUpperCase(),
+  });
 
-// Helper: 将 CuratedArticle 转换为 Article 格式（用于精选推荐）
-const curatedToArticle = (curated: CuratedArticle): Article => ({
-  id: curated.id,
-  source: curated.feed.title,
-  time: curated.readTimeMinutes
-    ? `阅读时间 ${curated.readTimeMinutes} 分钟`
-    : new Date(curated.publishedAt).toLocaleDateString("zh-CN"),
-  title: curated.title,
-  summary: curated.summary,
-  featured: curated.feed.isFeatured,
-  sourceBadge: curated.feed.title.substring(0, 3).toUpperCase(),
-});
+  // Helper: 将 CuratedArticle 转换为 Article 格式（用于精选推荐）
+  const curatedToArticle = (curated: CuratedArticle): Article => ({
+    id: curated.id,
+    source: curated.feed.title,
+    time: curated.readTimeMinutes
+      ? `阅读时间 ${curated.readTimeMinutes} 分钟`
+      : new Date(curated.publishedAt).toLocaleDateString("zh-CN"),
+    title: curated.title,
+    summary: curated.summary,
+    featured: curated.feed.isFeatured,
+    sourceBadge: curated.feed.title.substring(0, 3).toUpperCase(),
+  });
 
   const currentArticles =
     selectedTab === 3
@@ -151,7 +156,9 @@ const curatedToArticle = (curated: CuratedArticle): Article => ({
   };
 
   const handleBookmarkToggle = (articleId: string) => {
-    toggleBookmark(articleId);
+    void toggleBookmark(articleId).catch((error) => {
+      Alert.alert("操作失败", getWriteActionMessage(error));
+    });
   };
 
   const checkBookmark = (articleId: string) => isBookmarked(articleId);

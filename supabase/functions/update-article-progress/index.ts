@@ -61,6 +61,21 @@ function validationError(message: string): Response {
   );
 }
 
+function writeFailedError(): Response {
+  return json(
+    {
+      success: false,
+      error: {
+        code: "WRITE_FAILED",
+        message: "Write operation failed.",
+      },
+      meta: meta(),
+    },
+    500,
+    corsHeaders,
+  );
+}
+
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -113,9 +128,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
   });
 
   // Verify the token and get user
-  const { data: userData, error: authError } = await supabase.auth.getUser(
-    accessToken,
-  );
+  const { data: userData, error: authError } =
+    await supabase.auth.getUser(accessToken);
 
   if (authError || !userData.user) {
     return unauthorizedError();
@@ -137,62 +151,57 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return validationError("Missing or invalid article_id.");
   }
 
-  if (typeof progress !== "number" || isNaN(progress) || progress < 0 || progress > 100) {
+  if (
+    typeof progress !== "number" ||
+    isNaN(progress) ||
+    progress < 0 ||
+    progress > 100
+  ) {
     return validationError("Invalid progress value. Must be 0-100.");
   }
 
-  // Store reading progress in a dedicated table
-  // First check if progress record exists
-  const { data: existingProgress } = await supabase
-    .from("reading_progress")
-    .select("progress")
-    .eq("user_id", userId)
-    .eq("article_id", article_id)
-    .single();
+  try {
+    const { data: existingProgress, error: existingProgressError } =
+      await supabase
+        .from("reading_progress")
+        .select("progress")
+        .eq("user_id", userId)
+        .eq("article_id", article_id)
+        .maybeSingle();
 
-  let error: Error | null = null;
+    if (existingProgressError) {
+      console.error(
+        "update-article-progress: failed to query existing progress",
+        existingProgressError,
+      );
+      return writeFailedError();
+    }
 
-  if (existingProgress) {
-    // Update existing progress
-    const { error: updateError } = await supabase
-      .from("reading_progress")
-      .update({
-        progress: progress,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("user_id", userId)
-      .eq("article_id", article_id);
+    const timestamp = new Date().toISOString();
+    const { error } = existingProgress
+      ? await supabase
+          .from("reading_progress")
+          .update({
+            progress,
+            updated_at: timestamp,
+          })
+          .eq("user_id", userId)
+          .eq("article_id", article_id)
+      : await supabase.from("reading_progress").insert({
+          user_id: userId,
+          article_id,
+          progress,
+          created_at: timestamp,
+          updated_at: timestamp,
+        });
 
-    error = updateError;
-  } else {
-    // Insert new progress record
-    const { error: insertError } = await supabase
-      .from("reading_progress")
-      .insert({
-        user_id: userId,
-        article_id: article_id,
-        progress: progress,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
-
-    error = insertError;
-  }
-
-  if (error) {
-    console.error("update-article-progress: failed", error);
-    return json(
-      {
-        success: false,
-        error: {
-          code: "INTERNAL_ERROR",
-          message: "Failed to update reading progress.",
-        },
-        meta: meta(),
-      },
-      500,
-      corsHeaders,
-    );
+    if (error) {
+      console.error("update-article-progress: failed", error);
+      return writeFailedError();
+    }
+  } catch (error) {
+    console.error("update-article-progress: unexpected failure", error);
+    return writeFailedError();
   }
 
   return json(

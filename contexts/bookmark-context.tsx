@@ -5,9 +5,13 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+
+import { useNetworkStatus } from "@/contexts/network-context";
+import { guardWriteAction } from "@/modules/write/write-action";
 
 const BOOKMARKS_STORAGE_KEY = "@one_rss_bookmarks";
 
@@ -16,13 +20,15 @@ type BookmarkState = Set<string>;
 export interface BookmarkContextValue {
   bookmarkedIds: BookmarkState;
   isBookmarked: (id: string) => boolean;
-  toggleBookmark: (id: string) => void;
+  toggleBookmark: (id: string) => Promise<void>;
 }
 
 const BookmarkContext = createContext<BookmarkContextValue | null>(null);
 
 export function BookmarkProvider({ children }: { children: ReactNode }) {
   const [bookmarkedIds, setBookmarkedIds] = useState<BookmarkState>(new Set());
+  const bookmarkedIdsRef = useRef(bookmarkedIds);
+  const { isOnline } = useNetworkStatus();
 
   // Load bookmarks from storage on mount
   useEffect(() => {
@@ -30,8 +36,10 @@ export function BookmarkProvider({ children }: { children: ReactNode }) {
       try {
         const stored = await AsyncStorage.getItem(BOOKMARKS_STORAGE_KEY);
         if (stored) {
-          const parsed = JSON.parse(stored);
-          setBookmarkedIds(new Set(parsed));
+          const parsed = JSON.parse(stored) as string[];
+          const nextState = new Set<string>(parsed);
+          bookmarkedIdsRef.current = nextState;
+          setBookmarkedIds(nextState);
         }
       } catch (error) {
         console.error("Failed to load bookmarks:", error);
@@ -39,28 +47,44 @@ export function BookmarkProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
+  useEffect(() => {
+    bookmarkedIdsRef.current = bookmarkedIds;
+  }, [bookmarkedIds]);
+
   const isBookmarked = useCallback(
     (id: string) => bookmarkedIds.has(id),
     [bookmarkedIds],
   );
 
-  const toggleBookmark = useCallback((id: string) => {
-    setBookmarkedIds((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      // Persist to storage
-      AsyncStorage.setItem(BOOKMARKS_STORAGE_KEY, JSON.stringify([...newSet])).catch(
-        (error) => {
-          console.error("Failed to save bookmarks:", error);
-        },
-      );
-      return newSet;
-    });
-  }, []);
+  const toggleBookmark = useCallback(
+    async (id: string) => {
+      await guardWriteAction(isOnline, async () => {
+        const previousState = bookmarkedIdsRef.current;
+        const nextState = new Set(previousState);
+
+        if (nextState.has(id)) {
+          nextState.delete(id);
+        } else {
+          nextState.add(id);
+        }
+
+        bookmarkedIdsRef.current = nextState;
+        setBookmarkedIds(nextState);
+
+        try {
+          await AsyncStorage.setItem(
+            BOOKMARKS_STORAGE_KEY,
+            JSON.stringify([...nextState]),
+          );
+        } catch (error) {
+          bookmarkedIdsRef.current = previousState;
+          setBookmarkedIds(previousState);
+          throw error;
+        }
+      });
+    },
+    [isOnline],
+  );
 
   const value = useMemo(
     () => ({ bookmarkedIds, isBookmarked, toggleBookmark }),

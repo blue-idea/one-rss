@@ -2,6 +2,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useMemo, useState } from "react";
 import {
+  Alert,
   Platform,
   ScrollView,
   StyleSheet,
@@ -13,6 +14,11 @@ import {
 
 import { Header } from "@/components/header";
 import { Colors, Spacing } from "@/constants/theme";
+import { useNetworkStatus } from "@/contexts/network-context";
+import {
+  getWriteActionMessage,
+  guardWriteAction,
+} from "@/modules/write/write-action";
 
 const categories = ["精选", "科技", "设计", "商业"];
 
@@ -74,11 +80,13 @@ const sourceList: FeedSource[] = [
 export default function ExploreScreen() {
   const [selectedCategory, setSelectedCategory] = useState("精选");
   const [searchQuery, setSearchQuery] = useState("");
+  const [sources, setSources] = useState(sourceList);
   const colorScheme = "light";
   const colors = Colors[colorScheme];
+  const { isOnline } = useNetworkStatus();
 
   const filteredSources = useMemo(() => {
-    return sourceList.filter((source) => {
+    return sources.filter((source) => {
       const matchesCategory =
         selectedCategory === "精选" || source.category === selectedCategory;
       const q = searchQuery.trim().toLowerCase();
@@ -88,7 +96,42 @@ export default function ExploreScreen() {
         source.description.toLowerCase().includes(q);
       return matchesCategory && matchesSearch;
     });
-  }, [searchQuery, selectedCategory]);
+  }, [searchQuery, selectedCategory, sources]);
+
+  const showWriteError = (error: unknown) => {
+    Alert.alert("操作失败", getWriteActionMessage(error));
+  };
+
+  const handleSubscriptionToggle = async (sourceId: string) => {
+    try {
+      await guardWriteAction(isOnline, async () => {
+        setSources((prev) =>
+          prev.map((source) =>
+            source.id === sourceId
+              ? { ...source, subscribed: !source.subscribed }
+              : source,
+          ),
+        );
+      });
+    } catch (error) {
+      showWriteError(error);
+    }
+  };
+
+  const handleAddSubscription = async () => {
+    try {
+      await guardWriteAction(isOnline, async () => {
+        const trimmedQuery = searchQuery.trim();
+        if (!trimmedQuery) {
+          return;
+        }
+
+        setSearchQuery("");
+      });
+    } catch (error) {
+      showWriteError(error);
+    }
+  };
 
   const styles = StyleSheet.create({
     container: {
@@ -259,7 +302,12 @@ export default function ExploreScreen() {
                 value={searchQuery}
                 onChangeText={setSearchQuery}
               />
-              <TouchableOpacity style={styles.addButton}>
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={() => {
+                  void handleAddSubscription();
+                }}
+              >
                 <Text style={styles.addButtonText}>添加订阅</Text>
               </TouchableOpacity>
             </View>
@@ -314,6 +362,9 @@ export default function ExploreScreen() {
                       styles.subscribeBtn,
                       source.subscribed && styles.subscribeBtnActive,
                     ]}
+                    onPress={() => {
+                      void handleSubscriptionToggle(source.id);
+                    }}
                   >
                     <MaterialIcons
                       name={source.subscribed ? "check" : "add"}

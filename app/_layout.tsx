@@ -23,6 +23,8 @@ import {
 } from "@/constants/auth-routes";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { BookmarkProvider } from "@/contexts/bookmark-context";
+import { NetworkProvider } from "@/contexts/network-context";
+import { PreferenceProvider } from "@/contexts/preference-context";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
 void SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -106,9 +108,13 @@ function AuthRedirectRoot() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <BookmarkProvider>
-        <AuthRedirectRoot />
-      </BookmarkProvider>
+      <NetworkProvider>
+        <PreferenceProvider>
+          <BookmarkProvider>
+            <AuthRedirectRoot />
+          </BookmarkProvider>
+        </PreferenceProvider>
+      </NetworkProvider>
     </AuthProvider>
   );
 }

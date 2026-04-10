@@ -5,9 +5,13 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+
+import { useNetworkStatus } from "@/contexts/network-context";
+import { guardWriteAction } from "@/modules/write/write-action";
 
 export type Language = "zh" | "en" | "fr" | "es" | "de" | "ja" | "ko";
 
@@ -72,10 +76,11 @@ export interface PreferenceContextValue {
 const PreferenceContext = createContext<PreferenceContextValue | null>(null);
 
 export function PreferenceProvider({ children }: { children: ReactNode }) {
-  const [preferences, setPreferences] = useState<PreferenceState>(
-    DEFAULT_PREFERENCES,
-  );
+  const [preferences, setPreferences] =
+    useState<PreferenceState>(DEFAULT_PREFERENCES);
   const [isLoading, setIsLoading] = useState(true);
+  const preferencesRef = useRef(preferences);
+  const { isOnline } = useNetworkStatus();
 
   useEffect(() => {
     (async () => {
@@ -83,10 +88,9 @@ export function PreferenceProvider({ children }: { children: ReactNode }) {
         const stored = await AsyncStorage.getItem(PREFERENCE_STORAGE_KEY);
         if (stored) {
           const parsed = JSON.parse(stored) as Partial<PreferenceState>;
-          setPreferences({
+          const nextPreferences = {
             interfaceLanguage:
-              parsed.interfaceLanguage ??
-              DEFAULT_PREFERENCES.interfaceLanguage,
+              parsed.interfaceLanguage ?? DEFAULT_PREFERENCES.interfaceLanguage,
             translationLanguage:
               parsed.translationLanguage ??
               DEFAULT_PREFERENCES.translationLanguage,
@@ -95,7 +99,9 @@ export function PreferenceProvider({ children }: { children: ReactNode }) {
               parsed.readerFontSize ?? DEFAULT_PREFERENCES.readerFontSize,
             readerLineHeight:
               parsed.readerLineHeight ?? DEFAULT_PREFERENCES.readerLineHeight,
-          });
+          };
+          preferencesRef.current = nextPreferences;
+          setPreferences(nextPreferences);
         }
       } catch (error) {
         console.error("Failed to load preferences:", error);
@@ -105,65 +111,70 @@ export function PreferenceProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
-  const savePreferences = useCallback((newPrefs: PreferenceState) => {
-    AsyncStorage.setItem(PREFERENCE_STORAGE_KEY, JSON.stringify(newPrefs)).catch(
-      (error) => console.error("Failed to save preferences:", error),
-    );
-  }, []);
+  useEffect(() => {
+    preferencesRef.current = preferences;
+  }, [preferences]);
+
+  const updatePreferences = useCallback(
+    async (patch: Partial<PreferenceState>) => {
+      await guardWriteAction(isOnline, async () => {
+        const previousPreferences = preferencesRef.current;
+        const nextPreferences = {
+          ...previousPreferences,
+          ...patch,
+        };
+
+        preferencesRef.current = nextPreferences;
+        setPreferences(nextPreferences);
+
+        try {
+          await AsyncStorage.setItem(
+            PREFERENCE_STORAGE_KEY,
+            JSON.stringify(nextPreferences),
+          );
+        } catch (error) {
+          preferencesRef.current = previousPreferences;
+          setPreferences(previousPreferences);
+          throw error;
+        }
+      });
+    },
+    [isOnline],
+  );
 
   const setInterfaceLanguage = useCallback(
     async (lang: Language) => {
-      setPreferences((prev) => {
-        const newPrefs = { ...prev, interfaceLanguage: lang };
-        savePreferences(newPrefs);
-        return newPrefs;
-      });
+      await updatePreferences({ interfaceLanguage: lang });
     },
-    [savePreferences],
+    [updatePreferences],
   );
 
   const setTranslationLanguage = useCallback(
     async (lang: Language) => {
-      setPreferences((prev) => {
-        const newPrefs = { ...prev, translationLanguage: lang };
-        savePreferences(newPrefs);
-        return newPrefs;
-      });
+      await updatePreferences({ translationLanguage: lang });
     },
-    [savePreferences],
+    [updatePreferences],
   );
 
   const setReaderTheme = useCallback(
     async (theme: ReaderTheme) => {
-      setPreferences((prev) => {
-        const newPrefs = { ...prev, readerTheme: theme };
-        savePreferences(newPrefs);
-        return newPrefs;
-      });
+      await updatePreferences({ readerTheme: theme });
     },
-    [savePreferences],
+    [updatePreferences],
   );
 
   const setReaderFontSize = useCallback(
     async (size: ReaderFontSize) => {
-      setPreferences((prev) => {
-        const newPrefs = { ...prev, readerFontSize: size };
-        savePreferences(newPrefs);
-        return newPrefs;
-      });
+      await updatePreferences({ readerFontSize: size });
     },
-    [savePreferences],
+    [updatePreferences],
   );
 
   const setReaderLineHeight = useCallback(
     async (height: ReaderLineHeight) => {
-      setPreferences((prev) => {
-        const newPrefs = { ...prev, readerLineHeight: height };
-        savePreferences(newPrefs);
-        return newPrefs;
-      });
+      await updatePreferences({ readerLineHeight: height });
     },
-    [savePreferences],
+    [updatePreferences],
   );
 
   const value = useMemo(
