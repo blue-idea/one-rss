@@ -13,6 +13,11 @@ import {
   View,
 } from "react-native";
 
+import {
+  fetchTodayArticles,
+  type TimeRange,
+  type TodayArticle,
+} from "@/modules/today/api/fetchTodayArticles";
 import { fetchCuratedArticles, type CuratedArticle } from "@/modules/curated/api/fetchCuratedArticles";
 import { useBookmarks } from "@/contexts/bookmark-context";
 
@@ -32,53 +37,33 @@ type Article = {
 
 const timelineTabs = ["今日", "昨天", "本周", "精选推荐"];
 
-const todayArticles: Article[] = [
-  {
-    id: "1",
-    source: "建筑评论",
-    time: "阅读时间 12 分钟",
-    title: "沉默的建筑师：设计没有视觉噪音的城市",
-    summary:
-      "在持续连接的时代，新一代城市设计师正在优先考虑“宁静权”。本文探讨声学景观设计如何影响心理健康，并分析减少视觉干扰对生活质量的提升。",
-    featured: true,
-    sourceBadge: "ARC",
-  },
-  {
-    id: "2",
-    source: "纽约时报",
-    time: "2小时前",
-    title: "全球经济：向再生金融模式的转型",
-    summary:
-      "全球投资机构开始放弃季度增长，转而关注未来 50 年的生态系统稳定性。再生金融不仅是道德选择，也正在成为新的风险管理框架。",
-    actionLabel: "阅读全文",
-  },
-  {
-    id: "3",
-    source: "TechCrunch",
-    time: "4小时前",
-    title: "超越硅基：首台碳纳米管计算机上线",
-    summary:
-      "新型计算架构实现更高性能和更低功耗，标志着计算科学进入新阶段，并有望从底层改写 AI 训练与边缘计算的硬件版图。",
-    tags: ["基础研究", "量子物理"],
-  },
-  {
-    id: "4",
-    source: "Dezeen",
-    time: "5小时前",
-    title: "粗野主义的伦理：为什么原始混凝土正在现代回归",
-    summary:
-      "新一代建筑师将粗野主义重新定义为可持续方案，通过材料寿命与结构诚实性回应“一次性设计”文化，探索更长期的建筑价值。",
-  },
-  {
-    id: "5",
-    source: "大西洋月刊",
-    time: "8小时前",
-    title: "慢读革命：深度专注的抗争",
-    summary:
-      "在碎片化信息流中，深度阅读正在成为稀缺能力。研究表明，长篇阅读不仅提升认知连接能力，也帮助我们重新夺回注意力主权。",
-    showDeepTag: true,
-  },
+// 时间范围 tab 索引到 TimeRange 的映射
+const tabIndexToTimeRange: (TimeRange | null)[] = [
+  "today",
+  "yesterday",
+  "week",
+  null, // 精选推荐不使用时间范围
 ];
+
+// 格式化相对时间
+function formatRelativeTime(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffHours < 1) {
+    return "刚刚";
+  }
+  if (diffHours < 24) {
+    return `${diffHours}小时前`;
+  }
+  if (diffDays < 7) {
+    return `${diffDays}天前`;
+  }
+  return date.toLocaleDateString("zh-CN");
+}
 
 export default function TodayScreen() {
   const router = useRouter();
@@ -86,9 +71,30 @@ export default function TodayScreen() {
   const colors = Colors[colorScheme];
   const [selectedTab, setSelectedTab] = useState(0);
   const { isBookmarked, toggleBookmark } = useBookmarks();
+  const [todayArticles, setTodayArticles] = useState<TodayArticle[]>([]);
+  const [isLoadingToday, setIsLoadingToday] = useState(false);
   const [curatedArticles, setCuratedArticles] = useState<CuratedArticle[]>([]);
   const [isLoadingCurated, setIsLoadingCurated] = useState(false);
 
+  // 获取今日文章数据
+  useEffect(() => {
+    const timeRange = tabIndexToTimeRange[selectedTab];
+    if (timeRange) {
+      setIsLoadingToday(true);
+      fetchTodayArticles({ timeRange })
+        .then((articles) => {
+          setTodayArticles(articles);
+        })
+        .catch((err) => {
+          console.error("Failed to fetch today articles:", err);
+        })
+        .finally(() => {
+          setIsLoadingToday(false);
+        });
+    }
+  }, [selectedTab]);
+
+  // 获取精选推荐数据
   useEffect(() => {
     if (selectedTab === 3) {
       // 精选推荐 tab
@@ -106,23 +112,36 @@ export default function TodayScreen() {
     }
   }, [selectedTab]);
 
-  // Helper to transform CuratedArticle to Article
-  const transformToArticle = (curated: CuratedArticle): Article => ({
-    id: curated.id,
-    source: curated.feed.title,
-    time: curated.readTimeMinutes
-      ? `阅读时间 ${curated.readTimeMinutes} 分钟`
-      : new Date(curated.publishedAt).toLocaleDateString("zh-CN"),
-    title: curated.title,
-    summary: curated.summary,
-    featured: curated.feed.isFeatured,
-    sourceBadge: curated.feed.title.substring(0, 3).toUpperCase(),
-  });
+  // Helper: 将 TodayArticle 转换为 Article 格式（用于时间范围过滤）
+const todayToArticle = (today: TodayArticle): Article => ({
+  id: today.id,
+  source: today.feed.title,
+  time: today.readTimeMinutes
+    ? `阅读时间 ${today.readTimeMinutes} 分钟`
+    : formatRelativeTime(today.publishedAt),
+  title: today.title,
+  summary: today.summary,
+  featured: today.feed.isFeatured,
+  sourceBadge: today.feed.title.substring(0, 3).toUpperCase(),
+});
+
+// Helper: 将 CuratedArticle 转换为 Article 格式（用于精选推荐）
+const curatedToArticle = (curated: CuratedArticle): Article => ({
+  id: curated.id,
+  source: curated.feed.title,
+  time: curated.readTimeMinutes
+    ? `阅读时间 ${curated.readTimeMinutes} 分钟`
+    : new Date(curated.publishedAt).toLocaleDateString("zh-CN"),
+  title: curated.title,
+  summary: curated.summary,
+  featured: curated.feed.isFeatured,
+  sourceBadge: curated.feed.title.substring(0, 3).toUpperCase(),
+});
 
   const currentArticles =
     selectedTab === 3
-      ? curatedArticles.map(transformToArticle)
-      : todayArticles;
+      ? curatedArticles.map(curatedToArticle)
+      : todayArticles.map(todayToArticle);
 
   const handleArticlePress = (articleId: string) => {
     router.push({
@@ -507,7 +526,7 @@ export default function TodayScreen() {
           </View>
 
           <View style={styles.articleList}>
-            {isLoadingCurated ? (
+            {isLoadingCurated || isLoadingToday ? (
               <View style={styles.articleItem}>
                 <Text style={styles.articleMetaRow}>加载中...</Text>
               </View>
