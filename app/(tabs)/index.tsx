@@ -1,14 +1,23 @@
+import { useEffect, useState } from "react";
 import { Header } from "@/components/header";
 import { Colors, Spacing } from "@/constants/theme";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useRouter, type Href } from "expo-router";
 import {
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+
+import {
+  fetchCuratedArticles,
+  type CuratedArticle,
+} from "@/modules/curated/api/fetchCuratedArticles";
+import { useBookmarks } from "@/contexts/bookmark-context";
 
 type Article = {
   id: string;
@@ -21,9 +30,10 @@ type Article = {
   tags?: string[];
   actionLabel?: string;
   showDeepTag?: boolean;
+  isBookmarked?: boolean;
 };
 
-const timelineTabs = ["今日", "昨天", "本周"];
+const timelineTabs = ["今日", "昨天", "本周", "精选推荐"];
 
 const todayArticles: Article[] = [
   {
@@ -74,8 +84,59 @@ const todayArticles: Article[] = [
 ];
 
 export default function TodayScreen() {
+  const router = useRouter();
   const colorScheme = "light";
   const colors = Colors[colorScheme];
+  const [selectedTab, setSelectedTab] = useState(0);
+  const { isBookmarked, toggleBookmark } = useBookmarks();
+  const [curatedArticles, setCuratedArticles] = useState<CuratedArticle[]>([]);
+  const [isLoadingCurated, setIsLoadingCurated] = useState(false);
+
+  useEffect(() => {
+    if (selectedTab === 3) {
+      // 精选推荐 tab
+      setIsLoadingCurated(true);
+      fetchCuratedArticles()
+        .then((articles) => {
+          setCuratedArticles(articles);
+        })
+        .catch((err) => {
+          console.error("Failed to fetch curated articles:", err);
+        })
+        .finally(() => {
+          setIsLoadingCurated(false);
+        });
+    }
+  }, [selectedTab]);
+
+  // Helper to transform CuratedArticle to Article
+  const transformToArticle = (curated: CuratedArticle): Article => ({
+    id: curated.id,
+    source: curated.feed.title,
+    time: curated.readTimeMinutes
+      ? `阅读时间 ${curated.readTimeMinutes} 分钟`
+      : new Date(curated.publishedAt).toLocaleDateString("zh-CN"),
+    title: curated.title,
+    summary: curated.summary,
+    featured: curated.feed.isFeatured,
+    sourceBadge: curated.feed.title.substring(0, 3).toUpperCase(),
+  });
+
+  const currentArticles =
+    selectedTab === 3 ? curatedArticles.map(transformToArticle) : todayArticles;
+
+  const handleArticlePress = (articleId: string) => {
+    router.push({
+      pathname: "/read",
+      params: { id: articleId },
+    } as Href);
+  };
+
+  const handleBookmarkToggle = (articleId: string) => {
+    toggleBookmark(articleId);
+  };
+
+  const checkBookmark = (articleId: string) => isBookmarked(articleId);
 
   const styles = StyleSheet.create({
     container: {
@@ -288,7 +349,10 @@ export default function TodayScreen() {
     );
   };
 
-  const renderBottomRow = (article: Article) => {
+  const renderBottomRow = (article: Article, bookmarked: boolean) => {
+    const handleBookmarkPress = () => {
+      handleBookmarkToggle(article.id);
+    };
     if (article.featured) {
       return (
         <View style={styles.bottomRow}>
@@ -300,11 +364,14 @@ export default function TodayScreen() {
             </View>
             <Text style={styles.sourceName}>{article.source}</Text>
           </View>
-          <TouchableOpacity style={styles.bookmarkButton}>
+          <TouchableOpacity
+            style={styles.bookmarkButton}
+            onPress={handleBookmarkPress}
+          >
             <MaterialIcons
-              name="bookmark-border"
+              name={bookmarked ? "bookmark" : "bookmark-border"}
               size={20}
-              color={colors.onSurfaceVariant}
+              color={bookmarked ? colors.primary : colors.onSurfaceVariant}
             />
           </TouchableOpacity>
         </View>
@@ -325,11 +392,14 @@ export default function TodayScreen() {
                 color={colors.onSurfaceVariant}
               />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.bookmarkButton}>
+            <TouchableOpacity
+              style={styles.bookmarkButton}
+              onPress={handleBookmarkPress}
+            >
               <MaterialIcons
-                name="bookmark-border"
+                name={bookmarked ? "bookmark" : "bookmark-border"}
                 size={20}
-                color={colors.onSurfaceVariant}
+                color={bookmarked ? colors.primary : colors.onSurfaceVariant}
               />
             </TouchableOpacity>
           </View>
@@ -347,11 +417,14 @@ export default function TodayScreen() {
               </View>
             ))}
           </View>
-          <TouchableOpacity style={styles.bookmarkButton}>
+          <TouchableOpacity
+            style={styles.bookmarkButton}
+            onPress={handleBookmarkPress}
+          >
             <MaterialIcons
-              name="bookmark-border"
+              name={bookmarked ? "bookmark" : "bookmark-border"}
               size={20}
-              color={colors.onSurfaceVariant}
+              color={bookmarked ? colors.primary : colors.onSurfaceVariant}
             />
           </TouchableOpacity>
         </View>
@@ -365,11 +438,14 @@ export default function TodayScreen() {
             <MaterialIcons name="verified" size={12} color={colors.primary} />
             <Text style={styles.deepTagText}>深度解析</Text>
           </View>
-          <TouchableOpacity style={styles.bookmarkButton}>
+          <TouchableOpacity
+            style={styles.bookmarkButton}
+            onPress={handleBookmarkPress}
+          >
             <MaterialIcons
-              name="bookmark-border"
+              name={bookmarked ? "bookmark" : "bookmark-border"}
               size={20}
-              color={colors.onSurfaceVariant}
+              color={bookmarked ? colors.primary : colors.onSurfaceVariant}
             />
           </TouchableOpacity>
         </View>
@@ -379,11 +455,14 @@ export default function TodayScreen() {
     return (
       <View style={styles.bottomRow}>
         <View />
-        <TouchableOpacity style={styles.bookmarkButton}>
+        <TouchableOpacity
+          style={styles.bookmarkButton}
+          onPress={handleBookmarkPress}
+        >
           <MaterialIcons
-            name="bookmark-border"
+            name={bookmarked ? "bookmark" : "bookmark-border"}
             size={20}
-            color={colors.onSurfaceVariant}
+            color={bookmarked ? colors.primary : colors.onSurfaceVariant}
           />
         </TouchableOpacity>
       </View>
@@ -402,13 +481,14 @@ export default function TodayScreen() {
                   key={tab}
                   style={[
                     styles.timelineTabButton,
-                    index === 0 && styles.timelineTabActive,
+                    index === selectedTab && styles.timelineTabActive,
                   ]}
+                  onPress={() => setSelectedTab(index)}
                 >
                   <Text
                     style={[
                       styles.timelineTabText,
-                      index === 0 && styles.timelineTabTextActive,
+                      index === selectedTab && styles.timelineTabTextActive,
                     ]}
                   >
                     {tab}
@@ -428,16 +508,26 @@ export default function TodayScreen() {
           </View>
 
           <View style={styles.articleList}>
-            {todayArticles.map((article) => (
-              <View key={article.id} style={styles.articleItem}>
-                {renderArticleMeta(article)}
-                <Text style={styles.articleTitle}>{article.title}</Text>
-                <Text style={styles.articleSummary} numberOfLines={5}>
-                  {article.summary}
-                </Text>
-                {renderBottomRow(article)}
+            {isLoadingCurated ? (
+              <View style={styles.articleItem}>
+                <Text style={styles.articleMetaRow}>加载中...</Text>
               </View>
-            ))}
+            ) : (
+              currentArticles.map((article) => (
+                <Pressable
+                  key={article.id}
+                  style={styles.articleItem}
+                  onPress={() => handleArticlePress(article.id)}
+                >
+                  {renderArticleMeta(article)}
+                  <Text style={styles.articleTitle}>{article.title}</Text>
+                  <Text style={styles.articleSummary} numberOfLines={5}>
+                    {article.summary}
+                  </Text>
+                  {renderBottomRow(article, checkBookmark(article.id))}
+                </Pressable>
+              ))
+            )}
           </View>
         </View>
       </ScrollView>
