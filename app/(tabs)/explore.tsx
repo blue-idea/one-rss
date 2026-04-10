@@ -1,7 +1,7 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import { Image } from "expo-image";
-import { useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useRef, useState } from "react";
 import {
+  FlatList,
   Platform,
   ScrollView,
   StyleSheet,
@@ -9,9 +9,12 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  type ListRenderItemInfo,
+  type ViewToken,
 } from "react-native";
 
 import { Header } from "@/components/header";
+import { LazyImage } from "@/components/lazy-image";
 import { Colors, Spacing } from "@/constants/theme";
 
 const categories = ["精选", "科技", "设计", "商业"];
@@ -71,26 +74,10 @@ const sourceList: FeedSource[] = [
   },
 ];
 
-export default function ExploreScreen() {
-  const [selectedCategory, setSelectedCategory] = useState("精选");
-  const [searchQuery, setSearchQuery] = useState("");
-  const colorScheme = "light";
-  const colors = Colors[colorScheme];
+const VIEWABILITY_CONFIG = { itemVisiblePercentThreshold: 20 };
 
-  const filteredSources = useMemo(() => {
-    return sourceList.filter((source) => {
-      const matchesCategory =
-        selectedCategory === "精选" || source.category === selectedCategory;
-      const q = searchQuery.trim().toLowerCase();
-      const matchesSearch =
-        q.length === 0 ||
-        source.name.toLowerCase().includes(q) ||
-        source.description.toLowerCase().includes(q);
-      return matchesCategory && matchesSearch;
-    });
-  }, [searchQuery, selectedCategory]);
-
-  const styles = StyleSheet.create({
+function createStyles(colors: (typeof Colors)["light"]) {
+  return StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: colors.surface,
@@ -166,13 +153,8 @@ export default function ExploreScreen() {
     categoryTextActive: {
       color: colors.onPrimary,
     },
-    grid: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      marginHorizontal: -Spacing.xs,
-    },
     gridItem: {
-      width: "50%",
+      flex: 1,
       paddingHorizontal: Spacing.xs,
       marginBottom: Spacing.sm,
     },
@@ -240,103 +222,180 @@ export default function ExploreScreen() {
       marginBottom: Spacing.lg,
     },
   });
+}
+
+type ExploreCardProps = {
+  source: FeedSource;
+  styles: ReturnType<typeof createStyles>;
+  colors: (typeof Colors)["light"];
+  shouldLoadImage: boolean;
+};
+
+const ExploreCard = memo(function ExploreCard({
+  source,
+  styles,
+  colors,
+  shouldLoadImage,
+}: ExploreCardProps) {
+  return (
+    <View style={styles.gridItem}>
+      <View style={styles.card}>
+        <View style={styles.logoWrap}>
+          <LazyImage
+            uri={source.logo}
+            shouldLoad={shouldLoadImage}
+            style={styles.logo}
+            contentFit="cover"
+            placeholderColor={colors.surfaceContainerLow}
+          />
+        </View>
+        <Text style={styles.cardTitle} numberOfLines={1}>
+          {source.name}
+        </Text>
+        <Text style={styles.cardDescription} numberOfLines={2}>
+          {source.description}
+        </Text>
+        <TouchableOpacity
+          style={[
+            styles.subscribeBtn,
+            source.subscribed && styles.subscribeBtnActive,
+          ]}
+        >
+          <MaterialIcons
+            name={source.subscribed ? "check" : "add"}
+            size={16}
+            color={source.subscribed ? colors.onPrimary : colors.primary}
+          />
+          <Text
+            style={[
+              styles.subscribeBtnText,
+              source.subscribed && styles.subscribeBtnTextActive,
+            ]}
+          >
+            {source.subscribed ? "已订阅" : "订阅"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+});
+
+export default function ExploreScreen() {
+  const [selectedCategory, setSelectedCategory] = useState("精选");
+  const [searchQuery, setSearchQuery] = useState("");
+  const colors = Colors.light;
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const [visibleIds, setVisibleIds] = useState<Set<string>>(new Set());
+
+  const filteredSources = useMemo(() => {
+    return sourceList.filter((source) => {
+      const matchesCategory =
+        selectedCategory === "精选" || source.category === selectedCategory;
+      const q = searchQuery.trim().toLowerCase();
+      const matchesSearch =
+        q.length === 0 ||
+        source.name.toLowerCase().includes(q) ||
+        source.description.toLowerCase().includes(q);
+      return matchesCategory && matchesSearch;
+    });
+  }, [searchQuery, selectedCategory]);
+
+  const onViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      setVisibleIds(
+        new Set(
+          viewableItems
+            .map((item) => String(item.item?.id ?? ""))
+            .filter((id) => id.length > 0),
+        ),
+      );
+    },
+  );
+
+  const renderHeader = useCallback(
+    () => (
+      <View style={styles.categorySection}>
+        <Text style={styles.title}>发现源</Text>
+        <View style={styles.searchContainer}>
+          <View style={styles.searchIconWrap}>
+            <MaterialIcons name="link" size={20} style={styles.menuIcon} />
+          </View>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="添加 RSS 地址或搜索"
+            placeholderTextColor={`${colors.onSurfaceVariant}99`}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          <TouchableOpacity style={styles.addButton}>
+            <Text style={styles.addButtonText}>添加订阅</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.categoriesContainer}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoryScroll}
+          >
+            {categories.map((category) => (
+              <TouchableOpacity
+                key={category}
+                style={[
+                  styles.categoryTag,
+                  selectedCategory === category && styles.categoryTagActive,
+                ]}
+                onPress={() => setSelectedCategory(category)}
+              >
+                <Text
+                  style={[
+                    styles.categoryText,
+                    selectedCategory === category && styles.categoryTextActive,
+                  ]}
+                >
+                  {category}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      </View>
+    ),
+    [colors.onSurfaceVariant, searchQuery, selectedCategory, styles],
+  );
+
+  const renderItem = useCallback(
+    ({ item }: ListRenderItemInfo<FeedSource>) => (
+      <ExploreCard
+        source={item}
+        styles={styles}
+        colors={colors}
+        shouldLoadImage={visibleIds.has(item.id)}
+      />
+    ),
+    [colors, styles, visibleIds],
+  );
 
   return (
     <View style={styles.container}>
       <Header title="The Curator" />
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
-          <View style={styles.categorySection}>
-            <Text style={styles.title}>发现源</Text>
-            <View style={styles.searchContainer}>
-              <View style={styles.searchIconWrap}>
-                <MaterialIcons name="link" size={20} style={styles.menuIcon} />
-              </View>
-              <TextInput
-                style={styles.searchInput}
-                placeholder="添加 RSS 地址或搜索"
-                placeholderTextColor={`${colors.onSurfaceVariant}99`}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-              />
-              <TouchableOpacity style={styles.addButton}>
-                <Text style={styles.addButtonText}>添加订阅</Text>
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.categoryScroll}
-            >
-              {categories.map((category) => (
-                <TouchableOpacity
-                  key={category}
-                  style={[
-                    styles.categoryTag,
-                    selectedCategory === category && styles.categoryTagActive,
-                  ]}
-                  onPress={() => setSelectedCategory(category)}
-                >
-                  <Text
-                    style={[
-                      styles.categoryText,
-                      selectedCategory === category &&
-                        styles.categoryTextActive,
-                    ]}
-                  >
-                    {category}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-
-          <View style={styles.grid}>
-            {filteredSources.map((source) => (
-              <View key={source.id} style={styles.gridItem}>
-                <View style={styles.card}>
-                  <View style={styles.logoWrap}>
-                    <Image
-                      source={{ uri: source.logo }}
-                      style={styles.logo}
-                      contentFit="cover"
-                    />
-                  </View>
-                  <Text style={styles.cardTitle} numberOfLines={1}>
-                    {source.name}
-                  </Text>
-                  <Text style={styles.cardDescription} numberOfLines={2}>
-                    {source.description}
-                  </Text>
-                  <TouchableOpacity
-                    style={[
-                      styles.subscribeBtn,
-                      source.subscribed && styles.subscribeBtnActive,
-                    ]}
-                  >
-                    <MaterialIcons
-                      name={source.subscribed ? "check" : "add"}
-                      size={16}
-                      color={
-                        source.subscribed ? colors.onPrimary : colors.primary
-                      }
-                    />
-                    <Text
-                      style={[
-                        styles.subscribeBtnText,
-                        source.subscribed && styles.subscribeBtnTextActive,
-                      ]}
-                    >
-                      {source.subscribed ? "已订阅" : "订阅"}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))}
-          </View>
-        </View>
-      </ScrollView>
+      <FlatList
+        data={filteredSources}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        ListHeaderComponent={renderHeader}
+        contentContainerStyle={styles.content}
+        numColumns={2}
+        columnWrapperStyle={{ alignItems: "stretch" }}
+        showsVerticalScrollIndicator={false}
+        removeClippedSubviews={Platform.OS === "android"}
+        initialNumToRender={6}
+        maxToRenderPerBatch={4}
+        windowSize={7}
+        updateCellsBatchingPeriod={50}
+        viewabilityConfig={VIEWABILITY_CONFIG}
+        onViewableItemsChanged={onViewableItemsChanged.current}
+      />
     </View>
   );
 }

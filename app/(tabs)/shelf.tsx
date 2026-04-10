@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
 import { MaterialIcons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { useRouter, type Href } from "expo-router";
+import { memo, useCallback, useMemo, useRef, useState } from "react";
 import {
+  FlatList,
   Platform,
   Pressable,
   ScrollView,
@@ -10,9 +10,12 @@ import {
   Text,
   TouchableOpacity,
   View,
+  type ListRenderItemInfo,
+  type ViewToken,
 } from "react-native";
 
 import { Header } from "@/components/header";
+import { LazyImage } from "@/components/lazy-image";
 import { Colors, Spacing } from "@/constants/theme";
 import { useBookmarks } from "@/contexts/bookmark-context";
 
@@ -25,6 +28,13 @@ type ShelfFeed = {
   updateAt: string;
   unread: number;
   logo: string;
+};
+
+type BookmarkedArticle = {
+  id: string;
+  source: string;
+  title: string;
+  time: string;
 };
 
 const shelfFeeds: ShelfFeed[] = [
@@ -70,59 +80,10 @@ const shelfFeeds: ShelfFeed[] = [
   },
 ];
 
-export default function ShelfScreen() {
-  const router = useRouter();
-  const [selectedChip, setSelectedChip] = useState("全部");
-  const colorScheme = "light";
-  const colors = Colors[colorScheme];
-  const { isBookmarked: checkBookmark, bookmarkedIds } = useBookmarks();
-  const visibleFeeds = useMemo(
-    () =>
-      shelfFeeds.filter((item) => {
-        if (selectedChip === "全部") return true;
-        if (selectedChip === "收藏") return false;
-        return item.tag === selectedChip;
-      }),
-    [selectedChip],
-  );
+const VIEWABILITY_CONFIG = { itemVisiblePercentThreshold: 25 };
 
-  // Get bookmarked articles from context - map to match the article format
-  const bookmarkedArticles = useMemo(() => {
-    const articles = [
-      {
-        id: "1",
-        source: "建筑评论",
-        title: "沉默的建筑师：设计没有视觉噪音的城市",
-        time: "阅读时间 12 分钟",
-      },
-      {
-        id: "5",
-        source: "大西洋月刊",
-        title: "慢读革命：深度专注的抗争",
-        time: "8小时前",
-      },
-    ];
-    // Filter to only show articles that are actually bookmarked
-    return articles.filter((article) => bookmarkedIds.has(article.id));
-  }, [bookmarkedIds]);
-
-  const showBookmarks = selectedChip === "收藏";
-
-  const handleArticlePress = (articleId: string) => {
-    router.push({
-      pathname: "/read",
-      params: { id: articleId },
-    } as Href);
-  };
-
-  const handleFeedPress = (feedId: string) => {
-    router.push({
-      pathname: "/read",
-      params: { feedId },
-    } as Href);
-  };
-
-  const styles = StyleSheet.create({
+function createStyles(colors: (typeof Colors)["light"]) {
+  return StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: colors.surface,
@@ -168,10 +129,6 @@ export default function ShelfScreen() {
     chipTextActive: {
       color: colors.onPrimary,
     },
-    listWrap: {
-      gap: Spacing.sm,
-      marginTop: Spacing.lg,
-    },
     row: {
       borderRadius: 14,
       backgroundColor: colors.surfaceContainerLow,
@@ -179,6 +136,7 @@ export default function ShelfScreen() {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
+      marginTop: Spacing.sm,
     },
     rowLeft: {
       flexDirection: "row",
@@ -199,6 +157,9 @@ export default function ShelfScreen() {
       width: "100%",
       height: "100%",
     },
+    articleInfo: {
+      flex: 1,
+    },
     feedTitle: {
       fontSize: 22,
       lineHeight: 26,
@@ -206,6 +167,11 @@ export default function ShelfScreen() {
       color: colors.onSurface,
       marginBottom: Spacing.xs,
       fontFamily: Platform.OS === "ios" ? "Georgia" : "serif",
+    },
+    sourceName: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: colors.onSurfaceVariant,
     },
     metaRow: {
       flexDirection: "row",
@@ -258,6 +224,13 @@ export default function ShelfScreen() {
       justifyContent: "center",
       alignItems: "center",
     },
+    emptyBookmarkWrap: {
+      marginTop: Spacing.xl,
+      borderRadius: 24,
+      backgroundColor: colors.surfaceContainerLow,
+      padding: Spacing.xxxl,
+      alignItems: "center",
+    },
     emptyIconWrap: {
       width: 64,
       height: 64,
@@ -294,137 +267,286 @@ export default function ShelfScreen() {
       fontWeight: "700",
     },
   });
+}
+
+type ShelfItem =
+  | { type: "feed"; feed: ShelfFeed }
+  | { type: "article"; article: BookmarkedArticle };
+
+type ShelfRowProps = {
+  item: ShelfItem;
+  styles: ReturnType<typeof createStyles>;
+  colors: (typeof Colors)["light"];
+  shouldLoadImage: boolean;
+  onArticlePress: (articleId: string) => void;
+  onFeedPress: (feedId: string) => void;
+};
+
+const ShelfRow = memo(function ShelfRow({
+  item,
+  styles,
+  colors,
+  shouldLoadImage,
+  onArticlePress,
+  onFeedPress,
+}: ShelfRowProps) {
+  if (item.type === "article") {
+    return (
+      <Pressable
+        style={styles.row}
+        onPress={() => onArticlePress(item.article.id)}
+      >
+        <View style={styles.rowLeft}>
+          <View style={styles.articleInfo}>
+            <Text style={styles.feedTitle} numberOfLines={2}>
+              {item.article.title}
+            </Text>
+            <View style={styles.metaRow}>
+              <Text style={styles.sourceName}>{item.article.source}</Text>
+              <Text style={styles.updateText}>{item.article.time}</Text>
+            </View>
+          </View>
+        </View>
+        <View style={styles.rowRight}>
+          <MaterialIcons
+            name="chevron-right"
+            size={22}
+            color={colors.outlineVariant}
+          />
+        </View>
+      </Pressable>
+    );
+  }
+
+  return (
+    <Pressable style={styles.row} onPress={() => onFeedPress(item.feed.id)}>
+      <View style={styles.rowLeft}>
+        <View style={styles.logoWrap}>
+          <LazyImage
+            uri={item.feed.logo}
+            shouldLoad={shouldLoadImage}
+            style={styles.logo}
+            contentFit="contain"
+            placeholderColor="#ffffff"
+          />
+        </View>
+        <View style={styles.articleInfo}>
+          <Text style={styles.feedTitle} numberOfLines={1}>
+            {item.feed.name}
+          </Text>
+          <View style={styles.metaRow}>
+            <View style={styles.tag}>
+              <Text style={styles.tagText}>{item.feed.tag}</Text>
+            </View>
+            <Text style={styles.updateText}>{item.feed.updateAt}</Text>
+          </View>
+        </View>
+      </View>
+      <View style={styles.rowRight}>
+        <View style={styles.unread}>
+          <Text style={styles.unreadText}>{item.feed.unread}</Text>
+        </View>
+        <MaterialIcons
+          name="chevron-right"
+          size={22}
+          color={colors.outlineVariant}
+        />
+      </View>
+    </Pressable>
+  );
+});
+
+export default function ShelfScreen() {
+  const router = useRouter();
+  const [selectedChip, setSelectedChip] = useState("全部");
+  const colors = Colors.light;
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { bookmarkedIds } = useBookmarks();
+  const [visibleIds, setVisibleIds] = useState<Set<string>>(new Set());
+
+  const visibleFeeds = useMemo(
+    () =>
+      shelfFeeds.filter((item) => {
+        if (selectedChip === "全部") return true;
+        if (selectedChip === "收藏") return false;
+        return item.tag === selectedChip;
+      }),
+    [selectedChip],
+  );
+
+  const bookmarkedArticles = useMemo(() => {
+    const articles: BookmarkedArticle[] = [
+      {
+        id: "1",
+        source: "建筑评论",
+        title: "沉默的建筑师：设计没有视觉噪音的城市",
+        time: "阅读时间 12 分钟",
+      },
+      {
+        id: "5",
+        source: "大西洋月刊",
+        title: "慢读革命：深度专注的抗争",
+        time: "8小时前",
+      },
+    ];
+    return articles.filter((article) => bookmarkedIds.has(article.id));
+  }, [bookmarkedIds]);
+
+  const showBookmarks = selectedChip === "收藏";
+  const listData = useMemo<ShelfItem[]>(
+    () =>
+      showBookmarks
+        ? bookmarkedArticles.map((article) => ({ type: "article", article }))
+        : visibleFeeds.map((feed) => ({ type: "feed", feed })),
+    [bookmarkedArticles, showBookmarks, visibleFeeds],
+  );
+
+  const handleArticlePress = useCallback(
+    (articleId: string) => {
+      router.push({
+        pathname: "/read",
+        params: { id: articleId },
+      } as Href);
+    },
+    [router],
+  );
+
+  const handleFeedPress = useCallback(
+    (feedId: string) => {
+      router.push({
+        pathname: "/read",
+        params: { feedId },
+      } as Href);
+    },
+    [router],
+  );
+
+  const onViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      setVisibleIds(
+        new Set(
+          viewableItems
+            .map((token) => {
+              const item = token.item as ShelfItem | undefined;
+              if (!item || item.type !== "feed") return "";
+              return item.feed.id;
+            })
+            .filter((id) => id.length > 0),
+        ),
+      );
+    },
+  );
+
+  const renderHeader = useCallback(
+    () => (
+      <>
+        <Text style={styles.heroTitle}>书架</Text>
+        <Text style={styles.heroSubTitle}>您收藏的数字之声。</Text>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chipList}
+        >
+          {filterChips.map((chip) => (
+            <TouchableOpacity
+              key={chip}
+              style={[styles.chip, selectedChip === chip && styles.chipActive]}
+              onPress={() => setSelectedChip(chip)}
+            >
+              <Text
+                style={[
+                  styles.chipText,
+                  selectedChip === chip && styles.chipTextActive,
+                ]}
+              >
+                {chip}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </>
+    ),
+    [selectedChip, styles],
+  );
+
+  const renderFooter = useCallback(
+    () => (
+      <View style={styles.emptyWrap}>
+        <View style={styles.emptyIconWrap}>
+          <MaterialIcons name="rss-feed" size={30} color={colors.primary} />
+        </View>
+        <Text style={styles.emptyTitle}>发现更多声音</Text>
+        <Text style={styles.emptyDesc}>
+          寻找并关注世界上最优秀的作家和出版物。
+        </Text>
+        <TouchableOpacity style={styles.cta}>
+          <Text style={styles.ctaText}>探索目录</Text>
+        </TouchableOpacity>
+      </View>
+    ),
+    [colors.primary, styles],
+  );
+
+  const renderEmpty = useCallback(() => {
+    if (!showBookmarks) return null;
+    return (
+      <View style={styles.emptyBookmarkWrap}>
+        <View style={styles.emptyIconWrap}>
+          <MaterialIcons
+            name="bookmark-border"
+            size={30}
+            color={colors.primary}
+          />
+        </View>
+        <Text style={styles.emptyTitle}>暂无收藏</Text>
+        <Text style={styles.emptyDesc}>
+          在今日页或阅读页点击收藏按钮来保存文章。
+        </Text>
+      </View>
+    );
+  }, [colors.primary, showBookmarks, styles]);
+
+  const renderItem = useCallback(
+    ({ item }: ListRenderItemInfo<ShelfItem>) => (
+      <ShelfRow
+        item={item}
+        styles={styles}
+        colors={colors}
+        shouldLoadImage={
+          item.type === "feed" ? visibleIds.has(item.feed.id) : false
+        }
+        onArticlePress={handleArticlePress}
+        onFeedPress={handleFeedPress}
+      />
+    ),
+    [colors, handleArticlePress, handleFeedPress, styles, visibleIds],
+  );
 
   return (
     <View style={styles.container}>
       <Header title="The Curator" />
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
-          <Text style={styles.heroTitle}>书架</Text>
-          <Text style={styles.heroSubTitle}>您收藏的数字之声。</Text>
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.chipList}
-          >
-            {filterChips.map((chip) => (
-              <TouchableOpacity
-                key={chip}
-                style={[
-                  styles.chip,
-                  selectedChip === chip && styles.chipActive,
-                ]}
-                onPress={() => setSelectedChip(chip)}
-              >
-                <Text
-                  style={[
-                    styles.chipText,
-                    selectedChip === chip && styles.chipTextActive,
-                  ]}
-                >
-                  {chip}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-
-          <View style={styles.listWrap}>
-            {selectedChip === "收藏" ? (
-              bookmarkedArticles.length > 0 ? (
-                bookmarkedArticles.map((article) => (
-                  <Pressable
-                    key={article.id}
-                    style={styles.row}
-                    onPress={() => handleArticlePress(article.id)}
-                  >
-                    <View style={styles.rowLeft}>
-                      <View style={styles.articleInfo}>
-                        <Text style={styles.feedTitle} numberOfLines={2}>
-                          {article.title}
-                        </Text>
-                        <View style={styles.metaRow}>
-                          <Text style={styles.sourceName}>{article.source}</Text>
-                          <Text style={styles.updateText}>{article.time}</Text>
-                        </View>
-                      </View>
-                    </View>
-                    <View style={styles.rowRight}>
-                      <MaterialIcons
-                        name="chevron-right"
-                        size={22}
-                        color={colors.outlineVariant}
-                      />
-                    </View>
-                  </Pressable>
-                ))
-              ) : (
-                <View style={styles.emptyBookmarkWrap}>
-                  <View style={styles.emptyIconWrap}>
-                    <MaterialIcons name="bookmark-border" size={30} color={colors.primary} />
-                  </View>
-                  <Text style={styles.emptyTitle}>暂无收藏</Text>
-                  <Text style={styles.emptyDesc}>
-                    在今日页或阅读页点击收藏按钮来保存文章。
-                  </Text>
-                </View>
-              )
-            ) : (
-              visibleFeeds.map((feed) => (
-                <Pressable
-                  key={feed.id}
-                  style={styles.row}
-                  onPress={() => handleFeedPress(feed.id)}
-                >
-                  <View style={styles.rowLeft}>
-                    <View style={styles.logoWrap}>
-                      <Image
-                        source={{ uri: feed.logo }}
-                        style={styles.logo}
-                        contentFit="contain"
-                      />
-                    </View>
-                    <View>
-                      <Text style={styles.feedTitle} numberOfLines={1}>
-                        {feed.name}
-                      </Text>
-                      <View style={styles.metaRow}>
-                        <View style={styles.tag}>
-                          <Text style={styles.tagText}>{feed.tag}</Text>
-                        </View>
-                        <Text style={styles.updateText}>{feed.updateAt}</Text>
-                      </View>
-                    </View>
-                  </View>
-                  <View style={styles.rowRight}>
-                    <View style={styles.unread}>
-                      <Text style={styles.unreadText}>{feed.unread}</Text>
-                    </View>
-                    <MaterialIcons
-                      name="chevron-right"
-                      size={22}
-                      color={colors.outlineVariant}
-                    />
-                  </View>
-                </Pressable>
-              ))
-            )}
-          </View>
-
-          <View style={styles.emptyWrap}>
-            <View style={styles.emptyIconWrap}>
-              <MaterialIcons name="rss-feed" size={30} color={colors.primary} />
-            </View>
-            <Text style={styles.emptyTitle}>发现更多声音</Text>
-            <Text style={styles.emptyDesc}>
-              寻找并关注世界上最优秀的作家和出版物。
-            </Text>
-            <TouchableOpacity style={styles.cta}>
-              <Text style={styles.ctaText}>探索目录</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </ScrollView>
+      <FlatList
+        data={listData}
+        keyExtractor={(item) =>
+          item.type === "feed"
+            ? `feed-${item.feed.id}`
+            : `article-${item.article.id}`
+        }
+        renderItem={renderItem}
+        ListHeaderComponent={renderHeader}
+        ListFooterComponent={renderFooter}
+        ListEmptyComponent={renderEmpty}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        removeClippedSubviews={Platform.OS === "android"}
+        initialNumToRender={6}
+        maxToRenderPerBatch={4}
+        windowSize={7}
+        updateCellsBatchingPeriod={50}
+        viewabilityConfig={VIEWABILITY_CONFIG}
+        onViewableItemsChanged={onViewableItemsChanged.current}
+      />
     </View>
   );
 }
