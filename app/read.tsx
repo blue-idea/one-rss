@@ -1,64 +1,212 @@
-import { useState } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { MaterialIcons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { Share, Alert } from "react-native";
 import {
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  Modal,
+  Pressable,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
 } from "react-native";
-import { Colors, Spacing } from "@/constants/theme";
+import { Spacing } from "@/constants/theme";
 import { useBookmarks } from "@/contexts/bookmark-context";
+import {
+  usePreferences,
+  type ReaderTheme,
+  type ReaderFontSize,
+  type ReaderLineHeight,
+} from "@/contexts/preference-context";
+import { fetchArticle, type Article } from "@/modules/article/api/fetchArticle";
+import { updateReadingProgress } from "@/modules/article/api/updateReadingProgress";
 
-const articleData = {
-  source: "大西洋月刊 (The Atlantic)",
-  meta: "发布于 2023年10月24日 • 12分钟阅读",
-  title: "宁静的建筑：为何现代城市正缺失静谧空间",
-  imageUrl:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuDthO0lRqO5_hYl35LE4styW1Z8a1LksY_-CJAlOD6Do_jf74bbUmvwG3Y9ufMoDwMuTRA2z_HA1RA44gQpBGrhm-gfp1_k7-Z8HkH6JPizQKwkJqCXyTy1Wh20N-XqVTET-0s5YWipyYlEJdFEUqxr03ElicMWLGebUvInT-m8K38xrll0MKxSzmdrg-Z_h8MMVJPoAt-C0DkMeafEv8RFuTCR1I5aVL_cEZOW0wSGId13KTWDTx7b6FltPeh33-vMhxRclT-sGx_W",
-  caption: "摄影：Elena Krane。斯德哥尔摩公共图书馆中央中庭。",
-  paragraphs: [
-    "在城市的心脏地带，宁静已成为最昂贵的奢侈品。随着城市密度增加，数字连接的嗡嗡声渗透到最偏远的街道角落，建筑师们开始重新审视声学隔离的核心价值。过去的“安静地带”——图书馆、大教堂和画廊——正被重新设计，以适应当下的后分心时代。",
-    "几十年来，公共空间的设计一直由视觉主导。我们为美学、流动性和“网红打卡”时刻进行了优化。但随着神经科学家发现环境噪音对皮质醇水平和认知功能的深远影响，一场修复性建筑的新运动正将声音置于蓝图的中心。",
-    "当代城市规划通常将安静视为隔离的副产品——即远离噪音源。然而，下一代策展人正将宁静融入结构本身。通过使用多孔材料、算法几何图案和动力学隔音墙，这些新空间不仅阻挡噪音，还主动中和噪音。",
-    "展望2030年代，“静默图书馆”可能不再仅是一座建筑，而是一种哲学。我们正在学习，要策划一个有意识的生活，首先必须策划我们周围振动的空气。",
-  ],
-  quote:
-    "“真正的宁静并非声音的缺失，而是空间的呈现，在其中思想终能听见自己的声音。”",
-  quoteAuthor: "— 安藤忠雄，建筑师",
-  pillars: [
-    "材料孔隙率：摆脱传统的混凝土，转向能吸收而非反射声波的有机纹理。",
-    "地下容积：利用大地的自然热能和声学质量打造冥想室。",
-    "主动扩散：集成能与城市混乱频率相协调的白噪音发生器。",
-  ],
+// 主题配色
+const themeColors = {
+  light: {
+    background: "#ffffff",
+    text: "rgba(26, 28, 30, 0.9)",
+    secondary: "rgba(26, 28, 30, 0.7)",
+    accent: "#0058bc",
+    surface: "#f9f9fc",
+    surfaceHigh: "#e8e8ea",
+    border: "rgba(193, 198, 215, 0.2)",
+  },
+  dark: {
+    background: "#1a1c1e",
+    text: "rgba(226, 226, 229, 0.95)",
+    secondary: "rgba(193, 198, 215, 0.7)",
+    accent: "#adc6ff",
+    surface: "#232528",
+    surfaceHigh: "#2d2f32",
+    border: "rgba(65, 71, 85, 0.3)",
+  },
+  deep: {
+    background: "#0d1117",
+    text: "rgba(148, 163, 184, 0.95)",
+    secondary: "rgba(110, 118, 129, 0.7)",
+    accent: "#58a6ff",
+    surface: "#161b22",
+    surfaceHigh: "#21262d",
+    border: "rgba(48, 54, 61, 0.4)",
+  },
+};
+
+const fontSizes: ReaderFontSize[] = [14, 16, 18, 20, 22, 24, 26, 28];
+const lineHeights: ReaderLineHeight[] = [1.4, 1.5, 1.6, 1.8, 2.0];
+
+const themeLabels: Record<ReaderTheme, string> = {
+  light: "日间",
+  dark: "夜间",
+  deep: "深邃",
 };
 
 export default function ReadScreen() {
-  const colors = Colors.light;
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string; feedId?: string }>();
   const { isBookmarked, toggleBookmark } = useBookmarks();
+  const {
+    readerTheme,
+    readerFontSize,
+    readerLineHeight,
+    setReaderTheme,
+    setReaderFontSize,
+    setReaderLineHeight,
+  } = usePreferences();
 
-  // Get initial bookmark state from context based on article ID
+  // 文章数据
+  const [article, setArticle] = useState<Article | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // 偏好面板状态
+  const [showThemePanel, setShowThemePanel] = useState(false);
+  const [showFontPanel, setShowFontPanel] = useState(false);
+
+  // 收藏状态
   const initialBookmarked = params.id ? isBookmarked(params.id) : false;
   const [localBookmarked, setLocalBookmarked] = useState(initialBookmarked);
 
-  const handleBookmarkToggle = () => {
+  // 滚动进度
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const contentHeightRef = useRef(0);
+  const scrollViewHeightRef = useRef(0);
+
+  // 获取文章数据
+  useEffect(() => {
+    if (!params.id) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    fetchArticle(params.id)
+      .then((data) => {
+        setArticle(data);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch article:", err);
+        setError("加载文章失败");
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [params.id]);
+
+  // 报告阅读进度
+  const reportProgress = useCallback(async (progress: number) => {
+    if (params.id) {
+      try {
+        await updateReadingProgress({ articleId: params.id, progress });
+      } catch (error) {
+        console.log("Failed to report progress:", error);
+      }
+    }
+  }, [params.id]);
+
+  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    const scrollableHeight = contentSize.height - layoutMeasurement.height;
+    if (scrollableHeight > 0) {
+      const progress = Math.min(
+        Math.round((contentOffset.y / scrollableHeight) * 100),
+        100
+      );
+      setScrollProgress(progress);
+      if (progress % 10 === 0 || progress === 100) {
+        reportProgress(progress);
+      }
+    }
+  }, [reportProgress]);
+
+  const handleContentSizeChange = useCallback((_width: number, height: number) => {
+    contentHeightRef.current = height;
+  }, []);
+
+  const handleLayout = useCallback((event: { nativeEvent: { layout: { height: number } } }) => {
+    scrollViewHeightRef.current = event.nativeEvent.layout.height;
+  }, []);
+
+  const handleBookmarkToggle = useCallback(() => {
     if (params.id) {
       toggleBookmark(params.id);
       setLocalBookmarked((prev) => !prev);
     }
+  }, [params.id, toggleBookmark]);
+
+  const handleShare = async () => {
+    if (!article) return;
+    try {
+      await Share.share({
+        title: article.title,
+        message: `${article.title}\n\n${article.feed.title}\n\n${article.summary?.substring(0, 100) || ""}...`,
+        url: params.id ? `one-rss://article/${params.id}` : undefined,
+      });
+    } catch {
+      Alert.alert(
+        "无法分享",
+        "请尝试通过系统分享菜单手动分享这篇文章。",
+        [{ text: "确定" }]
+      );
+    }
   };
 
-  // Use local state for immediate UI update, synced with context
   const displayBookmarked = params.id ? localBookmarked : false;
+
+  // 根据当前主题获取配色
+  const theme = themeColors[readerTheme];
+
+  // 解析正文内容为段落
+  const contentParagraphs = useMemo(() => {
+    if (!article?.content) return [];
+    return article.content.split(/\n+/).filter((p) => p.trim());
+  }, [article?.content]);
+
+  // 格式化发布时间
+  const formattedDate = article
+    ? new Date(article.publishedAt).toLocaleDateString("zh-CN", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : "";
+
+  // 格式化阅读时长
+  const readTime = article?.readTimeMinutes
+    ? `${article.readTimeMinutes}分钟阅读`
+    : "";
+
+  const metaText = formattedDate && readTime
+    ? `发布于 ${formattedDate} • ${readTime}`
+    : formattedDate || readTime || "";
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.surface,
+      backgroundColor: theme.background,
     },
     scroll: {
       flex: 1,
@@ -75,7 +223,9 @@ export default function ReadScreen() {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      backgroundColor: "rgba(249, 249, 252, 0.92)",
+      backgroundColor: theme.background,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
     },
     topAction: {
       width: 40,
@@ -93,14 +243,14 @@ export default function ReadScreen() {
       width: 32,
       height: 32,
       borderRadius: 8,
-      backgroundColor: colors.surfaceContainerHigh,
+      backgroundColor: theme.surfaceHigh,
       alignItems: "center",
       justifyContent: "center",
     },
     topTitle: {
       fontSize: 14,
       fontWeight: "700",
-      color: colors.onSurface,
+      color: theme.text,
     },
     topRightActions: {
       flexDirection: "row",
@@ -117,9 +267,9 @@ export default function ReadScreen() {
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: colors.surfaceContainerHigh,
+      backgroundColor: theme.surfaceHigh,
       borderWidth: 1,
-      borderColor: "rgba(193, 198, 215, 0.2)",
+      borderColor: theme.border,
       justifyContent: "center",
       alignItems: "center",
     },
@@ -130,93 +280,32 @@ export default function ReadScreen() {
       fontSize: 11,
       letterSpacing: 1.1,
       textTransform: "uppercase",
-      color: colors.primary,
+      color: theme.accent,
       fontWeight: "700",
     },
     sourceMeta: {
       marginTop: 4,
       fontSize: 11,
-      color: colors.onSurfaceVariant,
+      color: theme.secondary,
     },
     articleTitle: {
-      fontSize: 42,
-      lineHeight: 47,
+      fontSize: readerFontSize + 24,
+      lineHeight: Math.round(readerFontSize * readerLineHeight + 24),
       fontWeight: "700",
-      color: colors.onSurface,
+      color: theme.text,
       marginBottom: Spacing.xl,
     },
-    heroWrap: {
-      borderRadius: 24,
-      overflow: "hidden",
-      backgroundColor: colors.surfaceContainerLow,
-      aspectRatio: 16 / 10,
-      marginBottom: Spacing.md,
-    },
-    heroImage: {
-      width: "100%",
-      height: "100%",
-    },
-    heroCaption: {
-      fontSize: 12,
-      fontStyle: "italic",
-      textAlign: "center",
-      color: colors.onSurfaceVariant,
-      marginBottom: 44,
-    },
-    paragraphLead: {
-      fontSize: 24,
-      lineHeight: 38,
-      color: "rgba(26, 28, 30, 0.9)",
-      marginBottom: 30,
+    summaryText: {
+      fontSize: readerFontSize + 2,
+      lineHeight: Math.round((readerFontSize + 2) * readerLineHeight),
+      color: theme.secondary,
+      marginBottom: Spacing.xl,
     },
     paragraph: {
-      fontSize: 24,
-      lineHeight: 38,
-      color: "rgba(26, 28, 30, 0.9)",
-      marginBottom: 30,
-    },
-    quoteWrap: {
-      borderLeftWidth: 4,
-      borderLeftColor: "rgba(0, 88, 188, 0.2)",
-      paddingLeft: Spacing.lg,
-      marginVertical: Spacing.xl,
-    },
-    quoteText: {
-      fontSize: 30,
-      lineHeight: 40,
-      color: colors.primary,
-      fontWeight: "500",
-    },
-    quoteAuthor: {
-      marginTop: Spacing.md,
-      fontSize: 12,
-      textTransform: "uppercase",
-      letterSpacing: 1,
-      color: colors.onSurfaceVariant,
-    },
-    infoBox: {
-      marginVertical: Spacing.xl,
-      borderRadius: 24,
-      padding: Spacing.xl,
-      backgroundColor: colors.surfaceContainerLow,
-    },
-    infoTitle: {
-      fontSize: 18,
-      fontWeight: "700",
-      color: colors.onSurface,
-      marginBottom: Spacing.lg,
-    },
-    pillarRow: {
-      flexDirection: "row",
-      alignItems: "flex-start",
-      marginBottom: Spacing.md,
-      gap: Spacing.sm,
-    },
-    pillarText: {
-      flex: 1,
-      fontSize: 20,
-      lineHeight: 30,
-      color: "rgba(26, 28, 30, 0.8)",
+      fontSize: readerFontSize,
+      lineHeight: Math.round(readerFontSize * readerLineHeight),
+      color: theme.text,
+      marginBottom: Math.round(readerFontSize * readerLineHeight),
     },
     readerToolbarWrap: {
       position: "absolute",
@@ -225,8 +314,8 @@ export default function ReadScreen() {
       bottom: 18,
       borderRadius: 999,
       borderWidth: 1,
-      borderColor: "rgba(193, 198, 215, 0.15)",
-      backgroundColor: "rgba(249, 249, 252, 0.92)",
+      borderColor: theme.border,
+      backgroundColor: theme.background,
       paddingHorizontal: Spacing.sm,
       paddingVertical: Spacing.sm,
       flexDirection: "row",
@@ -248,7 +337,7 @@ export default function ReadScreen() {
     toolLabel: {
       fontSize: 8,
       fontWeight: "700",
-      color: colors.onSurfaceVariant,
+      color: theme.secondary,
       marginTop: 1,
     },
     speakButton: {
@@ -257,17 +346,12 @@ export default function ReadScreen() {
       borderRadius: 28,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: colors.primaryContainer,
-      shadowColor: colors.primary,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.2,
-      shadowRadius: 8,
-      elevation: 6,
+      backgroundColor: theme.accent + "20",
     },
     speakLabel: {
       fontSize: 8,
       fontWeight: "700",
-      color: colors.onPrimary,
+      color: theme.accent,
       marginTop: 1,
     },
     progressTrack: {
@@ -276,115 +360,361 @@ export default function ReadScreen() {
       right: 0,
       bottom: 0,
       height: 4,
-      backgroundColor: colors.surfaceContainerLow,
+      backgroundColor: theme.surface,
     },
-    progressFill: {
-      width: "33%",
-      height: "100%",
-      backgroundColor: colors.primary,
+    loadingContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: theme.background,
+    },
+    loadingText: {
+      fontSize: 16,
+      color: theme.secondary,
+    },
+    errorContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: theme.background,
+      padding: Spacing.xl,
+    },
+    errorText: {
+      fontSize: 16,
+      color: theme.secondary,
+      textAlign: "center",
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      justifyContent: "flex-end",
+    },
+    panelContainer: {
+      backgroundColor: theme.background,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      paddingTop: Spacing.xl,
+      paddingBottom: Spacing.xxxl,
+      paddingHorizontal: Spacing.xl,
+    },
+    panelTitle: {
+      fontSize: 18,
+      fontWeight: "700",
+      color: theme.text,
+      marginBottom: Spacing.lg,
+      textAlign: "center",
+    },
+    optionGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: Spacing.md,
+    },
+    optionItem: {
+      paddingVertical: Spacing.md,
+      paddingHorizontal: Spacing.lg,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.surface,
+    },
+    optionItemActive: {
+      borderColor: theme.accent,
+      backgroundColor: theme.accent + "15",
+    },
+    optionText: {
+      fontSize: 14,
+      color: theme.text,
+    },
+    optionTextActive: {
+      color: theme.accent,
+      fontWeight: "600",
+    },
+    sliderContainer: {
+      marginBottom: Spacing.lg,
+    },
+    sliderLabel: {
+      fontSize: 14,
+      color: theme.secondary,
+      marginBottom: Spacing.sm,
+    },
+    sliderRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: Spacing.md,
+    },
+    sliderButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: theme.surfaceHigh,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    sliderValue: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: theme.text,
+      minWidth: 50,
+      textAlign: "center",
+    },
+    currentValue: {
+      fontSize: 12,
+      color: theme.accent,
+      marginTop: Spacing.xs,
+      textAlign: "center",
     },
   });
 
+  const progressFillStyle = {
+    width: `${scrollProgress}%`,
+    height: "100%",
+    backgroundColor: theme.accent,
+  };
+
+  // 渲染主题选择面板
+  const renderThemePanel = () => (
+    <Modal
+      visible={showThemePanel}
+      transparent
+      animationType="slide"
+      onRequestClose={() => setShowThemePanel(false)}
+    >
+      <Pressable
+        style={styles.modalOverlay}
+        onPress={() => setShowThemePanel(false)}
+      >
+        <Pressable style={styles.panelContainer} onPress={(e) => e.stopPropagation()}>
+          <Text style={styles.panelTitle}>选择阅读主题</Text>
+          <View style={styles.optionGrid}>
+            {(["light", "dark", "deep"] as ReaderTheme[]).map((t) => (
+              <TouchableOpacity
+                key={t}
+                style={[
+                  styles.optionItem,
+                  readerTheme === t && styles.optionItemActive,
+                ]}
+                onPress={() => {
+                  setReaderTheme(t);
+                  setShowThemePanel(false);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.optionText,
+                    readerTheme === t && styles.optionTextActive,
+                  ]}
+                >
+                  {themeLabels[t]}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+
+  // 渲染字体设置面板
+  const renderFontPanel = () => (
+    <Modal
+      visible={showFontPanel}
+      transparent
+      animationType="slide"
+      onRequestClose={() => setShowFontPanel(false)}
+    >
+      <Pressable
+        style={styles.modalOverlay}
+        onPress={() => setShowFontPanel(false)}
+      >
+        <Pressable style={styles.panelContainer} onPress={(e) => e.stopPropagation()}>
+          <Text style={styles.panelTitle}>阅读设置</Text>
+
+          {/* 字号设置 */}
+          <View style={styles.sliderContainer}>
+            <Text style={styles.sliderLabel}>字体大小</Text>
+            <View style={styles.sliderRow}>
+              <TouchableOpacity
+                style={styles.sliderButton}
+                onPress={() => {
+                  const idx = fontSizes.indexOf(readerFontSize);
+                  if (idx > 0) setReaderFontSize(fontSizes[idx - 1]);
+                }}
+              >
+                <MaterialIcons name="remove" size={20} color={theme.text} />
+              </TouchableOpacity>
+              <Text style={styles.sliderValue}>{readerFontSize}</Text>
+              <TouchableOpacity
+                style={styles.sliderButton}
+                onPress={() => {
+                  const idx = fontSizes.indexOf(readerFontSize);
+                  if (idx < fontSizes.length - 1) setReaderFontSize(fontSizes[idx + 1]);
+                }}
+              >
+                <MaterialIcons name="add" size={20} color={theme.text} />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.currentValue}>当前: {readerFontSize}px</Text>
+          </View>
+
+          {/* 行高设置 */}
+          <View style={styles.sliderContainer}>
+            <Text style={styles.sliderLabel}>行高</Text>
+            <View style={styles.optionGrid}>
+              {lineHeights.map((h) => (
+                <TouchableOpacity
+                  key={h}
+                  style={[
+                    styles.optionItem,
+                    readerLineHeight === h && styles.optionItemActive,
+                  ]}
+                  onPress={() => setReaderLineHeight(h)}
+                >
+                  <Text
+                    style={[
+                      styles.optionText,
+                      readerLineHeight === h && styles.optionTextActive,
+                    ]}
+                  >
+                    {h}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+
+  // 加载中状态
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <Text style={styles.loadingText}>加载中...</Text>
+      </View>
+    );
+  }
+
+  // 错误状态
+  if (error || !article) {
+    return (
+      <View style={[styles.container, styles.errorContainer]}>
+        <Text style={styles.errorText}>{error || "无法加载文章"}</Text>
+        <TouchableOpacity
+          style={[styles.topAction, { marginTop: Spacing.lg }]}
+          onPress={() => router.back()}
+        >
+          <MaterialIcons name="arrow-back" size={24} color={theme.text} />
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
+      {/* 顶部导航栏 */}
       <View style={styles.topBar}>
         <TouchableOpacity
           style={styles.topAction}
           onPress={() => router.back()}
         >
-          <MaterialIcons name="arrow-back" size={24} color={colors.onSurface} />
+          <MaterialIcons name="arrow-back" size={24} color={theme.text} />
         </TouchableOpacity>
         <View style={styles.topCenter}>
           <View style={styles.topCenterIcon}>
             <MaterialIcons
               name="auto-stories"
               size={16}
-              color={colors.primary}
+              color={theme.accent}
             />
           </View>
-          <Text style={styles.topTitle}>The Curator</Text>
+          <Text style={styles.topTitle}>{article.feed.title}</Text>
         </View>
         <View style={styles.topRightActions}>
           <TouchableOpacity style={styles.topAction} onPress={handleBookmarkToggle}>
             <MaterialIcons
               name={displayBookmarked ? "bookmark" : "bookmark-border"}
               size={22}
-              color={displayBookmarked ? colors.primary : colors.onSurface}
+              color={displayBookmarked ? theme.accent : theme.text}
             />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.topAction}>
-            <MaterialIcons name="share" size={22} color={colors.onSurface} />
+          <TouchableOpacity style={styles.topAction} onPress={handleShare}>
+            <MaterialIcons name="share" size={22} color={theme.text} />
           </TouchableOpacity>
         </View>
       </View>
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+
+      {/* 滚动内容区 */}
+      <ScrollView
+        style={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={100}
+        onContentSizeChange={handleContentSizeChange}
+        onLayout={handleLayout}
+        ref={scrollViewRef}
+      >
         <View style={styles.content}>
+          {/* 元信息 */}
           <View style={styles.headerMetaRow}>
             <View style={styles.sourceIconWrap}>
               <MaterialIcons
                 name="newspaper"
                 size={18}
-                color={colors.primary}
+                color={theme.accent}
               />
             </View>
             <View style={styles.sourceBlock}>
-              <Text style={styles.sourceName}>{articleData.source}</Text>
-              <Text style={styles.sourceMeta}>{articleData.meta}</Text>
+              <Text style={styles.sourceName}>{article.feed.title}</Text>
+              <Text style={styles.sourceMeta}>{metaText}</Text>
             </View>
           </View>
-          <Text style={styles.articleTitle}>{articleData.title}</Text>
-          <View style={styles.heroWrap}>
-            <Image
-              source={{ uri: articleData.imageUrl }}
-              style={styles.heroImage}
-              contentFit="cover"
-            />
-          </View>
-          <Text style={styles.heroCaption}>{articleData.caption}</Text>
-          <Text style={styles.paragraphLead}>{articleData.paragraphs[0]}</Text>
-          <Text style={styles.paragraph}>{articleData.paragraphs[1]}</Text>
-          <View style={styles.quoteWrap}>
-            <Text style={styles.quoteText}>{articleData.quote}</Text>
-            <Text style={styles.quoteAuthor}>{articleData.quoteAuthor}</Text>
-          </View>
-          <Text style={styles.paragraph}>{articleData.paragraphs[2]}</Text>
-          <View style={styles.infoBox}>
-            <Text style={styles.infoTitle}>声学圣殿的三大支柱</Text>
-            {articleData.pillars.map((item) => (
-              <View key={item} style={styles.pillarRow}>
-                <MaterialIcons
-                  name="check-circle"
-                  size={20}
-                  color={colors.primary}
-                />
-                <Text style={styles.pillarText}>{item}</Text>
-              </View>
-            ))}
-          </View>
-          <Text style={styles.paragraph}>{articleData.paragraphs[3]}</Text>
+
+          {/* 标题 */}
+          <Text style={styles.articleTitle}>{article.title}</Text>
+
+          {/* 摘要/导语 */}
+          {article.summary && (
+            <Text style={styles.summaryText}>{article.summary}</Text>
+          )}
+
+          {/* 正文段落 */}
+          {contentParagraphs.map((paragraph, index) => (
+            <Text key={index} style={styles.paragraph}>
+              {paragraph}
+            </Text>
+          ))}
         </View>
       </ScrollView>
+
+      {/* 底部工具栏 */}
       <View style={styles.readerToolbarWrap}>
         <View style={styles.toolbarGroup}>
-          <TouchableOpacity style={styles.toolButton}>
+          <TouchableOpacity
+            style={styles.toolButton}
+            onPress={() => setShowThemePanel(true)}
+          >
             <MaterialIcons
               name="palette"
               size={22}
-              color={colors.onSurfaceVariant}
+              color={theme.secondary}
             />
             <Text style={styles.toolLabel}>主题</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.toolButton}>
+          <TouchableOpacity
+            style={styles.toolButton}
+            onPress={() => setShowFontPanel(true)}
+          >
             <MaterialIcons
               name="format-size"
               size={22}
-              color={colors.onSurfaceVariant}
+              color={theme.secondary}
             />
             <Text style={styles.toolLabel}>字体</Text>
           </TouchableOpacity>
         </View>
         <TouchableOpacity style={styles.speakButton}>
-          <MaterialIcons name="volume-up" size={24} color={colors.onPrimary} />
+          <MaterialIcons name="volume-up" size={24} color={theme.accent} />
           <Text style={styles.speakLabel}>朗读</Text>
         </TouchableOpacity>
         <View style={styles.toolbarGroup}>
@@ -392,7 +722,7 @@ export default function ReadScreen() {
             <MaterialIcons
               name="translate"
               size={22}
-              color={colors.onSurfaceVariant}
+              color={theme.secondary}
             />
             <Text style={styles.toolLabel}>翻译</Text>
           </TouchableOpacity>
@@ -400,14 +730,20 @@ export default function ReadScreen() {
             <MaterialIcons
               name="more-vert"
               size={22}
-              color={colors.onSurfaceVariant}
+              color={theme.secondary}
             />
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* 阅读进度条 */}
       <View style={styles.progressTrack}>
-        <View style={styles.progressFill} />
+        <View style={progressFillStyle} />
       </View>
+
+      {/* 偏好设置面板 */}
+      {renderThemePanel()}
+      {renderFontPanel()}
     </View>
   );
 }

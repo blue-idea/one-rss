@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import {
@@ -8,15 +9,18 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useRouter } from "expo-router";
 
 import { Header } from "@/components/header";
 import { useAuth } from "@/contexts/auth-context";
+import { usePreferences, INTERFACE_LANGUAGES, TRANSLATION_LANGUAGES } from "@/contexts/preference-context";
 import { Colors, Spacing } from "@/constants/theme";
+import { fetchUserProfileStats, type UserProfileStats } from "@/modules/profile/api/fetchUserProfileStats";
 
 const profileStats = [
-  { id: "sources", value: "42", label: "订阅源" },
-  { id: "read", value: "1.2k", label: "已读" },
-  { id: "fav", value: "86", label: "收藏" },
+  { id: "sources", value: "0", label: "订阅源" },
+  { id: "read", value: "0", label: "已读" },
+  { id: "fav", value: "0", label: "收藏" },
 ];
 
 const settingsItems = [
@@ -32,19 +36,69 @@ const settingsItems = [
     title: "通知设置",
     desc: "重大新闻，每日摘要",
   },
-  { id: "lang", icon: "language", title: "界面语言", desc: "中文 (简体)" },
-  {
-    id: "translation",
-    icon: "translate",
-    title: "翻译语言",
-    desc: "自动翻译为 法语",
-  },
 ];
 
 export default function ProfileScreen() {
   const { signOut } = useAuth();
+  const { interfaceLanguage, translationLanguage } = usePreferences();
+  const router = useRouter();
   const colorScheme = "light";
   const colors = Colors[colorScheme];
+  const [stats, setStats] = useState<UserProfileStats | null>(null);
+
+  // Get display labels for current languages
+  const interfaceLangLabel = INTERFACE_LANGUAGES.find(l => l.value === interfaceLanguage)?.label ?? "中文 (简体)";
+  const translationLangLabel = TRANSLATION_LANGUAGES.find(l => l.value === translationLanguage)?.label ?? "English";
+
+  // Dynamic settings items based on preferences
+  const dynamicSettingsItems = [
+    {
+      id: "reading",
+      icon: "menu-book",
+      title: "阅读偏好",
+      desc: "字体大小，行高，主题",
+    },
+    {
+      id: "notify",
+      icon: "notifications-active",
+      title: "通知设置",
+      desc: "重大新闻，每日摘要",
+    },
+    { id: "lang", icon: "language", title: "界面语言", desc: interfaceLangLabel, route: "/language-settings?type=interface" },
+    { id: "translation", icon: "translate", title: "翻译语言", desc: translationLangLabel, route: "/language-settings?type=translation" },
+  ];
+
+  const handleSettingPress = (item: typeof dynamicSettingsItems[0]) => {
+    if (item.id === "lang" || item.id === "translation") {
+      router.push(item.route as any);
+    }
+    // Reading and notify settings would be handled in future tasks
+  };
+
+  // Fetch user stats
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const userStats = await fetchUserProfileStats();
+        if (!cancelled) {
+          setStats(userStats);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user stats:", error);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Update stats display when fetched
+  const displayStats = stats ? [
+    { id: "sources", value: String(stats.subscriptionCount), label: "订阅源" },
+    { id: "read", value: String(stats.readCount), label: "已读" },
+    { id: "fav", value: String(stats.bookmarkCount), label: "收藏" },
+  ] : profileStats;
 
   const styles = StyleSheet.create({
     container: {
@@ -251,7 +305,7 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.statsGrid}>
-            {profileStats.map((stat) => (
+            {displayStats.map((stat) => (
               <View key={stat.id} style={styles.statCard}>
                 <Text style={styles.statValue}>{stat.value}</Text>
                 <Text style={styles.statLabel}>{stat.label}</Text>
@@ -261,8 +315,8 @@ export default function ProfileScreen() {
 
           <Text style={styles.sectionTitle}>账户设置</Text>
           <View style={styles.settingsList}>
-            {settingsItems.map((item) => (
-              <TouchableOpacity key={item.id} style={styles.settingsItem}>
+            {dynamicSettingsItems.map((item) => (
+              <TouchableOpacity key={item.id} style={styles.settingsItem} onPress={() => handleSettingPress(item)}>
                 <View style={styles.settingLeft}>
                   <View style={styles.settingIconWrap}>
                     <MaterialIcons
