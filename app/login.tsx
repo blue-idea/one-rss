@@ -1,11 +1,20 @@
 import { Colors, Spacing } from "@/constants/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { AuthApiError } from "@/modules/auth/api/authApiError";
+import {
+  completeThirdPartySignIn,
+  signInWithThirdParty,
+  type ThirdPartyProvider,
+} from "@/modules/auth/api/thirdPartyAuth";
 import { registerWithEmailPassword } from "@/modules/auth/api/registerWithEmailPassword";
 import { sendEmailCode } from "@/modules/auth/api/sendEmailCode";
 import { signInWithEmailPassword } from "@/modules/auth/api/signInWithEmailPassword";
 import { verifyEmailCode } from "@/modules/auth/api/verifyEmailCode";
 import { useOtpCooldown } from "@/modules/auth/hooks/useOtpCooldown";
+import {
+  getThirdPartyErrorMessage,
+  getThirdPartyProviderLabel,
+} from "@/modules/auth/thirdPartyAuthPresentation";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useCallback, useState } from "react";
@@ -58,10 +67,45 @@ export default function LoginScreen() {
     useState("");
   const { secondsLeft: otpSecondsLeft, start: startOtpCooldown } =
     useOtpCooldown();
+  const {
+    secondsLeft: thirdPartyOtpSecondsLeft,
+    start: startThirdPartyOtpCooldown,
+  } = useOtpCooldown();
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [isSubmittingAuth, setIsSubmittingAuth] = useState(false);
   const [sendOtpError, setSendOtpError] = useState<string | null>(null);
+  const [thirdPartyProvider, setThirdPartyProvider] =
+    useState<ThirdPartyProvider | null>(null);
+  const [thirdPartyFlowId, setThirdPartyFlowId] = useState("");
+  const [thirdPartyEmail, setThirdPartyEmail] = useState("");
+  const [thirdPartyOtp, setThirdPartyOtp] = useState("");
+  const [
+    thirdPartyRegistrationCredential,
+    setThirdPartyRegistrationCredential,
+  ] = useState("");
+  const [
+    thirdPartyRegistrationCredentialExpiresAt,
+    setThirdPartyRegistrationCredentialExpiresAt,
+  ] = useState("");
+  const [thirdPartyError, setThirdPartyError] = useState<string | null>(null);
+  const [thirdPartyErrorCode, setThirdPartyErrorCode] = useState<string | null>(
+    null,
+  );
+  const [thirdPartyMessage, setThirdPartyMessage] = useState<string | null>(
+    null,
+  );
+  const [thirdPartyEmailError, setThirdPartyEmailError] = useState<
+    string | null
+  >(null);
+  const [thirdPartyOtpError, setThirdPartyOtpError] = useState<string | null>(
+    null,
+  );
+  const [isSubmittingThirdPartyAuth, setIsSubmittingThirdPartyAuth] =
+    useState(false);
+  const [isSendingThirdPartyOtp, setIsSendingThirdPartyOtp] = useState(false);
+  const [isCompletingThirdPartyAuth, setIsCompletingThirdPartyAuth] =
+    useState(false);
 
   const [emailError, setEmailError] = useState<string | null>(null);
   const [otpError, setOtpError] = useState<string | null>(null);
@@ -89,6 +133,29 @@ export default function LoginScreen() {
     setPasswordError(null);
     setConfirmError(null);
   }, []);
+
+  const resetThirdPartyVerification = useCallback(() => {
+    setThirdPartyFlowId("");
+    setThirdPartyEmail("");
+    setThirdPartyOtp("");
+    setThirdPartyRegistrationCredential("");
+    setThirdPartyRegistrationCredentialExpiresAt("");
+    setThirdPartyEmailError(null);
+    setThirdPartyOtpError(null);
+    startThirdPartyOtpCooldown(0);
+  }, [startThirdPartyOtpCooldown]);
+
+  const resetThirdPartyFeedback = useCallback(() => {
+    setThirdPartyError(null);
+    setThirdPartyErrorCode(null);
+    setThirdPartyMessage(null);
+  }, []);
+
+  const clearThirdPartyState = useCallback(() => {
+    resetThirdPartyFeedback();
+    resetThirdPartyVerification();
+    setThirdPartyProvider(null);
+  }, [resetThirdPartyFeedback, resetThirdPartyVerification]);
 
   const isValidEmail = (value: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
@@ -128,6 +195,195 @@ export default function LoginScreen() {
       setIsSendingOtp(false);
     }
   }, [email, isSendingOtp, otpSecondsLeft, resetFieldErrors, startOtpCooldown]);
+
+  const handleThirdPartyAuth = useCallback(
+    async (provider: ThirdPartyProvider) => {
+      if (isSubmittingThirdPartyAuth || isCompletingThirdPartyAuth) return;
+
+      resetThirdPartyFeedback();
+      resetThirdPartyVerification();
+      setThirdPartyProvider(provider);
+      setIsSubmittingThirdPartyAuth(true);
+
+      try {
+        const result = await signInWithThirdParty(provider);
+        if (result.status === "signed_in") {
+          await signIn();
+          return;
+        }
+
+        if (result.status === "cancelled") {
+          setThirdPartyErrorCode("AUTH_CANCELLED");
+          setThirdPartyError(
+            getThirdPartyErrorMessage("AUTH_CANCELLED", result.message),
+          );
+          return;
+        }
+
+        setThirdPartyFlowId(result.flowId);
+        setThirdPartyEmail(result.suggestedEmail ?? "");
+        setThirdPartyMessage(result.message);
+      } catch (err) {
+        if (err instanceof AuthApiError) {
+          setThirdPartyErrorCode(err.code);
+          setThirdPartyError(getThirdPartyErrorMessage(err.code, err.message));
+        } else {
+          setThirdPartyErrorCode("INTERNAL_ERROR");
+          setThirdPartyError("Unexpected error. Please try again.");
+        }
+      } finally {
+        setIsSubmittingThirdPartyAuth(false);
+      }
+    },
+    [
+      isCompletingThirdPartyAuth,
+      isSubmittingThirdPartyAuth,
+      resetThirdPartyFeedback,
+      resetThirdPartyVerification,
+      signIn,
+    ],
+  );
+
+  const handleSendThirdPartyOtp = useCallback(async () => {
+    if (!thirdPartyFlowId) return;
+    if (!isValidEmail(thirdPartyEmail)) {
+      setThirdPartyEmailError("请输入有效的电子邮箱。");
+      return;
+    }
+    if (isSendingThirdPartyOtp || thirdPartyOtpSecondsLeft > 0) return;
+
+    setThirdPartyEmailError(null);
+    setThirdPartyOtpError(null);
+    setThirdPartyError(null);
+    setThirdPartyErrorCode(null);
+    setIsSendingThirdPartyOtp(true);
+
+    try {
+      const { cooldownSeconds } = await sendEmailCode(thirdPartyEmail);
+      startThirdPartyOtpCooldown(Math.max(1, cooldownSeconds));
+      setThirdPartyMessage(
+        "Verification code sent. Check your inbox to continue.",
+      );
+    } catch (err) {
+      if (err instanceof AuthApiError) {
+        setThirdPartyErrorCode(err.code);
+        setThirdPartyError(getThirdPartyErrorMessage(err.code, err.message));
+        const raw = err.details?.cooldownSeconds;
+        const cool =
+          typeof raw === "number"
+            ? raw
+            : typeof raw === "string"
+              ? Number(raw)
+              : NaN;
+        if (err.code === "RATE_LIMITED" && Number.isFinite(cool) && cool > 0) {
+          startThirdPartyOtpCooldown(Math.ceil(cool));
+        } else if (err.code === "RATE_LIMITED") {
+          startThirdPartyOtpCooldown(60);
+        }
+      } else {
+        setThirdPartyErrorCode("INTERNAL_ERROR");
+        setThirdPartyError("Unexpected error. Please try again.");
+      }
+    } finally {
+      setIsSendingThirdPartyOtp(false);
+    }
+  }, [
+    isSendingThirdPartyOtp,
+    thirdPartyEmail,
+    thirdPartyFlowId,
+    thirdPartyOtpSecondsLeft,
+    startThirdPartyOtpCooldown,
+  ]);
+
+  const handleCompleteThirdPartyAuth = useCallback(async () => {
+    if (
+      !thirdPartyProvider ||
+      !thirdPartyFlowId ||
+      isCompletingThirdPartyAuth
+    ) {
+      return;
+    }
+
+    setThirdPartyEmailError(null);
+    setThirdPartyOtpError(null);
+    setThirdPartyError(null);
+
+    let valid = true;
+    if (!isValidEmail(thirdPartyEmail)) {
+      setThirdPartyEmailError("请输入有效的电子邮箱。");
+      valid = false;
+    }
+    if (thirdPartyOtp.trim().length !== 6) {
+      setThirdPartyOtpError("验证码错误或已过期。");
+      valid = false;
+    }
+    if (!valid) return;
+
+    setIsCompletingThirdPartyAuth(true);
+    try {
+      let credential = thirdPartyRegistrationCredential;
+      const expiry = thirdPartyRegistrationCredentialExpiresAt
+        ? new Date(thirdPartyRegistrationCredentialExpiresAt)
+        : null;
+
+      if (
+        !credential ||
+        !expiry ||
+        Number.isNaN(expiry.getTime()) ||
+        expiry <= new Date()
+      ) {
+        const verifyOut = await verifyEmailCode(thirdPartyEmail, thirdPartyOtp);
+        credential = verifyOut.registrationCredential;
+        setThirdPartyRegistrationCredential(verifyOut.registrationCredential);
+        setThirdPartyRegistrationCredentialExpiresAt(verifyOut.expiresAt);
+      }
+
+      const result = await completeThirdPartySignIn(thirdPartyProvider, {
+        flowId: thirdPartyFlowId,
+        email: thirdPartyEmail,
+        registrationCredential: credential,
+      });
+
+      setThirdPartyMessage(
+        result.isMerged
+          ? `${getThirdPartyProviderLabel(thirdPartyProvider)} 账号已自动合并并登录。`
+          : result.message,
+      );
+      resetThirdPartyVerification();
+      await signIn();
+    } catch (err) {
+      if (err instanceof AuthApiError) {
+        setThirdPartyErrorCode(err.code);
+        if (err.code === "INVALID_OTP") {
+          setThirdPartyRegistrationCredential("");
+          setThirdPartyRegistrationCredentialExpiresAt("");
+          setThirdPartyOtpError("验证码错误或已过期。");
+        } else if (err.code === "ACCOUNT_LINK_CONFLICT") {
+          setThirdPartyError(getThirdPartyErrorMessage(err.code, err.message));
+          resetThirdPartyVerification();
+          setMode("login");
+          setEmail(thirdPartyEmail);
+        } else {
+          setThirdPartyError(getThirdPartyErrorMessage(err.code, err.message));
+        }
+      } else {
+        setThirdPartyErrorCode("INTERNAL_ERROR");
+        setThirdPartyError("Unexpected error. Please try again.");
+      }
+    } finally {
+      setIsCompletingThirdPartyAuth(false);
+    }
+  }, [
+    isCompletingThirdPartyAuth,
+    resetThirdPartyVerification,
+    signIn,
+    thirdPartyEmail,
+    thirdPartyFlowId,
+    thirdPartyOtp,
+    thirdPartyProvider,
+    thirdPartyRegistrationCredential,
+    thirdPartyRegistrationCredentialExpiresAt,
+  ]);
 
   const handleSubmit = useCallback(async () => {
     resetFieldErrors();
@@ -353,6 +609,33 @@ export default function LoginScreen() {
       color: colors.primary,
       marginTop: Spacing.xs,
     },
+    banner: {
+      marginTop: Spacing.lg,
+      borderRadius: 16,
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.md,
+      gap: Spacing.xs,
+    },
+    bannerError: {
+      backgroundColor: "rgba(186, 26, 26, 0.08)",
+      borderWidth: 1,
+      borderColor: "rgba(186, 26, 26, 0.18)",
+    },
+    bannerSuccess: {
+      backgroundColor: "rgba(0, 88, 188, 0.08)",
+      borderWidth: 1,
+      borderColor: "rgba(0, 88, 188, 0.16)",
+    },
+    bannerTitle: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: colors.onSurface,
+    },
+    bannerText: {
+      fontSize: 13,
+      lineHeight: 19,
+      color: colors.onSurfaceVariant,
+    },
     termsRow: {
       flexDirection: "row",
       alignItems: "flex-start",
@@ -450,10 +733,57 @@ export default function LoginScreen() {
       alignItems: "center",
       justifyContent: "center",
     },
+    socialBtnDisabled: {
+      opacity: 0.55,
+    },
     socialIcon: {
       height: 22,
       width: 22,
       resizeMode: "contain",
+    },
+    socialBtnLabel: {
+      marginTop: Spacing.sm,
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.onSurfaceVariant,
+    },
+    supplementalCard: {
+      marginTop: Spacing.lg,
+      borderRadius: 20,
+      backgroundColor: "rgba(255,255,255,0.52)",
+      padding: Spacing.lg,
+    },
+    supplementalTitle: {
+      fontSize: 15,
+      fontWeight: "700",
+      color: colors.onSurface,
+      marginBottom: Spacing.xs,
+    },
+    supplementalText: {
+      fontSize: 13,
+      lineHeight: 20,
+      color: colors.onSurfaceVariant,
+      marginBottom: Spacing.md,
+    },
+    socialActionsRow: {
+      flexDirection: "row",
+      gap: Spacing.md,
+      marginTop: Spacing.md,
+    },
+    secondaryButton: {
+      flex: 1,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+      paddingVertical: Spacing.md,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "rgba(255,255,255,0.36)",
+    },
+    secondaryButtonLabel: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: colors.onSurface,
     },
   });
 
@@ -758,6 +1088,7 @@ export default function LoginScreen() {
                     setMode("login");
                     setOtp("");
                     clearRegisterVerification();
+                    clearThirdPartyState();
                     setConfirmPassword("");
                     setAgreeTerms(false);
                     startOtpCooldown(0);
@@ -774,6 +1105,7 @@ export default function LoginScreen() {
                     resetFieldErrors();
                     setMode("register");
                     setRegisterStep("verify");
+                    clearThirdPartyState();
                   }}
                 >
                   <Text style={styles.switchText}>
@@ -791,34 +1123,290 @@ export default function LoginScreen() {
 
             <View style={styles.socialRow}>
               <TouchableOpacity
-                style={styles.socialBtn}
+                testID="auth-social-apple"
+                style={[
+                  styles.socialBtn,
+                  (isSubmittingThirdPartyAuth || isCompletingThirdPartyAuth) &&
+                    styles.socialBtnDisabled,
+                ]}
                 accessibilityLabel="使用 Apple 继续"
+                onPress={() => void handleThirdPartyAuth("apple")}
+                disabled={
+                  isSubmittingThirdPartyAuth || isCompletingThirdPartyAuth
+                }
               >
-                <Image
-                  source={{ uri: SOCIAL_APPLE_URI }}
-                  style={styles.socialIcon}
-                />
+                {isSubmittingThirdPartyAuth &&
+                thirdPartyProvider === "apple" ? (
+                  <ActivityIndicator color={colors.primary} />
+                ) : (
+                  <>
+                    <Image
+                      source={{ uri: SOCIAL_APPLE_URI }}
+                      style={styles.socialIcon}
+                    />
+                    <Text style={styles.socialBtnLabel}>Apple</Text>
+                  </>
+                )}
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.socialBtn}
+                testID="auth-social-google"
+                style={[
+                  styles.socialBtn,
+                  (isSubmittingThirdPartyAuth || isCompletingThirdPartyAuth) &&
+                    styles.socialBtnDisabled,
+                ]}
                 accessibilityLabel="使用 Google 继续"
+                onPress={() => void handleThirdPartyAuth("google")}
+                disabled={
+                  isSubmittingThirdPartyAuth || isCompletingThirdPartyAuth
+                }
               >
-                <Image
-                  source={{ uri: SOCIAL_GOOGLE_URI }}
-                  style={styles.socialIcon}
-                />
+                {isSubmittingThirdPartyAuth &&
+                thirdPartyProvider === "google" ? (
+                  <ActivityIndicator color={colors.primary} />
+                ) : (
+                  <>
+                    <Image
+                      source={{ uri: SOCIAL_GOOGLE_URI }}
+                      style={styles.socialIcon}
+                    />
+                    <Text style={styles.socialBtnLabel}>Google</Text>
+                  </>
+                )}
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.socialBtn}
+                testID="auth-social-wechat"
+                style={[
+                  styles.socialBtn,
+                  (isSubmittingThirdPartyAuth || isCompletingThirdPartyAuth) &&
+                    styles.socialBtnDisabled,
+                ]}
                 accessibilityLabel="使用微信继续"
+                onPress={() => void handleThirdPartyAuth("wechat")}
+                disabled={
+                  isSubmittingThirdPartyAuth || isCompletingThirdPartyAuth
+                }
               >
-                <MaterialIcons
-                  name="chat"
-                  size={24}
-                  color={colors.onSurfaceVariant}
-                />
+                {isSubmittingThirdPartyAuth &&
+                thirdPartyProvider === "wechat" ? (
+                  <ActivityIndicator color={colors.primary} />
+                ) : (
+                  <>
+                    <MaterialIcons
+                      name="chat"
+                      size={24}
+                      color={colors.onSurfaceVariant}
+                    />
+                    <Text style={styles.socialBtnLabel}>微信</Text>
+                  </>
+                )}
               </TouchableOpacity>
             </View>
+
+            {thirdPartyError ? (
+              <View
+                testID="auth-third-party-error"
+                style={[styles.banner, styles.bannerError]}
+              >
+                <Text style={styles.bannerTitle}>第三方登录未完成</Text>
+                <Text style={styles.bannerText}>{thirdPartyError}</Text>
+              </View>
+            ) : null}
+
+            {thirdPartyMessage ? (
+              <View
+                testID="auth-third-party-message"
+                style={[styles.banner, styles.bannerSuccess]}
+              >
+                <Text style={styles.bannerTitle}>第三方登录</Text>
+                <Text style={styles.bannerText}>{thirdPartyMessage}</Text>
+              </View>
+            ) : null}
+
+            {thirdPartyFlowId && thirdPartyProvider ? (
+              <View style={styles.supplementalCard}>
+                <Text style={styles.supplementalTitle}>
+                  补充 {getThirdPartyProviderLabel(thirdPartyProvider)} 登录邮箱
+                </Text>
+                <Text style={styles.supplementalText}>
+                  第三方授权未返回可用邮箱。请补充邮箱并完成验证码校验后继续登录。
+                </Text>
+
+                <View style={styles.fieldGap}>
+                  <View style={styles.labelRow}>
+                    <Text style={styles.label}>补充邮箱</Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.inputWrap,
+                      thirdPartyEmailError ? styles.inputWrapError : null,
+                    ]}
+                  >
+                    <MaterialIcons
+                      style={styles.inputIcon}
+                      name="mail-outline"
+                      size={22}
+                      color={colors.onSurfaceVariant}
+                    />
+                    <TextInput
+                      testID="auth-third-party-email"
+                      style={styles.input}
+                      placeholder="example@email.com"
+                      placeholderTextColor={`${colors.outline}99`}
+                      value={thirdPartyEmail}
+                      onChangeText={(value) => {
+                        setThirdPartyEmail(value);
+                        setThirdPartyRegistrationCredential("");
+                        setThirdPartyRegistrationCredentialExpiresAt("");
+                        if (thirdPartyEmailError) setThirdPartyEmailError(null);
+                      }}
+                      autoCapitalize="none"
+                      keyboardType="email-address"
+                      autoComplete="email"
+                    />
+                  </View>
+                  {thirdPartyEmailError ? (
+                    <Text style={styles.errorText}>{thirdPartyEmailError}</Text>
+                  ) : null}
+                </View>
+
+                <View style={styles.fieldGap}>
+                  <View style={styles.labelRow}>
+                    <Text style={styles.label}>邮箱验证码</Text>
+                    <TouchableOpacity
+                      testID="auth-third-party-send-otp"
+                      onPress={() => void handleSendThirdPartyOtp()}
+                      disabled={
+                        isSendingThirdPartyOtp || thirdPartyOtpSecondsLeft > 0
+                      }
+                      accessibilityRole="button"
+                    >
+                      <View
+                        style={{ flexDirection: "row", alignItems: "center" }}
+                      >
+                        {isSendingThirdPartyOtp ? (
+                          <ActivityIndicator
+                            size="small"
+                            color={colors.primary}
+                            style={{ marginRight: 6 }}
+                          />
+                        ) : null}
+                        <Text
+                          style={[
+                            styles.otpSend,
+                            (isSendingThirdPartyOtp ||
+                              thirdPartyOtpSecondsLeft > 0) && {
+                              opacity: 0.5,
+                            },
+                          ]}
+                        >
+                          发送验证码
+                          {thirdPartyOtpSecondsLeft > 0 ? (
+                            <Text style={styles.otpSendMuted}>
+                              {" "}
+                              ({thirdPartyOtpSecondsLeft}s)
+                            </Text>
+                          ) : null}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                  <View
+                    style={[
+                      styles.inputWrap,
+                      thirdPartyOtpError ? styles.inputWrapError : null,
+                    ]}
+                  >
+                    <TextInput
+                      testID="auth-third-party-otp"
+                      style={styles.input}
+                      placeholder="请输入6位验证码"
+                      placeholderTextColor={`${colors.outline}99`}
+                      value={thirdPartyOtp}
+                      onChangeText={(value) => {
+                        setThirdPartyOtp(value.replace(/\D/g, "").slice(0, 6));
+                        if (thirdPartyOtpError) setThirdPartyOtpError(null);
+                      }}
+                      keyboardType="number-pad"
+                      maxLength={6}
+                    />
+                  </View>
+                  {thirdPartyOtpError ? (
+                    <Text style={styles.errorText}>{thirdPartyOtpError}</Text>
+                  ) : null}
+                </View>
+
+                <View style={styles.socialActionsRow}>
+                  <TouchableOpacity
+                    testID="auth-third-party-cancel"
+                    style={styles.secondaryButton}
+                    onPress={clearThirdPartyState}
+                    disabled={isCompletingThirdPartyAuth}
+                  >
+                    <Text style={styles.secondaryButtonLabel}>取消</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    testID="auth-third-party-complete"
+                    style={styles.primaryButton}
+                    onPress={() => void handleCompleteThirdPartyAuth()}
+                    disabled={isCompletingThirdPartyAuth}
+                    activeOpacity={0.92}
+                  >
+                    <LinearGradient
+                      colors={["#0058bc", "#0070eb"]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.primaryGradient}
+                    >
+                      <Text style={styles.primaryLabel}>
+                        {isCompletingThirdPartyAuth
+                          ? "提交中..."
+                          : "验证邮箱并登录"}
+                      </Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : null}
+
+            {thirdPartyError && thirdPartyProvider ? (
+              <View style={styles.socialActionsRow}>
+                {thirdPartyErrorCode === "ACCOUNT_LINK_CONFLICT" ? (
+                  <TouchableOpacity
+                    testID="auth-third-party-use-email"
+                    style={styles.secondaryButton}
+                    onPress={() => {
+                      setMode("login");
+                      if (thirdPartyEmail) {
+                        setEmail(thirdPartyEmail);
+                      }
+                    }}
+                    disabled={
+                      isSubmittingThirdPartyAuth || isCompletingThirdPartyAuth
+                    }
+                  >
+                    <Text style={styles.secondaryButtonLabel}>
+                      使用邮箱登录
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    testID="auth-third-party-retry"
+                    style={styles.secondaryButton}
+                    onPress={() =>
+                      void handleThirdPartyAuth(thirdPartyProvider)
+                    }
+                    disabled={
+                      isSubmittingThirdPartyAuth || isCompletingThirdPartyAuth
+                    }
+                  >
+                    <Text style={styles.secondaryButtonLabel}>
+                      重试 {getThirdPartyProviderLabel(thirdPartyProvider)} 登录
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            ) : null}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

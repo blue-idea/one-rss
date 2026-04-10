@@ -14,7 +14,7 @@
     "format:check": "prettier --check .",
     "test:unit": "vitest run",
     "build:web": "pnpm exec expo export --platform web --output-dir dist",
-    "test:e2e": "pnpm exec playwright test --pass-with-no-tests",
+    "test:e2e": "EXPO_PUBLIC_AUTH_SEND_CODE_URL=http://127.0.0.1:4173/api/send-email-code EXPO_PUBLIC_SUPABASE_ANON_KEY=test-anon-key pnpm build:web && pnpm exec playwright test",
     "test:visual:today": "node ./scripts/visual-regression-today.mjs",
     "test:visual:read": "node ./scripts/visual-regression-read.mjs",
     "test:visual:explore": "node ./scripts/visual-regression-explore.mjs",
