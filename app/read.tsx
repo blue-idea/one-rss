@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   ScrollView,
   StyleSheet,
@@ -8,7 +10,7 @@ import {
   View,
 } from "react-native";
 import { Colors, Spacing } from "@/constants/theme";
-import { useRouter } from "expo-router";
+import { useBookmarks } from "@/contexts/bookmark-context";
 
 const articleData = {
   source: "大西洋月刊 (The Atlantic)",
@@ -36,6 +38,22 @@ const articleData = {
 export default function ReadScreen() {
   const colors = Colors.light;
   const router = useRouter();
+  const params = useLocalSearchParams<{ id?: string; feedId?: string }>();
+  const { isBookmarked, toggleBookmark } = useBookmarks();
+
+  // Get initial bookmark state from context based on article ID
+  const initialBookmarked = params.id ? isBookmarked(params.id) : false;
+  const [localBookmarked, setLocalBookmarked] = useState(initialBookmarked);
+
+  const handleBookmarkToggle = () => {
+    if (params.id) {
+      toggleBookmark(params.id);
+      setLocalBookmarked((prev) => !prev);
+    }
+  };
+
+  // Use local state for immediate UI update, synced with context
+  const displayBookmarked = params.id ? localBookmarked : false;
 
   const styles = StyleSheet.create({
     container: {
@@ -287,11 +305,11 @@ export default function ReadScreen() {
           <Text style={styles.topTitle}>The Curator</Text>
         </View>
         <View style={styles.topRightActions}>
-          <TouchableOpacity style={styles.topAction}>
+          <TouchableOpacity style={styles.topAction} onPress={handleBookmarkToggle}>
             <MaterialIcons
-              name="bookmark-border"
+              name={displayBookmarked ? "bookmark" : "bookmark-border"}
               size={22}
-              color={colors.onSurface}
+              color={displayBookmarked ? colors.primary : colors.onSurface}
             />
           </TouchableOpacity>
           <TouchableOpacity style={styles.topAction}>

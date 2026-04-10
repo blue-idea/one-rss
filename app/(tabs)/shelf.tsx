@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import { useRouter, type Href } from "expo-router";
 import {
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,8 +14,9 @@ import {
 
 import { Header } from "@/components/header";
 import { Colors, Spacing } from "@/constants/theme";
+import { useBookmarks } from "@/contexts/bookmark-context";
 
-const filterChips = ["全部", "设计", "科技", "文化", "建筑", "商业"];
+const filterChips = ["全部", "收藏", "设计", "科技", "文化", "建筑", "商业"];
 
 type ShelfFeed = {
   id: string;
@@ -68,16 +71,56 @@ const shelfFeeds: ShelfFeed[] = [
 ];
 
 export default function ShelfScreen() {
+  const router = useRouter();
   const [selectedChip, setSelectedChip] = useState("全部");
   const colorScheme = "light";
   const colors = Colors[colorScheme];
+  const { isBookmarked: checkBookmark, bookmarkedIds } = useBookmarks();
   const visibleFeeds = useMemo(
     () =>
-      shelfFeeds.filter(
-        (item) => selectedChip === "全部" || item.tag === selectedChip,
-      ),
+      shelfFeeds.filter((item) => {
+        if (selectedChip === "全部") return true;
+        if (selectedChip === "收藏") return false;
+        return item.tag === selectedChip;
+      }),
     [selectedChip],
   );
+
+  // Get bookmarked articles from context - map to match the article format
+  const bookmarkedArticles = useMemo(() => {
+    const articles = [
+      {
+        id: "1",
+        source: "建筑评论",
+        title: "沉默的建筑师：设计没有视觉噪音的城市",
+        time: "阅读时间 12 分钟",
+      },
+      {
+        id: "5",
+        source: "大西洋月刊",
+        title: "慢读革命：深度专注的抗争",
+        time: "8小时前",
+      },
+    ];
+    // Filter to only show articles that are actually bookmarked
+    return articles.filter((article) => bookmarkedIds.has(article.id));
+  }, [bookmarkedIds]);
+
+  const showBookmarks = selectedChip === "收藏";
+
+  const handleArticlePress = (articleId: string) => {
+    router.push({
+      pathname: "/read",
+      params: { id: articleId },
+    } as Href);
+  };
+
+  const handleFeedPress = (feedId: string) => {
+    router.push({
+      pathname: "/read",
+      params: { feedId },
+    } as Href);
+  };
 
   const styles = StyleSheet.create({
     container: {
@@ -287,40 +330,85 @@ export default function ShelfScreen() {
           </ScrollView>
 
           <View style={styles.listWrap}>
-            {visibleFeeds.map((feed) => (
-              <View key={feed.id} style={styles.row}>
-                <View style={styles.rowLeft}>
-                  <View style={styles.logoWrap}>
-                    <Image
-                      source={{ uri: feed.logo }}
-                      style={styles.logo}
-                      contentFit="contain"
-                    />
-                  </View>
-                  <View>
-                    <Text style={styles.feedTitle} numberOfLines={1}>
-                      {feed.name}
-                    </Text>
-                    <View style={styles.metaRow}>
-                      <View style={styles.tag}>
-                        <Text style={styles.tagText}>{feed.tag}</Text>
+            {selectedChip === "收藏" ? (
+              bookmarkedArticles.length > 0 ? (
+                bookmarkedArticles.map((article) => (
+                  <Pressable
+                    key={article.id}
+                    style={styles.row}
+                    onPress={() => handleArticlePress(article.id)}
+                  >
+                    <View style={styles.rowLeft}>
+                      <View style={styles.articleInfo}>
+                        <Text style={styles.feedTitle} numberOfLines={2}>
+                          {article.title}
+                        </Text>
+                        <View style={styles.metaRow}>
+                          <Text style={styles.sourceName}>{article.source}</Text>
+                          <Text style={styles.updateText}>{article.time}</Text>
+                        </View>
                       </View>
-                      <Text style={styles.updateText}>{feed.updateAt}</Text>
+                    </View>
+                    <View style={styles.rowRight}>
+                      <MaterialIcons
+                        name="chevron-right"
+                        size={22}
+                        color={colors.outlineVariant}
+                      />
+                    </View>
+                  </Pressable>
+                ))
+              ) : (
+                <View style={styles.emptyBookmarkWrap}>
+                  <View style={styles.emptyIconWrap}>
+                    <MaterialIcons name="bookmark-border" size={30} color={colors.primary} />
+                  </View>
+                  <Text style={styles.emptyTitle}>暂无收藏</Text>
+                  <Text style={styles.emptyDesc}>
+                    在今日页或阅读页点击收藏按钮来保存文章。
+                  </Text>
+                </View>
+              )
+            ) : (
+              visibleFeeds.map((feed) => (
+                <Pressable
+                  key={feed.id}
+                  style={styles.row}
+                  onPress={() => handleFeedPress(feed.id)}
+                >
+                  <View style={styles.rowLeft}>
+                    <View style={styles.logoWrap}>
+                      <Image
+                        source={{ uri: feed.logo }}
+                        style={styles.logo}
+                        contentFit="contain"
+                      />
+                    </View>
+                    <View>
+                      <Text style={styles.feedTitle} numberOfLines={1}>
+                        {feed.name}
+                      </Text>
+                      <View style={styles.metaRow}>
+                        <View style={styles.tag}>
+                          <Text style={styles.tagText}>{feed.tag}</Text>
+                        </View>
+                        <Text style={styles.updateText}>{feed.updateAt}</Text>
+                      </View>
                     </View>
                   </View>
-                </View>
-                <View style={styles.rowRight}>
-                  <View style={styles.unread}>
-                    <Text style={styles.unreadText}>{feed.unread}</Text>
+                  <View style={styles.rowRight}>
+                    <View style={styles.unread}>
+                      <Text style={styles.unreadText}>{feed.unread}</Text>
+                    </View>
+                    <MaterialIcons
+                      name="chevron-right"
+                      size={22}
+                      color={colors.outlineVariant}
+                    />
                   </View>
-                  <MaterialIcons
-                    name="chevron-right"
-                    size={22}
-                    color={colors.outlineVariant}
-                  />
-                </View>
-              </View>
-            ))}
+                </Pressable>
+              ))
+            )}
           </View>
 
           <View style={styles.emptyWrap}>

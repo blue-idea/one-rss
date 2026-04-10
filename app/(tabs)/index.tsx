@@ -14,6 +14,7 @@ import {
 } from "react-native";
 
 import { fetchCuratedArticles, type CuratedArticle } from "@/modules/curated/api/fetchCuratedArticles";
+import { useBookmarks } from "@/contexts/bookmark-context";
 
 type Article = {
   id: string;
@@ -84,10 +85,7 @@ export default function TodayScreen() {
   const colorScheme = "light";
   const colors = Colors[colorScheme];
   const [selectedTab, setSelectedTab] = useState(0);
-  const [bookmarkedArticles, setBookmarkedArticles] = useState<Set<string>>(
-    new Set(),
-  );
-  // Use local bookmark state instead of context for now
+  const { isBookmarked, toggleBookmark } = useBookmarks();
   const [curatedArticles, setCuratedArticles] = useState<CuratedArticle[]>([]);
   const [isLoadingCurated, setIsLoadingCurated] = useState(false);
 
@@ -134,18 +132,10 @@ export default function TodayScreen() {
   };
 
   const handleBookmarkToggle = (articleId: string) => {
-    setBookmarkedArticles((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(articleId)) {
-        newSet.delete(articleId);
-      } else {
-        newSet.add(articleId);
-      }
-      return newSet;
-    });
+    toggleBookmark(articleId);
   };
 
-  const isBookmarked = (articleId: string) => bookmarkedArticles.has(articleId);
+  const checkBookmark = (articleId: string) => isBookmarked(articleId);
 
   const styles = StyleSheet.create({
     container: {
@@ -533,7 +523,7 @@ export default function TodayScreen() {
                   <Text style={styles.articleSummary} numberOfLines={5}>
                     {article.summary}
                   </Text>
-                  {renderBottomRow(article, isBookmarked(article.id))}
+                  {renderBottomRow(article, checkBookmark(article.id))}
                 </Pressable>
               ))
             )}

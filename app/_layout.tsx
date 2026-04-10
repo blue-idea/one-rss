@@ -22,6 +22,7 @@ import {
   sanitizeReturnTo,
 } from "@/constants/auth-routes";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
+import { BookmarkProvider } from "@/contexts/bookmark-context";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
 void SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -105,7 +106,9 @@ function AuthRedirectRoot() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <AuthRedirectRoot />
+      <BookmarkProvider>
+        <AuthRedirectRoot />
+      </BookmarkProvider>
     </AuthProvider>
   );
 }
