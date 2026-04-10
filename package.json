@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "sync:feed-directory": "node ./scripts/sync-feed-directory-from-csv.mjs",
     "test:unit": "vitest run",
     "build:web": "pnpm exec expo export --platform web --output-dir dist",
     "test:e2e": "pnpm exec playwright test --pass-with-no-tests",

@@ -1,0 +1,20 @@
+category_slug,category_title,category_sort,feed_id,feed_title,description,rss_url,site_url,language,is_featured
+tech,科技,1,techcrunch-startups,TechCrunch Startups,聚焦创业公司、融资动态与新产品发布。,https://rsshub.app/techcrunch/startups,https://techcrunch.com/startups/,en,true
+tech,科技,1,the-verge-tech,The Verge Tech,覆盖消费电子、平台生态与互联网文化。,https://rsshub.app/theverge,https://www.theverge.com/tech,en,true
+tech,科技,1,wired-security,WIRED Security,安全事件、隐私议题与基础设施风险分析。,https://rsshub.app/wired/category/security,https://www.wired.com/category/security/,en,false
+tech,科技,1,ars-technica-ai,Ars Technica AI,人工智能、芯片与开发工具的深度报道。,https://rsshub.app/arstechnica/index,https://arstechnica.com/ai/,en,false
+tech,科技,1,github-blog-engineering,GitHub Engineering,工程实践、平台架构与开发者体验更新。,https://rsshub.app/github/blog,https://github.blog/category/engineering/,en,false
+design,设计,2,dezeen-architecture,Dezeen Architecture,建筑、空间与可持续设计案例精选。,https://rsshub.app/dezeen/architecture,https://www.dezeen.com/architecture/,en,true
+design,设计,2,itsnicethat-design,It's Nice That Design,品牌、平面和视觉系统的新作与评论。,https://rsshub.app/itsnicethat/articles,https://www.itsnicethat.com/articles,en,false
+design,设计,2,smashing-magazine,Smashing Magazine,设计系统、前端体验与产品细节实践。,https://rsshub.app/smashingmagazine,https://www.smashingmagazine.com/articles/,en,false
+design,设计,2,aiga-eye-on-design,AIGA Eye on Design,设计史、出版趋势与创意行业观察。,https://rsshub.app/aiga/eye-on-design,https://eyeondesign.aiga.org/,en,false
+business,商业,3,bloomberg-tech,Bloomberg Tech,全球公司、资本流向与科技商业化追踪。,https://rsshub.app/bloomberg/technology,https://www.bloomberg.com/technology,en,true
+business,商业,3,hbr-innovation,Harvard Business Review,战略、管理与组织创新方法论。,https://rsshub.app/hbr/topic/innovation,https://hbr.org/topic/innovation,en,false
+business,商业,3,product-hunt,Product Hunt Daily,新品榜单、创作者故事与产品增长线索。,https://rsshub.app/producthunt/daily,https://www.producthunt.com/,en,false
+business,商业,3,stratechery,Stratechery,平台竞争、科技公司战略与长期结构分析。,https://rsshub.app/stratechery,https://stratechery.com/,en,true
+finance,财经,4,ft-markets,Financial Times Markets,宏观市场、利率与资产定价日报。,https://rsshub.app/financialtimes/markets,https://www.ft.com/markets,en,true
+finance,财经,4,wsj-markets,WSJ Markets,华尔街、企业财报与投资者情绪更新。,https://rsshub.app/wsj/markets,https://www.wsj.com/news/markets,en,false
+finance,财经,4,economist-finance,The Economist Finance,从政策到资本市场的全球财经评论。,https://rsshub.app/economist/finance-and-economics,https://www.economist.com/finance-and-economics,en,false
+culture,文化,5,newyorker-culture,The New Yorker Culture,写作、评论与文化议题的长篇内容。,https://rsshub.app/newyorker/culture,https://www.newyorker.com/culture,en,false
+culture,文化,5,aeon-ideas,Aeon Ideas,哲学、社会科学与人文思辨文章。,https://rsshub.app/aeon,https://aeon.co/,en,true
+culture,文化,5,atlantic-culture,The Atlantic Culture,媒介、社会与创意工作的深度写作。,https://rsshub.app/theatlantic/culture,https://www.theatlantic.com/culture/,en,false
