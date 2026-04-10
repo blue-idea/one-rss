@@ -1,4 +1,5 @@
 import { AuthApiError } from "@/modules/auth/api/authApiError";
+import { getSupabaseClient } from "@/modules/supabase/client";
 
 function getSupabaseUrl(): string | undefined {
   const direct = process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -23,17 +24,29 @@ function getSupabaseAnonKey(): string | undefined {
     : undefined;
 }
 
-export function parseSignInResponse(
-  body: unknown,
-): { ok: true } | { ok: false; code: string; message: string } {
+export function parseSignInResponse(body: unknown):
+  | {
+      ok: true;
+      data: {
+        accessToken: string;
+        refreshToken: string;
+      };
+    }
+  | { ok: false; code: string; message: string } {
   if (!body || typeof body !== "object") {
     return { ok: false, code: "INTERNAL_ERROR", message: "Invalid response." };
   }
 
   const rec = body as Record<string, unknown>;
   const accessToken = rec.access_token;
-  if (typeof accessToken === "string" && accessToken.length > 0) {
-    return { ok: true };
+  const refreshToken = rec.refresh_token;
+  if (
+    typeof accessToken === "string" &&
+    accessToken.length > 0 &&
+    typeof refreshToken === "string" &&
+    refreshToken.length > 0
+  ) {
+    return { ok: true, data: { accessToken, refreshToken } };
   }
 
   const errorCode = typeof rec.error === "string" ? rec.error : "";
@@ -106,7 +119,23 @@ export async function signInWithEmailPassword(
   }
 
   const parsed = parseSignInResponse(body);
-  if (parsed.ok) return;
+  if (parsed.ok) {
+    const supabase = getSupabaseClient();
+    const { error } = await supabase.auth.setSession({
+      access_token: parsed.data.accessToken,
+      refresh_token: parsed.data.refreshToken,
+    });
+
+    if (error) {
+      throw new AuthApiError(
+        "Failed to persist session.",
+        "SESSION_ERROR",
+        res.status,
+      );
+    }
+
+    return;
+  }
 
   throw new AuthApiError(parsed.message, parsed.code, res.status);
 }

@@ -1,19 +1,21 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Share, Alert } from "react-native";
 import {
+  Alert,
+  Modal,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  Modal,
-  Pressable,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
 } from "react-native";
 import { Spacing } from "@/constants/theme";
+import { useAuth } from "@/contexts/auth-context";
 import { useBookmarks } from "@/contexts/bookmark-context";
 import {
   usePreferences,
@@ -67,6 +69,7 @@ const themeLabels: Record<ReaderTheme, string> = {
 export default function ReadScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string; feedId?: string }>();
+  const { membership } = useAuth();
   const { isBookmarked, toggleBookmark } = useBookmarks();
   const {
     readerTheme,
@@ -117,38 +120,51 @@ export default function ReadScreen() {
   }, [params.id]);
 
   // 报告阅读进度
-  const reportProgress = useCallback(async (progress: number) => {
-    if (params.id) {
-      try {
-        await updateReadingProgress({ articleId: params.id, progress });
-      } catch (error) {
-        console.log("Failed to report progress:", error);
+  const reportProgress = useCallback(
+    async (progress: number) => {
+      if (params.id) {
+        try {
+          await updateReadingProgress({ articleId: params.id, progress });
+        } catch (error) {
+          console.log("Failed to report progress:", error);
+        }
       }
-    }
-  }, [params.id]);
+    },
+    [params.id],
+  );
 
-  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-    const scrollableHeight = contentSize.height - layoutMeasurement.height;
-    if (scrollableHeight > 0) {
-      const progress = Math.min(
-        Math.round((contentOffset.y / scrollableHeight) * 100),
-        100
-      );
-      setScrollProgress(progress);
-      if (progress % 10 === 0 || progress === 100) {
-        reportProgress(progress);
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { contentOffset, contentSize, layoutMeasurement } =
+        event.nativeEvent;
+      const scrollableHeight = contentSize.height - layoutMeasurement.height;
+      if (scrollableHeight > 0) {
+        const progress = Math.min(
+          Math.round((contentOffset.y / scrollableHeight) * 100),
+          100,
+        );
+        setScrollProgress(progress);
+        if (progress % 10 === 0 || progress === 100) {
+          reportProgress(progress);
+        }
       }
-    }
-  }, [reportProgress]);
+    },
+    [reportProgress],
+  );
 
-  const handleContentSizeChange = useCallback((_width: number, height: number) => {
-    contentHeightRef.current = height;
-  }, []);
+  const handleContentSizeChange = useCallback(
+    (_width: number, height: number) => {
+      contentHeightRef.current = height;
+    },
+    [],
+  );
 
-  const handleLayout = useCallback((event: { nativeEvent: { layout: { height: number } } }) => {
-    scrollViewHeightRef.current = event.nativeEvent.layout.height;
-  }, []);
+  const handleLayout = useCallback(
+    (event: { nativeEvent: { layout: { height: number } } }) => {
+      scrollViewHeightRef.current = event.nativeEvent.layout.height;
+    },
+    [],
+  );
 
   const handleBookmarkToggle = useCallback(() => {
     if (params.id) {
@@ -166,13 +182,28 @@ export default function ReadScreen() {
         url: params.id ? `one-rss://article/${params.id}` : undefined,
       });
     } catch {
-      Alert.alert(
-        "无法分享",
-        "请尝试通过系统分享菜单手动分享这篇文章。",
-        [{ text: "确定" }]
-      );
+      Alert.alert("无法分享", "请尝试通过系统分享菜单手动分享这篇文章。", [
+        { text: "确定" },
+      ]);
     }
   };
+
+  const handlePremiumAction = useCallback(
+    (action: "朗读" | "翻译") => {
+      if (membership?.tier !== "premium" || membership.status !== "active") {
+        Alert.alert(
+          "需要高级会员",
+          membership?.status === "expired"
+            ? "会员已失效，请续费后再试。"
+            : "升级高级会员后可使用朗读和翻译能力。",
+        );
+        return;
+      }
+
+      Alert.alert(action, `${action}能力将在后续任务中接入真实执行链路。`);
+    },
+    [membership],
+  );
 
   const displayBookmarked = params.id ? localBookmarked : false;
 
@@ -199,9 +230,10 @@ export default function ReadScreen() {
     ? `${article.readTimeMinutes}分钟阅读`
     : "";
 
-  const metaText = formattedDate && readTime
-    ? `发布于 ${formattedDate} • ${readTime}`
-    : formattedDate || readTime || "";
+  const metaText =
+    formattedDate && readTime
+      ? `发布于 ${formattedDate} • ${readTime}`
+      : formattedDate || readTime || "";
 
   const styles = StyleSheet.create({
     container: {
@@ -483,7 +515,10 @@ export default function ReadScreen() {
         style={styles.modalOverlay}
         onPress={() => setShowThemePanel(false)}
       >
-        <Pressable style={styles.panelContainer} onPress={(e) => e.stopPropagation()}>
+        <Pressable
+          style={styles.panelContainer}
+          onPress={(e) => e.stopPropagation()}
+        >
           <Text style={styles.panelTitle}>选择阅读主题</Text>
           <View style={styles.optionGrid}>
             {(["light", "dark", "deep"] as ReaderTheme[]).map((t) => (
@@ -526,7 +561,10 @@ export default function ReadScreen() {
         style={styles.modalOverlay}
         onPress={() => setShowFontPanel(false)}
       >
-        <Pressable style={styles.panelContainer} onPress={(e) => e.stopPropagation()}>
+        <Pressable
+          style={styles.panelContainer}
+          onPress={(e) => e.stopPropagation()}
+        >
           <Text style={styles.panelTitle}>阅读设置</Text>
 
           {/* 字号设置 */}
@@ -547,7 +585,8 @@ export default function ReadScreen() {
                 style={styles.sliderButton}
                 onPress={() => {
                   const idx = fontSizes.indexOf(readerFontSize);
-                  if (idx < fontSizes.length - 1) setReaderFontSize(fontSizes[idx + 1]);
+                  if (idx < fontSizes.length - 1)
+                    setReaderFontSize(fontSizes[idx + 1]);
                 }}
               >
                 <MaterialIcons name="add" size={20} color={theme.text} />
@@ -622,16 +661,15 @@ export default function ReadScreen() {
         </TouchableOpacity>
         <View style={styles.topCenter}>
           <View style={styles.topCenterIcon}>
-            <MaterialIcons
-              name="auto-stories"
-              size={16}
-              color={theme.accent}
-            />
+            <MaterialIcons name="auto-stories" size={16} color={theme.accent} />
           </View>
           <Text style={styles.topTitle}>{article.feed.title}</Text>
         </View>
         <View style={styles.topRightActions}>
-          <TouchableOpacity style={styles.topAction} onPress={handleBookmarkToggle}>
+          <TouchableOpacity
+            style={styles.topAction}
+            onPress={handleBookmarkToggle}
+          >
             <MaterialIcons
               name={displayBookmarked ? "bookmark" : "bookmark-border"}
               size={22}
@@ -658,11 +696,7 @@ export default function ReadScreen() {
           {/* 元信息 */}
           <View style={styles.headerMetaRow}>
             <View style={styles.sourceIconWrap}>
-              <MaterialIcons
-                name="newspaper"
-                size={18}
-                color={theme.accent}
-              />
+              <MaterialIcons name="newspaper" size={18} color={theme.accent} />
             </View>
             <View style={styles.sourceBlock}>
               <Text style={styles.sourceName}>{article.feed.title}</Text>
@@ -694,11 +728,7 @@ export default function ReadScreen() {
             style={styles.toolButton}
             onPress={() => setShowThemePanel(true)}
           >
-            <MaterialIcons
-              name="palette"
-              size={22}
-              color={theme.secondary}
-            />
+            <MaterialIcons name="palette" size={22} color={theme.secondary} />
             <Text style={styles.toolLabel}>主题</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -713,25 +743,23 @@ export default function ReadScreen() {
             <Text style={styles.toolLabel}>字体</Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.speakButton}>
+        <TouchableOpacity
+          style={styles.speakButton}
+          onPress={() => handlePremiumAction("朗读")}
+        >
           <MaterialIcons name="volume-up" size={24} color={theme.accent} />
           <Text style={styles.speakLabel}>朗读</Text>
         </TouchableOpacity>
         <View style={styles.toolbarGroup}>
-          <TouchableOpacity style={styles.toolButton}>
-            <MaterialIcons
-              name="translate"
-              size={22}
-              color={theme.secondary}
-            />
+          <TouchableOpacity
+            style={styles.toolButton}
+            onPress={() => handlePremiumAction("翻译")}
+          >
+            <MaterialIcons name="translate" size={22} color={theme.secondary} />
             <Text style={styles.toolLabel}>翻译</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.toolButton}>
-            <MaterialIcons
-              name="more-vert"
-              size={22}
-              color={theme.secondary}
-            />
+            <MaterialIcons name="more-vert" size={22} color={theme.secondary} />
           </TouchableOpacity>
         </View>
       </View>
