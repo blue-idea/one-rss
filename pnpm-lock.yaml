@@ -22,6 +22,9 @@ importers:
       "@react-navigation/native":
         specifier: ^7.1.8
         version: 7.2.2(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+      "@supabase/supabase-js":
+        specifier: ^2.103.0
+        version: 2.103.0
       expo:
         specifier: ~54.0.33
         version: 54.0.33(@babel/core@7.29.0)(@expo/metro-runtime@6.1.2)(expo-router@6.0.23)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
@@ -2296,6 +2299,54 @@ packages:
         integrity: sha512-V4BG07kuYSUkTCSBHG8G8TNhM+F19jXFWnQtzj+we8DrkpSBCee9Z3Ms8yiGer/dlmhe35/Xdgyo3/0rQKg7YA==,
       }
 
+  "@supabase/auth-js@2.103.0":
+    resolution:
+      {
+        integrity: sha512-6zAanO6c+6gpHOlt5Lb9TlBBkJdZiUWkWCJKAxzkywBDcwaHlLJKXnjQGX6GyVCyKRR1e7sTq4re/yRTH6U/9A==,
+      }
+    engines: { node: ">=20.0.0" }
+
+  "@supabase/functions-js@2.103.0":
+    resolution:
+      {
+        integrity: sha512-YrneV2NjskUkkmkZ2Jt2n3elBgbWzV4Y1M9MM370z2Zd5ZPFqFbY8KIoPwuNjtAGE9YrpKBxnbZqeF07BiN9Og==,
+      }
+    engines: { node: ">=20.0.0" }
+
+  "@supabase/phoenix@0.4.0":
+    resolution:
+      {
+        integrity: sha512-RHSx8bHS02xwfHdAbX5Lpbo6PXbgyf7lTaXTlwtFDPwOIw64NnVRwFAXGojHhjtVYI+PEPNSWwkL90f4agN3bw==,
+      }
+
+  "@supabase/postgrest-js@2.103.0":
+    resolution:
+      {
+        integrity: sha512-rC3sRxYdPZymkp2CZR1MiNQgbOleD01bGsW8VxEKRR5nMkLZ1NgAS1QTQf78Wh30czFyk505ZYr9Od8/mWT2TA==,
+      }
+    engines: { node: ">=20.0.0" }
+
+  "@supabase/realtime-js@2.103.0":
+    resolution:
+      {
+        integrity: sha512-gcPtXzZ6izyyBVf2of7K3dEt8CScPJn8VcSlQq6oWL9QoE1kqfQl0oFrOMHd5qrcADewxI7OxxosLB8W4XqtIQ==,
+      }
+    engines: { node: ">=20.0.0" }
+
+  "@supabase/storage-js@2.103.0":
+    resolution:
+      {
+        integrity: sha512-DHmlvdAXwtOmZNbkIZi4lkobPR3XjIzoOgzoz5duMf6G+sDeY015YrzMJCnqdccuYr7X5x4yYuSwF//RoN2dvQ==,
+      }
+    engines: { node: ">=20.0.0" }
+
+  "@supabase/supabase-js@2.103.0":
+    resolution:
+      {
+        integrity: sha512-j/6q5+LtXbR/YOLSLhy7Na74RD1cV2v+KwIIuuqMEjk1JpLEEyu0ynwDHpGoxMncDQl+R5FogaVqZm+85lZvtw==,
+      }
+    engines: { node: ">=20.0.0" }
+
   "@tybys/wasm-util@0.10.1":
     resolution:
       {
@@ -2402,6 +2453,12 @@ packages:
     resolution:
       {
         integrity: sha512-9aEbYZ3TbYMznPdcdr3SmIrLXwC/AKZXQeCf9Pgao5CKb8CyHuEX5jzWPTkvregvhRJHcpRO6BFoGW9ycaOkYw==,
+      }
+
+  "@types/ws@8.18.1":
+    resolution:
+      {
+        integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==,
       }
 
   "@types/yargs-parser@21.0.3":
@@ -4723,6 +4780,13 @@ packages:
       {
         integrity: sha512-WDC/ui2VVRrz3jOVi+XtjqkDjiVjTtFaAGiW37k6b+ohyQ5wYDOGkvCZa8+H0nx3gyvv0+BST9xuOgIyGQ00gw==,
       }
+
+  iceberg-js@0.8.1:
+    resolution:
+      {
+        integrity: sha512-1dhVQZXhcHje7798IVM+xoo/1ZdVfzOMIc8/rgVSijRK38EDqOJoGula9N/8ZI5RD8QTxNQtK/Gozpr+qUqRRA==,
+      }
+    engines: { node: ">=20.0.0" }
 
   ieee754@1.2.1:
     resolution:
@@ -9635,6 +9699,46 @@ snapshots:
     dependencies:
       "@sinonjs/commons": 3.0.1
 
+  "@supabase/auth-js@2.103.0":
+    dependencies:
+      tslib: 2.8.1
+
+  "@supabase/functions-js@2.103.0":
+    dependencies:
+      tslib: 2.8.1
+
+  "@supabase/phoenix@0.4.0": {}
+
+  "@supabase/postgrest-js@2.103.0":
+    dependencies:
+      tslib: 2.8.1
+
+  "@supabase/realtime-js@2.103.0":
+    dependencies:
+      "@supabase/phoenix": 0.4.0
+      "@types/ws": 8.18.1
+      tslib: 2.8.1
+      ws: 8.20.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
+  "@supabase/storage-js@2.103.0":
+    dependencies:
+      iceberg-js: 0.8.1
+      tslib: 2.8.1
+
+  "@supabase/supabase-js@2.103.0":
+    dependencies:
+      "@supabase/auth-js": 2.103.0
+      "@supabase/functions-js": 2.103.0
+      "@supabase/postgrest-js": 2.103.0
+      "@supabase/realtime-js": 2.103.0
+      "@supabase/storage-js": 2.103.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
   "@tybys/wasm-util@0.10.1":
     dependencies:
       tslib: 2.8.1
@@ -9699,6 +9803,10 @@ snapshots:
       csstype: 3.2.3
 
   "@types/stack-utils@2.0.3": {}
+
+  "@types/ws@8.18.1":
+    dependencies:
+      "@types/node": 25.5.2
 
   "@types/yargs-parser@21.0.3": {}
 
@@ -11323,6 +11431,8 @@ snapshots:
   husky@9.1.7: {}
 
   hyphenate-style-name@1.1.0: {}
+
+  iceberg-js@0.8.1: {}
 
   ieee754@1.2.1: {}
 
