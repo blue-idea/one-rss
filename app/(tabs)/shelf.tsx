@@ -1,8 +1,10 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { useRouter, type Href } from "expo-router";
+import { useFocusEffect, useRouter, type Href } from "expo-router";
 import {
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   Platform,
   Pressable,
   ScrollView,
@@ -15,6 +17,7 @@ import {
 import { Header } from "@/components/header";
 import { Colors, Spacing } from "@/constants/theme";
 import { useBookmarks } from "@/contexts/bookmark-context";
+import { usePersistentScreenState } from "@/contexts/navigation-state-context";
 
 const filterChips = ["全部", "收藏", "设计", "科技", "文化", "建筑", "商业"];
 
@@ -72,10 +75,52 @@ const shelfFeeds: ShelfFeed[] = [
 
 export default function ShelfScreen() {
   const router = useRouter();
-  const [selectedChip, setSelectedChip] = useState("全部");
+  const scrollViewRef = useRef<ScrollView>(null);
+  const shouldRestoreScrollRef = useRef(true);
+  const currentScrollYRef = useRef(0);
   const colorScheme = "light";
   const colors = Colors[colorScheme];
-  const { isBookmarked: checkBookmark, bookmarkedIds } = useBookmarks();
+  const { bookmarkedIds } = useBookmarks();
+  const { filters, setFilters, scrollY, setScrollY } = usePersistentScreenState(
+    "shelf",
+    { selectedChip: "全部" },
+  );
+  const selectedChip = filters.selectedChip;
+
+  useEffect(() => {
+    currentScrollYRef.current = scrollY;
+  }, [scrollY]);
+
+  useFocusEffect(
+    useCallback(() => {
+      shouldRestoreScrollRef.current = true;
+    }, []),
+  );
+
+  const restoreScrollPosition = useCallback(() => {
+    if (!shouldRestoreScrollRef.current) {
+      return;
+    }
+
+    shouldRestoreScrollRef.current = false;
+    requestAnimationFrame(() => {
+      scrollViewRef.current?.scrollTo({
+        y: scrollY,
+        animated: false,
+      });
+    });
+  }, [scrollY]);
+
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      currentScrollYRef.current = event.nativeEvent.contentOffset.y;
+    },
+    [],
+  );
+
+  const persistScrollPosition = useCallback(() => {
+    setScrollY(currentScrollYRef.current);
+  }, [setScrollY]);
   const visibleFeeds = useMemo(
     () =>
       shelfFeeds.filter((item) => {
@@ -106,9 +151,8 @@ export default function ShelfScreen() {
     return articles.filter((article) => bookmarkedIds.has(article.id));
   }, [bookmarkedIds]);
 
-  const showBookmarks = selectedChip === "收藏";
-
   const handleArticlePress = (articleId: string) => {
+    persistScrollPosition();
     router.push({
       pathname: "/read",
       params: { id: articleId },
@@ -116,6 +160,7 @@ export default function ShelfScreen() {
   };
 
   const handleFeedPress = (feedId: string) => {
+    persistScrollPosition();
     router.push({
       pathname: "/read",
       params: { feedId },
@@ -199,6 +244,9 @@ export default function ShelfScreen() {
       width: "100%",
       height: "100%",
     },
+    articleInfo: {
+      flex: 1,
+    },
     feedTitle: {
       fontSize: 22,
       lineHeight: 26,
@@ -229,6 +277,11 @@ export default function ShelfScreen() {
       fontSize: 12,
       color: `${colors.onSurfaceVariant}AA`,
     },
+    sourceName: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: colors.onSurfaceVariant,
+    },
     rowRight: {
       flexDirection: "row",
       alignItems: "center",
@@ -255,6 +308,14 @@ export default function ShelfScreen() {
       borderStyle: "dashed",
       borderColor: `${colors.outlineVariant}66`,
       padding: Spacing.xxxl,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    emptyBookmarkWrap: {
+      marginTop: Spacing.xl,
+      borderRadius: 24,
+      backgroundColor: colors.surfaceContainerLow,
+      padding: Spacing.xxl,
       justifyContent: "center",
       alignItems: "center",
     },
@@ -298,7 +359,15 @@ export default function ShelfScreen() {
   return (
     <View style={styles.container}>
       <Header title="The Curator" />
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={scrollViewRef}
+        showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        onScrollEndDrag={persistScrollPosition}
+        onMomentumScrollEnd={persistScrollPosition}
+        onContentSizeChange={restoreScrollPosition}
+        scrollEventThrottle={16}
+      >
         <View style={styles.content}>
           <Text style={styles.heroTitle}>书架</Text>
           <Text style={styles.heroSubTitle}>您收藏的数字之声。</Text>
@@ -315,7 +384,12 @@ export default function ShelfScreen() {
                   styles.chip,
                   selectedChip === chip && styles.chipActive,
                 ]}
-                onPress={() => setSelectedChip(chip)}
+                onPress={() => {
+                  setFilters((prev) => ({ ...prev, selectedChip: chip }));
+                  setScrollY(0);
+                  currentScrollYRef.current = 0;
+                  shouldRestoreScrollRef.current = true;
+                }}
               >
                 <Text
                   style={[
@@ -344,7 +418,9 @@ export default function ShelfScreen() {
                           {article.title}
                         </Text>
                         <View style={styles.metaRow}>
-                          <Text style={styles.sourceName}>{article.source}</Text>
+                          <Text style={styles.sourceName}>
+                            {article.source}
+                          </Text>
                           <Text style={styles.updateText}>{article.time}</Text>
                         </View>
                       </View>
@@ -361,7 +437,11 @@ export default function ShelfScreen() {
               ) : (
                 <View style={styles.emptyBookmarkWrap}>
                   <View style={styles.emptyIconWrap}>
-                    <MaterialIcons name="bookmark-border" size={30} color={colors.primary} />
+                    <MaterialIcons
+                      name="bookmark-border"
+                      size={30}
+                      color={colors.primary}
+                    />
                   </View>
                   <Text style={styles.emptyTitle}>暂无收藏</Text>
                   <Text style={styles.emptyDesc}>

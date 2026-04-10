@@ -1,7 +1,10 @@
 import { MaterialIcons } from "@expo/vector-icons";
+import { useFocusEffect } from "expo-router";
 import { Image } from "expo-image";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   Platform,
   ScrollView,
   StyleSheet,
@@ -13,6 +16,7 @@ import {
 
 import { Header } from "@/components/header";
 import { Colors, Spacing } from "@/constants/theme";
+import { usePersistentScreenState } from "@/contexts/navigation-state-context";
 
 const categories = ["精选", "科技", "设计", "商业"];
 
@@ -72,10 +76,52 @@ const sourceList: FeedSource[] = [
 ];
 
 export default function ExploreScreen() {
-  const [selectedCategory, setSelectedCategory] = useState("精选");
-  const [searchQuery, setSearchQuery] = useState("");
+  const scrollViewRef = useRef<ScrollView>(null);
+  const shouldRestoreScrollRef = useRef(true);
+  const currentScrollYRef = useRef(0);
   const colorScheme = "light";
   const colors = Colors[colorScheme];
+  const { filters, setFilters, scrollY, setScrollY } = usePersistentScreenState(
+    "explore",
+    { selectedCategory: "精选", searchQuery: "" },
+  );
+  const selectedCategory = filters.selectedCategory;
+  const searchQuery = filters.searchQuery;
+
+  useEffect(() => {
+    currentScrollYRef.current = scrollY;
+  }, [scrollY]);
+
+  useFocusEffect(
+    useCallback(() => {
+      shouldRestoreScrollRef.current = true;
+    }, []),
+  );
+
+  const restoreScrollPosition = useCallback(() => {
+    if (!shouldRestoreScrollRef.current) {
+      return;
+    }
+
+    shouldRestoreScrollRef.current = false;
+    requestAnimationFrame(() => {
+      scrollViewRef.current?.scrollTo({
+        y: scrollY,
+        animated: false,
+      });
+    });
+  }, [scrollY]);
+
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      currentScrollYRef.current = event.nativeEvent.contentOffset.y;
+    },
+    [],
+  );
+
+  const persistScrollPosition = useCallback(() => {
+    setScrollY(currentScrollYRef.current);
+  }, [setScrollY]);
 
   const filteredSources = useMemo(() => {
     return sourceList.filter((source) => {
@@ -244,7 +290,15 @@ export default function ExploreScreen() {
   return (
     <View style={styles.container}>
       <Header title="The Curator" />
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={scrollViewRef}
+        showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        onScrollEndDrag={persistScrollPosition}
+        onMomentumScrollEnd={persistScrollPosition}
+        onContentSizeChange={restoreScrollPosition}
+        scrollEventThrottle={16}
+      >
         <View style={styles.content}>
           <View style={styles.categorySection}>
             <Text style={styles.title}>发现源</Text>
@@ -257,7 +311,12 @@ export default function ExploreScreen() {
                 placeholder="添加 RSS 地址或搜索"
                 placeholderTextColor={`${colors.onSurfaceVariant}99`}
                 value={searchQuery}
-                onChangeText={setSearchQuery}
+                onChangeText={(value) => {
+                  setFilters((prev) => ({ ...prev, searchQuery: value }));
+                  setScrollY(0);
+                  currentScrollYRef.current = 0;
+                  shouldRestoreScrollRef.current = true;
+                }}
               />
               <TouchableOpacity style={styles.addButton}>
                 <Text style={styles.addButtonText}>添加订阅</Text>
@@ -276,7 +335,15 @@ export default function ExploreScreen() {
                     styles.categoryTag,
                     selectedCategory === category && styles.categoryTagActive,
                   ]}
-                  onPress={() => setSelectedCategory(category)}
+                  onPress={() => {
+                    setFilters((prev) => ({
+                      ...prev,
+                      selectedCategory: category,
+                    }));
+                    setScrollY(0);
+                    currentScrollYRef.current = 0;
+                    shouldRestoreScrollRef.current = true;
+                  }}
                 >
                   <Text
                     style={[

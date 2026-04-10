@@ -1,9 +1,12 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Header } from "@/components/header";
 import { Colors, Spacing } from "@/constants/theme";
+import { useFocusEffect } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter, type Href } from "expo-router";
 import {
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   Platform,
   Pressable,
   ScrollView,
@@ -18,8 +21,12 @@ import {
   type TimeRange,
   type TodayArticle,
 } from "@/modules/today/api/fetchTodayArticles";
-import { fetchCuratedArticles, type CuratedArticle } from "@/modules/curated/api/fetchCuratedArticles";
+import {
+  fetchCuratedArticles,
+  type CuratedArticle,
+} from "@/modules/curated/api/fetchCuratedArticles";
 import { useBookmarks } from "@/contexts/bookmark-context";
+import { usePersistentScreenState } from "@/contexts/navigation-state-context";
 
 type Article = {
   id: string;
@@ -69,12 +76,54 @@ export default function TodayScreen() {
   const router = useRouter();
   const colorScheme = "light";
   const colors = Colors[colorScheme];
-  const [selectedTab, setSelectedTab] = useState(0);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const shouldRestoreScrollRef = useRef(true);
+  const currentScrollYRef = useRef(0);
   const { isBookmarked, toggleBookmark } = useBookmarks();
+  const { filters, setFilters, scrollY, setScrollY } = usePersistentScreenState(
+    "today",
+    { selectedTab: 0 },
+  );
+  const selectedTab = filters.selectedTab;
   const [todayArticles, setTodayArticles] = useState<TodayArticle[]>([]);
   const [isLoadingToday, setIsLoadingToday] = useState(false);
   const [curatedArticles, setCuratedArticles] = useState<CuratedArticle[]>([]);
   const [isLoadingCurated, setIsLoadingCurated] = useState(false);
+
+  useEffect(() => {
+    currentScrollYRef.current = scrollY;
+  }, [scrollY]);
+
+  useFocusEffect(
+    useCallback(() => {
+      shouldRestoreScrollRef.current = true;
+    }, []),
+  );
+
+  const restoreScrollPosition = useCallback(() => {
+    if (!shouldRestoreScrollRef.current) {
+      return;
+    }
+
+    shouldRestoreScrollRef.current = false;
+    requestAnimationFrame(() => {
+      scrollViewRef.current?.scrollTo({
+        y: scrollY,
+        animated: false,
+      });
+    });
+  }, [scrollY]);
+
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      currentScrollYRef.current = event.nativeEvent.contentOffset.y;
+    },
+    [],
+  );
+
+  const persistScrollPosition = useCallback(() => {
+    setScrollY(currentScrollYRef.current);
+  }, [setScrollY]);
 
   // 获取今日文章数据
   useEffect(() => {
@@ -113,30 +162,30 @@ export default function TodayScreen() {
   }, [selectedTab]);
 
   // Helper: 将 TodayArticle 转换为 Article 格式（用于时间范围过滤）
-const todayToArticle = (today: TodayArticle): Article => ({
-  id: today.id,
-  source: today.feed.title,
-  time: today.readTimeMinutes
-    ? `阅读时间 ${today.readTimeMinutes} 分钟`
-    : formatRelativeTime(today.publishedAt),
-  title: today.title,
-  summary: today.summary,
-  featured: today.feed.isFeatured,
-  sourceBadge: today.feed.title.substring(0, 3).toUpperCase(),
-});
+  const todayToArticle = (today: TodayArticle): Article => ({
+    id: today.id,
+    source: today.feed.title,
+    time: today.readTimeMinutes
+      ? `阅读时间 ${today.readTimeMinutes} 分钟`
+      : formatRelativeTime(today.publishedAt),
+    title: today.title,
+    summary: today.summary,
+    featured: today.feed.isFeatured,
+    sourceBadge: today.feed.title.substring(0, 3).toUpperCase(),
+  });
 
-// Helper: 将 CuratedArticle 转换为 Article 格式（用于精选推荐）
-const curatedToArticle = (curated: CuratedArticle): Article => ({
-  id: curated.id,
-  source: curated.feed.title,
-  time: curated.readTimeMinutes
-    ? `阅读时间 ${curated.readTimeMinutes} 分钟`
-    : new Date(curated.publishedAt).toLocaleDateString("zh-CN"),
-  title: curated.title,
-  summary: curated.summary,
-  featured: curated.feed.isFeatured,
-  sourceBadge: curated.feed.title.substring(0, 3).toUpperCase(),
-});
+  // Helper: 将 CuratedArticle 转换为 Article 格式（用于精选推荐）
+  const curatedToArticle = (curated: CuratedArticle): Article => ({
+    id: curated.id,
+    source: curated.feed.title,
+    time: curated.readTimeMinutes
+      ? `阅读时间 ${curated.readTimeMinutes} 分钟`
+      : new Date(curated.publishedAt).toLocaleDateString("zh-CN"),
+    title: curated.title,
+    summary: curated.summary,
+    featured: curated.feed.isFeatured,
+    sourceBadge: curated.feed.title.substring(0, 3).toUpperCase(),
+  });
 
   const currentArticles =
     selectedTab === 3
@@ -144,6 +193,7 @@ const curatedToArticle = (curated: CuratedArticle): Article => ({
       : todayArticles.map(todayToArticle);
 
   const handleArticlePress = (articleId: string) => {
+    persistScrollPosition();
     router.push({
       pathname: "/read",
       params: { id: articleId },
@@ -490,7 +540,15 @@ const curatedToArticle = (curated: CuratedArticle): Article => ({
   return (
     <View testID="screen-today" style={styles.container}>
       <Header title="今日摘要" />
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={scrollViewRef}
+        showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        onScrollEndDrag={persistScrollPosition}
+        onMomentumScrollEnd={persistScrollPosition}
+        onContentSizeChange={restoreScrollPosition}
+        scrollEventThrottle={16}
+      >
         <View style={styles.content}>
           <View style={styles.tabsSection}>
             <View style={styles.tabsRow}>
@@ -501,7 +559,12 @@ const curatedToArticle = (curated: CuratedArticle): Article => ({
                     styles.timelineTabButton,
                     index === selectedTab && styles.timelineTabActive,
                   ]}
-                  onPress={() => setSelectedTab(index)}
+                  onPress={() => {
+                    setFilters((prev) => ({ ...prev, selectedTab: index }));
+                    setScrollY(0);
+                    currentScrollYRef.current = 0;
+                    shouldRestoreScrollRef.current = true;
+                  }}
                 >
                   <Text
                     style={[

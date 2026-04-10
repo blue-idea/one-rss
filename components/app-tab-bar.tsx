@@ -2,9 +2,8 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { usePathname, useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { getActiveFromPath, type TabKey } from "@/components/app-tab-bar.utils";
 import { Colors } from "@/constants/theme";
-
-type TabKey = "index" | "explore" | "shelf" | "profile";
 
 type TabItem = {
   key: TabKey;
@@ -22,14 +21,6 @@ const TAB_ITEMS: TabItem[] = [
 
 type AppTabBarProps = {
   activeKey?: TabKey;
-};
-
-const getActiveFromPath = (pathname: string): TabKey | undefined => {
-  if (pathname === "/" || pathname === "/index") return "index";
-  if (pathname.startsWith("/explore")) return "explore";
-  if (pathname.startsWith("/shelf")) return "shelf";
-  if (pathname.startsWith("/profile")) return "profile";
-  return undefined;
 };
 
 export function AppTabBar({ activeKey }: AppTabBarProps) {
@@ -74,7 +65,13 @@ export function AppTabBar({ activeKey }: AppTabBarProps) {
             key={item.key}
             testID={`app-tab-${item.key}`}
             style={styles.item}
-            onPress={() => router.replace(item.href)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: focused }}
+            onPress={() => {
+              if (!focused) {
+                router.navigate(item.href);
+              }
+            }}
           >
             <MaterialIcons name={item.icon} size={22} color={color} />
             <Text style={[styles.label, { color }]}>{item.label}</Text>
