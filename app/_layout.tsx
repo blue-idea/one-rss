@@ -23,6 +23,7 @@ import {
 } from "@/constants/auth-routes";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { SubscriptionProvider } from "@/modules/subscription/context/subscription-context";
 
 void SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -105,7 +106,9 @@ function AuthRedirectRoot() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <AuthRedirectRoot />
+      <SubscriptionProvider>
+        <AuthRedirectRoot />
+      </SubscriptionProvider>
     </AuthProvider>
   );
 }

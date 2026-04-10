@@ -13,72 +13,25 @@ import {
 
 import { Header } from "@/components/header";
 import { Colors, Spacing } from "@/constants/theme";
+import { useSubscription } from "@/modules/subscription/context/subscription-context";
 
 const categories = ["精选", "科技", "设计", "商业"];
-
-type FeedSource = {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  logo: string;
-  subscribed?: boolean;
-};
-
-const sourceList: FeedSource[] = [
-  {
-    id: "1",
-    name: "TechCrunch",
-    description: "最新科技新闻与洞察",
-    category: "科技",
-    logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuAE-ta2S57fKuTKEAeBLvTNL1f1YP7tx8_gqYn4ZOK6cF-MlmWHqg4ePp5vJEy91XnEf5zVk7TA4avOovmNsiZGmeOh_4Utwz364QD9tPXw97wRe6uOaR9tE_d4bpKxsIc6x4JxytkhbK9MWrS3frL30GHpmvdnRc1CA-nxzwQZqalVCNP6QOtzhhyW4zYR2r0J_cijGfARsg6eLOJJ3GWqqZkDvmT7yj-UqGgha6CI4RyG8PMViAh7pRgGlssWetzQnFtwb2Y3lWIE",
-    subscribed: true,
-  },
-  {
-    id: "2",
-    name: "The Verge",
-    description: "科技、科学和文化新闻",
-    category: "科技",
-    logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuACNGO6mztpymOfaeA_nrL7ClnVvu3wrSmGhqq_Xvji5S5DufhKZj0hlicllgblQ0w5mUKCFyZqESdc9RaxMNbTeLp0gXxKjxrI7ro2Fkr05J-mlgKG-HeMXNsFpxdxd88NFU0ve3FqUJi5G3Rqut4Rxm1Yc-8LmF4Opvp021Jf2T2HVmTe0KFtbViKCEpT8Y2HrDgaPRvcAvg2XNQDLvwRSTWV3JvU3yKRJR5YEcb1RJQWbENepve8T8G18S6tRof5vPYp0bLyTvHm",
-  },
-  {
-    id: "3",
-    name: "Wired",
-    description: "前沿科技新闻报道",
-    category: "科技",
-    logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuBJOjJKINC_fwY7mGb0wd7O5FP7-oQ-0hVyEtW23vnN0lBu3L7LiE-hm_mcUPviFgCC9ByanJhyMH8Zsw4Lo9TkxYBxO42Q3kzMnnGvl48VFn-AfSJIU3KxfSRtyFpdn41XWYbHq7ogl6M-mPU-3yx4yNJ9aJOflAU1FKnphccQEJWdmonQ8zkfIA8LZGUhCJMpdoL1kJ6YppdzwXHHyqVAmDBwe4tss-mVcHncYWinsbPGUVm5g0IS0cSwe9xC-4OJCVjBqiLy0o51",
-  },
-  {
-    id: "4",
-    name: "Ars Technica",
-    description: "深度科技分析",
-    category: "科技",
-    logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuCOUd4Hn9TvUhIGFzCxNDp2KGEDSbWax5KGNsM5uPMMAtW8oCcthhjM2Lxdgibtwsa07orPOUB_AWUEJvpPsBcx0M-lq4Gfq_rTH6xDuW4pGnoIrjHsAXksz-x_tCSz4B3rdpWjZEAKCeYf2XIAynK9jFnH7wZtBre3y1gM8u2t4OWgjjbBG00Pa9pVM8W_ants9xFFG4XUU_jP-EIhaIEs8oxb9dWNYrlgjrFuJRlXdfwgpbjJz4HXuX5HEjaHbBsc9ey0M_prNQdD",
-  },
-  {
-    id: "5",
-    name: "Dezeen",
-    description: "最具影响力的建筑杂志",
-    category: "设计",
-    logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuALRuqkmw061d0myJ3L_XRMzUHZIQPLz8DhIouSbsZMpF_Vioel2-hb_HX2WWhLpKjQ0c37ODXkZ-6Fynu6KqjyTThakksmtz9FTXOzWzMoekRSL1gCoOEwsirP7XQrCYiSK0JK8w8Y3YkaGFkjvjQf6Coexoeh2iIvXcCWVC8vy74PbPSRe6uBVhHKuzbpi7I2MVEx0g_LDAKhsm-vLAgXh3WK6SrLNJJUrfoHvElRxjz3xDMrXDl3T-lhGr7fx1vAQUj6_9M0KOv4",
-  },
-  {
-    id: "6",
-    name: "Bloomberg",
-    description: "全球金融市场实时新闻",
-    category: "商业",
-    logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuAoyEbPUIMFSpJtMdMdldzDqZ_6d6WcoHrYh1Qh8KcswnfeS1YxT5atew-2mPJ68nh2k48vc4wKY7CsoQwiWOLZ09UmT04FtlS-hHN8lYWtR9rLA7xDEIIYDxjduBqi5l3Ny2KPL4ybYz3l-kaF1lFXtlakFaNJEl9IljzaLUDWk_68E786BaDjBAPydLszVYj2Bt1TMRcSjylw10Ll4U_3G6WqZpNopAsMGGrcUSPrNexz7ZAISq-P5SXJdeE10Bxyz3PZohdwc0hA",
-  },
-];
 
 export default function ExploreScreen() {
   const [selectedCategory, setSelectedCategory] = useState("精选");
   const [searchQuery, setSearchQuery] = useState("");
+  const {
+    clearNotice,
+    discoverableFeeds,
+    importByUrl,
+    notice,
+    toggleSubscription,
+  } = useSubscription();
   const colorScheme = "light";
   const colors = Colors[colorScheme];
 
   const filteredSources = useMemo(() => {
-    return sourceList.filter((source) => {
+    return discoverableFeeds.filter((source) => {
       const matchesCategory =
         selectedCategory === "精选" || source.category === selectedCategory;
       const q = searchQuery.trim().toLowerCase();
@@ -88,7 +41,19 @@ export default function ExploreScreen() {
         source.description.toLowerCase().includes(q);
       return matchesCategory && matchesSearch;
     });
-  }, [searchQuery, selectedCategory]);
+  }, [discoverableFeeds, searchQuery, selectedCategory]);
+
+  const handleImport = () => {
+    const result = importByUrl(searchQuery);
+    if (result.notice.kind === "success") {
+      setSearchQuery("");
+      setSelectedCategory("精选");
+    }
+  };
+
+  const handleToggleSubscription = (feedId: string, subscribed: boolean) => {
+    toggleSubscription(feedId, subscribed);
+  };
 
   const styles = StyleSheet.create({
     container: {
@@ -115,7 +80,6 @@ export default function ExploreScreen() {
       borderRadius: 12,
       paddingHorizontal: 14,
       height: 56,
-      marginBottom: Spacing.xl,
     },
     searchIconWrap: {
       marginRight: Spacing.sm,
@@ -142,8 +106,20 @@ export default function ExploreScreen() {
       fontSize: 13,
       fontWeight: "700",
     },
-    categoriesContainer: {
+    noticeBox: {
+      marginTop: Spacing.sm,
       marginBottom: Spacing.xl,
+      borderRadius: 12,
+      paddingHorizontal: Spacing.md,
+      paddingVertical: 10,
+      backgroundColor:
+        notice?.kind === "error" ? colors.errorContainer : "#dff3e5",
+    },
+    noticeText: {
+      color: notice?.kind === "error" ? colors.onErrorContainer : "#14532d",
+      fontSize: 13,
+      lineHeight: 18,
+      fontWeight: "600",
     },
     categoryScroll: {
       paddingRight: Spacing.xs,
@@ -182,7 +158,7 @@ export default function ExploreScreen() {
       borderWidth: 1,
       borderColor: "rgba(0,0,0,0.06)",
       padding: Spacing.md,
-      minHeight: 198,
+      minHeight: 214,
     },
     logoWrap: {
       width: 64,
@@ -209,6 +185,12 @@ export default function ExploreScreen() {
       lineHeight: 18,
       color: colors.onSurfaceVariant,
       minHeight: 38,
+      marginBottom: Spacing.sm,
+    },
+    cardMeta: {
+      fontSize: 12,
+      lineHeight: 16,
+      color: colors.onSurfaceVariant,
       marginBottom: Spacing.md,
     },
     subscribeBtn: {
@@ -239,6 +221,29 @@ export default function ExploreScreen() {
     categorySection: {
       marginBottom: Spacing.lg,
     },
+    emptyState: {
+      width: "100%",
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant,
+      borderStyle: "dashed",
+      padding: Spacing.xl,
+      alignItems: "center",
+      backgroundColor: colors.surfaceContainerLowest,
+    },
+    emptyTitle: {
+      fontSize: 18,
+      lineHeight: 24,
+      fontWeight: "700",
+      color: colors.onSurface,
+      marginBottom: Spacing.xs,
+    },
+    emptyText: {
+      fontSize: 13,
+      lineHeight: 20,
+      color: colors.onSurfaceVariant,
+      textAlign: "center",
+    },
   });
 
   return (
@@ -257,12 +262,27 @@ export default function ExploreScreen() {
                 placeholder="添加 RSS 地址或搜索"
                 placeholderTextColor={`${colors.onSurfaceVariant}99`}
                 value={searchQuery}
-                onChangeText={setSearchQuery}
+                onChangeText={(value) => {
+                  setSearchQuery(value);
+                  if (notice) {
+                    clearNotice();
+                  }
+                }}
+                testID="explore-search-input"
               />
-              <TouchableOpacity style={styles.addButton}>
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={handleImport}
+                testID="explore-add-button"
+              >
                 <Text style={styles.addButtonText}>添加订阅</Text>
               </TouchableOpacity>
             </View>
+            {notice ? (
+              <View style={styles.noticeBox} testID="explore-notice">
+                <Text style={styles.noticeText}>{notice.message}</Text>
+              </View>
+            ) : null}
 
             <ScrollView
               horizontal
@@ -293,6 +313,15 @@ export default function ExploreScreen() {
           </View>
 
           <View style={styles.grid}>
+            {filteredSources.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyTitle}>没有匹配的订阅源</Text>
+                <Text style={styles.emptyText}>
+                  试试搜索其他关键词，或输入完整 RSS 地址后点击“添加订阅”。
+                </Text>
+              </View>
+            ) : null}
+
             {filteredSources.map((source) => (
               <View key={source.id} style={styles.gridItem}>
                 <View style={styles.card}>
@@ -309,11 +338,18 @@ export default function ExploreScreen() {
                   <Text style={styles.cardDescription} numberOfLines={2}>
                     {source.description}
                   </Text>
+                  <Text style={styles.cardMeta}>
+                    {source.subscribed ? "已订阅" : source.category}
+                  </Text>
                   <TouchableOpacity
                     style={[
                       styles.subscribeBtn,
                       source.subscribed && styles.subscribeBtnActive,
                     ]}
+                    onPress={() =>
+                      handleToggleSubscription(source.id, source.subscribed)
+                    }
+                    accessibilityLabel={`${source.subscribed ? "取消订阅" : "订阅"} ${source.name}`}
                   >
                     <MaterialIcons
                       name={source.subscribed ? "check" : "add"}
@@ -328,7 +364,7 @@ export default function ExploreScreen() {
                         source.subscribed && styles.subscribeBtnTextActive,
                       ]}
                     >
-                      {source.subscribed ? "已订阅" : "订阅"}
+                      {source.subscribed ? "取消订阅" : "订阅"}
                     </Text>
                   </TouchableOpacity>
                 </View>
