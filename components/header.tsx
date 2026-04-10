@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
-import { Colors, Spacing } from "@/constants/theme";
+import { Colors, Fonts, Radii, Spacing, Typography } from "@/constants/theme";
 
 export type HeaderProps = {
   title: string;
@@ -54,8 +54,8 @@ export function Header({
       paddingTop: topPadding,
       paddingBottom: Spacing.md,
       backgroundColor: bgColor,
-      borderBottomWidth: 1,
-      borderBottomColor: "rgba(193, 198, 215, 0.3)",
+      borderBottomLeftRadius: Radii.lg,
+      borderBottomRightRadius: Radii.lg,
     },
     leftContainer: {
       flexDirection: "row",
@@ -78,12 +78,13 @@ export function Header({
       paddingHorizontal: Spacing.md,
     },
     title: {
-      fontSize: 20,
-      lineHeight: 24,
-      fontWeight: "800",
+      ...Typography.label,
+      fontSize: 15,
+      lineHeight: 18,
       color: colors.primary,
       textTransform: "uppercase",
-      letterSpacing: -0.2,
+      letterSpacing: 1.2,
+      fontFamily: Fonts?.sans,
     },
     rightContainer: {
       minWidth: 74,
@@ -117,6 +118,8 @@ export function Header({
     },
     rightText: {
       fontSize: 15,
+      fontFamily: Fonts?.sans,
+      fontWeight: "600",
       color: colors.primary,
     },
   });

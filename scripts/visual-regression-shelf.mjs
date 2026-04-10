@@ -49,7 +49,7 @@ const run = async () => {
   try {
     const designPage = await browser.newPage({ viewport: VIEWPORT, deviceScaleFactor: 1 });
     await designPage.goto(`file:///${DESIGN_HTML.replace(/\\/g, '/')}`, {
-      waitUntil: 'networkidle',
+      waitUntil: 'load',
     });
     await designPage.waitForTimeout(1600);
     await designPage.screenshot({ path: DESIGN_IMAGE, fullPage: false });
@@ -65,7 +65,7 @@ const run = async () => {
     try {
       await waitForUrlReady(APP_URL);
       const appPage = await browser.newPage({ viewport: VIEWPORT, deviceScaleFactor: 1 });
-      await appPage.goto(APP_URL, { waitUntil: 'networkidle' });
+      await appPage.goto(APP_URL, { waitUntil: 'load' });
       await appPage.waitForTimeout(1600);
       await appPage.screenshot({ path: ACTUAL_IMAGE, fullPage: false });
       await appPage.close();

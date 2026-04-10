@@ -3,7 +3,6 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter, type Href } from "expo-router";
 import {
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,10 +12,25 @@ import {
 } from "react-native";
 
 import { Header } from "@/components/header";
-import { Colors, Spacing } from "@/constants/theme";
+import { StatePanel } from "@/components/ui/state-panel";
+import {
+  Colors,
+  Elevation,
+  Radii,
+  Spacing,
+  Typography,
+} from "@/constants/theme";
 import { useBookmarks } from "@/contexts/bookmark-context";
 
-const filterChips = ["全部", "收藏", "设计", "科技", "文化", "建筑", "商业"];
+const filterChips = [
+  "全部",
+  "收藏",
+  "设计",
+  "科技",
+  "文化",
+  "建筑",
+  "商业",
+] as const;
 
 type ShelfFeed = {
   id: string;
@@ -73,9 +87,9 @@ const shelfFeeds: ShelfFeed[] = [
 export default function ShelfScreen() {
   const router = useRouter();
   const [selectedChip, setSelectedChip] = useState("全部");
-  const colorScheme = "light";
-  const colors = Colors[colorScheme];
-  const { isBookmarked: checkBookmark, bookmarkedIds } = useBookmarks();
+  const colors = Colors.light;
+  const { bookmarkedIds } = useBookmarks();
+
   const visibleFeeds = useMemo(
     () =>
       shelfFeeds.filter((item) => {
@@ -86,7 +100,6 @@ export default function ShelfScreen() {
     [selectedChip],
   );
 
-  // Get bookmarked articles from context - map to match the article format
   const bookmarkedArticles = useMemo(() => {
     const articles = [
       {
@@ -102,11 +115,8 @@ export default function ShelfScreen() {
         time: "8小时前",
       },
     ];
-    // Filter to only show articles that are actually bookmarked
     return articles.filter((article) => bookmarkedIds.has(article.id));
   }, [bookmarkedIds]);
-
-  const showBookmarks = selectedChip === "收藏";
 
   const handleArticlePress = (articleId: string) => {
     router.push({
@@ -130,55 +140,59 @@ export default function ShelfScreen() {
     content: {
       paddingHorizontal: Spacing.xl,
       paddingBottom: 120,
+      gap: Spacing.lg,
+    },
+    heroBlock: {
+      borderRadius: Radii.xl,
+      backgroundColor: colors.surfaceContainerLow,
+      padding: Spacing.xl,
+      gap: Spacing.sm,
     },
     heroTitle: {
-      fontSize: 44,
-      lineHeight: 50,
-      fontWeight: "800",
+      ...Typography.display,
       color: colors.onSurface,
-      fontFamily: Platform.OS === "ios" ? "Georgia" : "serif",
     },
     heroSubTitle: {
-      fontSize: 22,
-      lineHeight: 28,
+      ...Typography.body,
       color: colors.onSurfaceVariant,
-      marginTop: 4,
-      marginBottom: Spacing.xl,
-      fontStyle: "italic",
-      fontFamily: Platform.OS === "ios" ? "Georgia" : "serif",
+    },
+    chipsWrap: {
+      borderRadius: Radii.xl,
+      backgroundColor: colors.surfaceContainerHigh,
+      padding: Spacing.lg,
     },
     chipList: {
-      paddingBottom: Spacing.sm,
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: Spacing.sm,
     },
     chip: {
       paddingHorizontal: Spacing.lg,
       paddingVertical: 10,
-      borderRadius: 20,
-      marginRight: Spacing.sm,
-      backgroundColor: colors.surfaceContainerHigh,
+      borderRadius: Radii.pill,
+      backgroundColor: colors.surfaceContainerLowest,
     },
     chipActive: {
       backgroundColor: colors.primary,
     },
     chipText: {
-      fontSize: 14,
-      fontWeight: "600",
+      ...Typography.label,
       color: colors.onSurfaceVariant,
     },
     chipTextActive: {
       color: colors.onPrimary,
     },
     listWrap: {
-      gap: Spacing.sm,
-      marginTop: Spacing.lg,
+      gap: Spacing.md,
     },
     row: {
-      borderRadius: 14,
-      backgroundColor: colors.surfaceContainerLow,
+      borderRadius: Radii.xl,
+      backgroundColor: colors.surfaceContainerLowest,
       padding: Spacing.lg,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
+      ...Elevation.card,
     },
     rowLeft: {
       flexDirection: "row",
@@ -189,7 +203,7 @@ export default function ShelfScreen() {
     logoWrap: {
       width: 56,
       height: 56,
-      borderRadius: 12,
+      borderRadius: Radii.md,
       backgroundColor: "#ffffff",
       padding: Spacing.sm,
       marginRight: Spacing.lg,
@@ -200,34 +214,38 @@ export default function ShelfScreen() {
       height: "100%",
     },
     feedTitle: {
-      fontSize: 22,
-      lineHeight: 26,
-      fontWeight: "700",
+      ...Typography.cardTitle,
       color: colors.onSurface,
       marginBottom: Spacing.xs,
-      fontFamily: Platform.OS === "ios" ? "Georgia" : "serif",
+      flex: 1,
+    },
+    articleInfo: {
+      flex: 1,
     },
     metaRow: {
       flexDirection: "row",
       alignItems: "center",
       gap: Spacing.sm,
+      flexWrap: "wrap",
     },
     tag: {
-      borderRadius: 4,
-      backgroundColor: colors.surfaceContainerHighest,
+      borderRadius: Radii.sm,
+      backgroundColor: colors.surfaceContainerLow,
       paddingHorizontal: Spacing.sm,
-      paddingVertical: 2,
+      paddingVertical: 4,
     },
     tagText: {
-      fontSize: 10,
+      ...Typography.micro,
       color: colors.onSurfaceVariant,
-      letterSpacing: 0.6,
       textTransform: "uppercase",
-      fontWeight: "700",
+    },
+    sourceName: {
+      ...Typography.bodyStrong,
+      color: colors.onSurfaceVariant,
     },
     updateText: {
-      fontSize: 12,
-      color: `${colors.onSurfaceVariant}AA`,
+      ...Typography.micro,
+      color: `${colors.onSurfaceVariant}CC`,
     },
     rowRight: {
       flexDirection: "row",
@@ -235,102 +253,63 @@ export default function ShelfScreen() {
       gap: Spacing.md,
     },
     unread: {
-      minWidth: 24,
-      height: 24,
-      borderRadius: 8,
-      backgroundColor: `${colors.primary}1A`,
-      paddingHorizontal: 6,
+      minWidth: 28,
+      height: 28,
+      borderRadius: 10,
+      backgroundColor: `${colors.primary}16`,
+      paddingHorizontal: 8,
       alignItems: "center",
       justifyContent: "center",
     },
     unreadText: {
-      fontSize: 12,
-      fontWeight: "700",
+      ...Typography.label,
       color: colors.primary,
     },
-    emptyWrap: {
-      marginTop: Spacing.xxl,
-      borderRadius: 32,
-      borderWidth: 2,
-      borderStyle: "dashed",
-      borderColor: `${colors.outlineVariant}66`,
-      padding: Spacing.xxxl,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    emptyIconWrap: {
-      width: 64,
-      height: 64,
-      borderRadius: 32,
-      backgroundColor: colors.surfaceContainerHigh,
-      alignItems: "center",
-      justifyContent: "center",
-      marginBottom: Spacing.md,
-    },
-    emptyTitle: {
-      fontSize: 28,
-      fontWeight: "700",
-      color: colors.onSurface,
-      marginBottom: 4,
-      fontFamily: Platform.OS === "ios" ? "Georgia" : "serif",
-    },
-    emptyDesc: {
-      textAlign: "center",
-      color: colors.onSurfaceVariant,
-      fontSize: 18,
-      lineHeight: 26,
-      marginBottom: Spacing.lg,
-      fontFamily: Platform.OS === "ios" ? "Georgia" : "serif",
-    },
-    cta: {
-      borderRadius: 24,
-      backgroundColor: colors.primary,
-      paddingHorizontal: Spacing.xxl,
-      paddingVertical: 12,
-    },
-    ctaText: {
-      color: colors.onPrimary,
-      fontSize: 16,
-      fontWeight: "700",
+    ctaWrap: {
+      marginTop: Spacing.sm,
     },
   });
+
+  const showBookmarks = selectedChip === "收藏";
 
   return (
     <View style={styles.container}>
       <Header title="The Curator" />
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
-          <Text style={styles.heroTitle}>书架</Text>
-          <Text style={styles.heroSubTitle}>您收藏的数字之声。</Text>
+          <View style={styles.heroBlock}>
+            <Text style={styles.heroTitle}>书架</Text>
+            <Text style={styles.heroSubTitle}>
+              收藏与订阅统一沉淀在连续色块中，减少碎片化列表边界。
+            </Text>
+          </View>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.chipList}
-          >
-            {filterChips.map((chip) => (
-              <TouchableOpacity
-                key={chip}
-                style={[
-                  styles.chip,
-                  selectedChip === chip && styles.chipActive,
-                ]}
-                onPress={() => setSelectedChip(chip)}
-              >
-                <Text
+          <View style={styles.chipsWrap}>
+            <View style={styles.chipList}>
+              {filterChips.map((chip) => (
+                <TouchableOpacity
+                  key={chip}
                   style={[
-                    styles.chipText,
-                    selectedChip === chip && styles.chipTextActive,
+                    styles.chip,
+                    selectedChip === chip && styles.chipActive,
                   ]}
+                  onPress={() => setSelectedChip(chip)}
                 >
-                  {chip}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+                  <Text
+                    style={[
+                      styles.chipText,
+                      selectedChip === chip && styles.chipTextActive,
+                    ]}
+                  >
+                    {chip}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
 
           <View style={styles.listWrap}>
-            {selectedChip === "收藏" ? (
+            {showBookmarks ? (
               bookmarkedArticles.length > 0 ? (
                 bookmarkedArticles.map((article) => (
                   <Pressable
@@ -344,7 +323,9 @@ export default function ShelfScreen() {
                           {article.title}
                         </Text>
                         <View style={styles.metaRow}>
-                          <Text style={styles.sourceName}>{article.source}</Text>
+                          <Text style={styles.sourceName}>
+                            {article.source}
+                          </Text>
                           <Text style={styles.updateText}>{article.time}</Text>
                         </View>
                       </View>
@@ -353,23 +334,19 @@ export default function ShelfScreen() {
                       <MaterialIcons
                         name="chevron-right"
                         size={22}
-                        color={colors.outlineVariant}
+                        color={colors.outline}
                       />
                     </View>
                   </Pressable>
                 ))
               ) : (
-                <View style={styles.emptyBookmarkWrap}>
-                  <View style={styles.emptyIconWrap}>
-                    <MaterialIcons name="bookmark-border" size={30} color={colors.primary} />
-                  </View>
-                  <Text style={styles.emptyTitle}>暂无收藏</Text>
-                  <Text style={styles.emptyDesc}>
-                    在今日页或阅读页点击收藏按钮来保存文章。
-                  </Text>
-                </View>
+                <StatePanel
+                  icon="bookmark-border"
+                  title="暂无收藏"
+                  message="在今日页或阅读页点击收藏按钮，文章会在这里形成统一的收纳块。"
+                />
               )
-            ) : (
+            ) : visibleFeeds.length > 0 ? (
               visibleFeeds.map((feed) => (
                 <Pressable
                   key={feed.id}
@@ -384,7 +361,7 @@ export default function ShelfScreen() {
                         contentFit="contain"
                       />
                     </View>
-                    <View>
+                    <View style={styles.articleInfo}>
                       <Text style={styles.feedTitle} numberOfLines={1}>
                         {feed.name}
                       </Text>
@@ -403,25 +380,28 @@ export default function ShelfScreen() {
                     <MaterialIcons
                       name="chevron-right"
                       size={22}
-                      color={colors.outlineVariant}
+                      color={colors.outline}
                     />
                   </View>
                 </Pressable>
               ))
+            ) : (
+              <StatePanel
+                icon="rss-feed"
+                title="该分类暂时为空"
+                message="切换其他分类或稍后再来，新的订阅源会继续同步到书架。"
+              />
             )}
           </View>
 
-          <View style={styles.emptyWrap}>
-            <View style={styles.emptyIconWrap}>
-              <MaterialIcons name="rss-feed" size={30} color={colors.primary} />
-            </View>
-            <Text style={styles.emptyTitle}>发现更多声音</Text>
-            <Text style={styles.emptyDesc}>
-              寻找并关注世界上最优秀的作家和出版物。
-            </Text>
-            <TouchableOpacity style={styles.cta}>
-              <Text style={styles.ctaText}>探索目录</Text>
-            </TouchableOpacity>
+          <View style={styles.ctaWrap}>
+            <StatePanel
+              icon="travel-explore"
+              title="发现更多声音"
+              message="继续探索目录，把新的来源沉淀进你的专属书架。"
+              actionLabel="探索目录"
+              onAction={() => router.push("/(tabs)/explore")}
+            />
           </View>
         </View>
       </ScrollView>

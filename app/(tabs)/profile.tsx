@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import {
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,46 +11,47 @@ import {
 import { useRouter } from "expo-router";
 
 import { Header } from "@/components/header";
+import { StatePanel } from "@/components/ui/state-panel";
 import { useAuth } from "@/contexts/auth-context";
-import { usePreferences, INTERFACE_LANGUAGES, TRANSLATION_LANGUAGES } from "@/contexts/preference-context";
-import { Colors, Spacing } from "@/constants/theme";
-import { fetchUserProfileStats, type UserProfileStats } from "@/modules/profile/api/fetchUserProfileStats";
+import {
+  INTERFACE_LANGUAGES,
+  TRANSLATION_LANGUAGES,
+  usePreferences,
+} from "@/contexts/preference-context";
+import {
+  Colors,
+  Elevation,
+  Radii,
+  Spacing,
+  Typography,
+} from "@/constants/theme";
+import {
+  fetchUserProfileStats,
+  type UserProfileStats,
+} from "@/modules/profile/api/fetchUserProfileStats";
 
-const profileStats = [
+const emptyStats = [
   { id: "sources", value: "0", label: "订阅源" },
   { id: "read", value: "0", label: "已读" },
   { id: "fav", value: "0", label: "收藏" },
-];
-
-const settingsItems = [
-  {
-    id: "reading",
-    icon: "menu-book",
-    title: "阅读偏好",
-    desc: "字体大小，行高，主题",
-  },
-  {
-    id: "notify",
-    icon: "notifications-active",
-    title: "通知设置",
-    desc: "重大新闻，每日摘要",
-  },
 ];
 
 export default function ProfileScreen() {
   const { signOut } = useAuth();
   const { interfaceLanguage, translationLanguage } = usePreferences();
   const router = useRouter();
-  const colorScheme = "light";
-  const colors = Colors[colorScheme];
+  const colors = Colors.light;
   const [stats, setStats] = useState<UserProfileStats | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Get display labels for current languages
-  const interfaceLangLabel = INTERFACE_LANGUAGES.find(l => l.value === interfaceLanguage)?.label ?? "中文 (简体)";
-  const translationLangLabel = TRANSLATION_LANGUAGES.find(l => l.value === translationLanguage)?.label ?? "English";
+  const interfaceLangLabel =
+    INTERFACE_LANGUAGES.find((item) => item.value === interfaceLanguage)
+      ?.label ?? "简体中文";
+  const translationLangLabel =
+    TRANSLATION_LANGUAGES.find((item) => item.value === translationLanguage)
+      ?.label ?? "English";
 
-  // Dynamic settings items based on preferences
-  const dynamicSettingsItems = [
+  const settingsItems = [
     {
       id: "reading",
       icon: "menu-book",
@@ -64,41 +64,55 @@ export default function ProfileScreen() {
       title: "通知设置",
       desc: "重大新闻，每日摘要",
     },
-    { id: "lang", icon: "language", title: "界面语言", desc: interfaceLangLabel, route: "/language-settings?type=interface" },
-    { id: "translation", icon: "translate", title: "翻译语言", desc: translationLangLabel, route: "/language-settings?type=translation" },
+    {
+      id: "lang",
+      icon: "language",
+      title: "界面语言",
+      desc: interfaceLangLabel,
+      route: "/language-settings?type=interface",
+    },
+    {
+      id: "translation",
+      icon: "translate",
+      title: "翻译语言",
+      desc: translationLangLabel,
+      route: "/language-settings?type=translation",
+    },
   ];
 
-  const handleSettingPress = (item: typeof dynamicSettingsItems[0]) => {
-    if (item.id === "lang" || item.id === "translation") {
-      router.push(item.route as any);
-    }
-    // Reading and notify settings would be handled in future tasks
-  };
-
-  // Fetch user stats
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
+        setError(null);
         const userStats = await fetchUserProfileStats();
         if (!cancelled) {
           setStats(userStats);
         }
-      } catch (error) {
-        console.error("Failed to fetch user stats:", error);
+      } catch (err) {
+        console.error("Failed to fetch user stats:", err);
+        if (!cancelled) {
+          setError("账户统计暂时无法获取，请稍后重试。");
+        }
       }
     })();
+
     return () => {
       cancelled = true;
     };
   }, []);
 
-  // Update stats display when fetched
-  const displayStats = stats ? [
-    { id: "sources", value: String(stats.subscriptionCount), label: "订阅源" },
-    { id: "read", value: String(stats.readCount), label: "已读" },
-    { id: "fav", value: String(stats.bookmarkCount), label: "收藏" },
-  ] : profileStats;
+  const displayStats = stats
+    ? [
+        {
+          id: "sources",
+          value: String(stats.subscriptionCount),
+          label: "订阅源",
+        },
+        { id: "read", value: String(stats.readCount), label: "已读" },
+        { id: "fav", value: String(stats.bookmarkCount), label: "收藏" },
+      ]
+    : emptyStats;
 
   const styles = StyleSheet.create({
     container: {
@@ -108,14 +122,14 @@ export default function ProfileScreen() {
     content: {
       paddingHorizontal: Spacing.xl,
       paddingBottom: 112,
+      gap: Spacing.lg,
     },
     profileSection: {
-      flexDirection: "row",
-      justifyContent: "center",
-      marginBottom: Spacing.xl,
-    },
-    profileInner: {
+      borderRadius: Radii.xl,
+      backgroundColor: colors.surfaceContainerLow,
+      padding: Spacing.xl,
       alignItems: "center",
+      ...Elevation.card,
     },
     mainAvatarWrap: {
       width: 112,
@@ -145,72 +159,71 @@ export default function ProfileScreen() {
       justifyContent: "center",
     },
     userName: {
-      fontSize: 38,
-      lineHeight: 42,
+      ...Typography.display,
       color: colors.onSurface,
-      fontWeight: "800",
-      fontFamily: Platform.OS === "ios" ? "Georgia" : "serif",
+      fontSize: 36,
+      lineHeight: 40,
     },
     memberTag: {
       marginTop: Spacing.sm,
-      borderRadius: 999,
+      borderRadius: Radii.pill,
       paddingHorizontal: Spacing.md,
       paddingVertical: 6,
       backgroundColor: colors.surfaceContainerHigh,
     },
     memberTagText: {
+      ...Typography.micro,
       color: colors.primary,
-      fontSize: 11,
-      fontWeight: "800",
-      letterSpacing: 1.1,
       textTransform: "uppercase",
+    },
+    profileHint: {
+      ...Typography.body,
+      color: colors.onSurfaceVariant,
+      textAlign: "center",
+      marginTop: Spacing.md,
     },
     statsGrid: {
       flexDirection: "row",
       justifyContent: "space-between",
-      marginBottom: Spacing.xxl,
     },
     statCard: {
       width: "31%",
-      borderRadius: 14,
-      backgroundColor: colors.surfaceContainerLow,
+      borderRadius: Radii.xl,
+      backgroundColor: colors.surfaceContainerLowest,
       alignItems: "center",
       justifyContent: "center",
       paddingVertical: Spacing.xl,
+      ...Elevation.card,
     },
     statValue: {
-      fontSize: 30,
-      lineHeight: 34,
+      ...Typography.title,
       color: colors.primary,
-      fontWeight: "900",
       marginBottom: 4,
-      fontFamily: Platform.OS === "ios" ? "Georgia" : "serif",
     },
     statLabel: {
-      fontSize: 11,
-      fontWeight: "700",
-      letterSpacing: 0.3,
+      ...Typography.micro,
       textTransform: "uppercase",
       color: colors.onSurfaceVariant,
     },
+    sectionWrap: {
+      borderRadius: Radii.xl,
+      backgroundColor: colors.surfaceContainerHigh,
+      padding: Spacing.lg,
+      gap: Spacing.sm,
+    },
     sectionTitle: {
-      fontSize: 22,
-      lineHeight: 26,
-      fontWeight: "700",
+      ...Typography.sectionTitle,
       color: colors.onSurface,
-      paddingHorizontal: Spacing.xs,
-      marginBottom: Spacing.md,
-      fontFamily: Platform.OS === "ios" ? "Georgia" : "serif",
     },
     settingsList: {
-      gap: 8,
+      gap: Spacing.sm,
     },
     settingsItem: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      backgroundColor: colors.surfaceContainerLow,
-      borderRadius: 14,
+      backgroundColor: colors.surfaceContainerLowest,
+      borderRadius: Radii.lg,
       paddingHorizontal: Spacing.lg,
       paddingVertical: Spacing.lg,
     },
@@ -221,36 +234,27 @@ export default function ProfileScreen() {
       marginRight: Spacing.md,
     },
     settingIconWrap: {
-      width: 40,
-      height: 40,
-      borderRadius: 10,
-      backgroundColor: colors.surface,
+      width: 44,
+      height: 44,
+      borderRadius: Radii.md,
+      backgroundColor: colors.surfaceContainerLow,
       alignItems: "center",
       justifyContent: "center",
       marginRight: Spacing.md,
     },
     settingTitle: {
-      fontSize: 22,
-      lineHeight: 24,
-      fontWeight: "700",
+      ...Typography.cardTitle,
       color: colors.onSurface,
       marginBottom: 2,
-      fontFamily: Platform.OS === "ios" ? "Georgia" : "serif",
     },
     settingDesc: {
-      fontSize: 12,
-      color: "#6b7280",
-    },
-    logoutWrap: {
-      marginTop: Spacing.xxl,
-      paddingTop: Spacing.lg,
-      alignItems: "center",
+      ...Typography.body,
+      color: colors.onSurfaceVariant,
     },
     logoutBtn: {
       width: "100%",
-      borderRadius: 999,
-      borderWidth: 2,
-      borderColor: `${colors.error}1A`,
+      borderRadius: Radii.pill,
+      backgroundColor: colors.errorContainer,
       height: 54,
       flexDirection: "row",
       alignItems: "center",
@@ -258,17 +262,14 @@ export default function ProfileScreen() {
       gap: Spacing.sm,
     },
     logoutText: {
-      color: colors.error,
-      fontSize: 24,
-      lineHeight: 26,
-      fontWeight: "700",
-      fontFamily: Platform.OS === "ios" ? "Georgia" : "serif",
+      ...Typography.bodyStrong,
+      color: colors.onErrorContainer,
     },
     version: {
-      marginTop: Spacing.lg,
-      fontSize: 10,
+      marginTop: Spacing.md,
+      ...Typography.micro,
       color: colors.onSurfaceVariant,
-      letterSpacing: 2,
+      textAlign: "center",
       textTransform: "uppercase",
     },
   });
@@ -276,32 +277,32 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <Header title="The Curator" />
-
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           <View style={styles.profileSection}>
-            <View style={styles.profileInner}>
-              <View style={styles.mainAvatarWrap}>
-                <Image
-                  source={{
-                    uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuC5TyUeGUezGxfEjFjzDwqdTDcwMfBR70QBCQjH0KwZQxjEbrNatuR-5Md-KdGlmsArPP8toZ-5HqLoOsdngVUzxz4Du0RCWlPSOevqrYIH_lfDOwSSIrqtjjK1lnNHIsKi1UMKGeEn5TcbGNQ7EUmfK62MzCe7oRO8S80fYah9Pr0PdnpYpieLYxQgJQJlXqS2lVUzufSSrLvljja2l4blGDhpG_UU0v3SjSR5Qoz268rEWks6j7xgRnz5qypvzsIXhsjQ1GsLEAVG",
-                  }}
-                  style={styles.mainAvatar}
-                  contentFit="cover"
+            <View style={styles.mainAvatarWrap}>
+              <Image
+                source={{
+                  uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuC5TyUeGUezGxfEjFjzDwqdTDcwMfBR70QBCQjH0KwZQxjEbrNatuR-5Md-KdGlmsArPP8toZ-5HqLoOsdngVUzxz4Du0RCWlPSOevqrYIH_lfDOwSSIrqtjjK1lnNHIsKi1UMKGeEn5TcbGNQ7EUmfK62MzCe7oRO8S80fYah9Pr0PdnpYpieLYxQgJQJlXqS2lVUzufSSrLvljja2l4blGDhpG_UU0v3SjSR5Qoz268rEWks6j7xgRnz5qypvzsIXhsjQ1GsLEAVG",
+                }}
+                style={styles.mainAvatar}
+                contentFit="cover"
+              />
+              <View style={styles.verifiedBadge}>
+                <MaterialIcons
+                  name="verified"
+                  size={14}
+                  color={colors.onPrimary}
                 />
-                <View style={styles.verifiedBadge}>
-                  <MaterialIcons
-                    name="verified"
-                    size={14}
-                    color={colors.onPrimary}
-                  />
-                </View>
-              </View>
-              <Text style={styles.userName}>Reader 101</Text>
-              <View style={styles.memberTag}>
-                <Text style={styles.memberTagText}>高级会员</Text>
               </View>
             </View>
+            <Text style={styles.userName}>Reader 101</Text>
+            <View style={styles.memberTag}>
+              <Text style={styles.memberTagText}>高级会员</Text>
+            </View>
+            <Text style={styles.profileHint}>
+              账户信息、语言偏好与阅读设置共享同一套卡片层级和交互密度。
+            </Text>
           </View>
 
           <View style={styles.statsGrid}>
@@ -313,41 +314,65 @@ export default function ProfileScreen() {
             ))}
           </View>
 
-          <Text style={styles.sectionTitle}>账户设置</Text>
-          <View style={styles.settingsList}>
-            {dynamicSettingsItems.map((item) => (
-              <TouchableOpacity key={item.id} style={styles.settingsItem} onPress={() => handleSettingPress(item)}>
-                <View style={styles.settingLeft}>
-                  <View style={styles.settingIconWrap}>
-                    <MaterialIcons
-                      name={item.icon as never}
-                      size={20}
-                      color={colors.primary}
-                    />
+          {error ? (
+            <StatePanel
+              icon="cloud-off"
+              tone="error"
+              title="统计加载失败"
+              message={error}
+            />
+          ) : null}
+
+          <View style={styles.sectionWrap}>
+            <Text style={styles.sectionTitle}>账户设置</Text>
+            <View style={styles.settingsList}>
+              {settingsItems.map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.settingsItem}
+                  onPress={() => {
+                    if (item.route) {
+                      router.push(item.route as never);
+                    }
+                  }}
+                >
+                  <View style={styles.settingLeft}>
+                    <View style={styles.settingIconWrap}>
+                      <MaterialIcons
+                        name={item.icon as never}
+                        size={20}
+                        color={colors.primary}
+                      />
+                    </View>
+                    <View>
+                      <Text style={styles.settingTitle}>{item.title}</Text>
+                      <Text style={styles.settingDesc}>{item.desc}</Text>
+                    </View>
                   </View>
-                  <View>
-                    <Text style={styles.settingTitle}>{item.title}</Text>
-                    <Text style={styles.settingDesc}>{item.desc}</Text>
-                  </View>
-                </View>
-                <MaterialIcons
-                  name="chevron-right"
-                  size={22}
-                  color={colors.onSurfaceVariant}
-                />
-              </TouchableOpacity>
-            ))}
+                  <MaterialIcons
+                    name="chevron-right"
+                    size={22}
+                    color={colors.onSurfaceVariant}
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
 
-          <View style={styles.logoutWrap}>
+          <View style={styles.sectionWrap}>
+            <Text style={styles.sectionTitle}>账户动作</Text>
             <TouchableOpacity
               style={styles.logoutBtn}
               onPress={() => void signOut()}
             >
-              <MaterialIcons name="logout" size={20} color={colors.error} />
+              <MaterialIcons
+                name="logout"
+                size={20}
+                color={colors.onErrorContainer}
+              />
               <Text style={styles.logoutText}>退出登录</Text>
             </TouchableOpacity>
-            <Text style={styles.version}>THE CURATOR 版本 2.4.0</Text>
+            <Text style={styles.version}>The Curator 版本 2.4.0</Text>
           </View>
         </View>
       </ScrollView>

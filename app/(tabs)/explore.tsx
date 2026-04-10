@@ -2,7 +2,6 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useMemo, useState } from "react";
 import {
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,9 +11,15 @@ import {
 } from "react-native";
 
 import { Header } from "@/components/header";
-import { Colors, Spacing } from "@/constants/theme";
+import {
+  Colors,
+  Elevation,
+  Radii,
+  Spacing,
+  Typography,
+} from "@/constants/theme";
 
-const categories = ["精选", "科技", "设计", "商业"];
+const categories = ["精选", "科技", "设计", "商业"] as const;
 
 type FeedSource = {
   id: string;
@@ -74,8 +79,7 @@ const sourceList: FeedSource[] = [
 export default function ExploreScreen() {
   const [selectedCategory, setSelectedCategory] = useState("精选");
   const [searchQuery, setSearchQuery] = useState("");
-  const colorScheme = "light";
-  const colors = Colors[colorScheme];
+  const colors = Colors.light;
 
   const filteredSources = useMemo(() => {
     return sourceList.filter((source) => {
@@ -98,70 +102,75 @@ export default function ExploreScreen() {
     content: {
       paddingHorizontal: Spacing.xl,
       paddingBottom: 104,
+      gap: Spacing.lg,
+    },
+    heroBlock: {
+      borderRadius: Radii.xl,
+      backgroundColor: colors.surfaceContainerLow,
+      padding: Spacing.xl,
+      gap: Spacing.sm,
     },
     title: {
-      fontSize: 34,
-      lineHeight: 40,
-      fontWeight: "700",
+      ...Typography.display,
       color: colors.onSurface,
-      fontFamily: Platform.OS === "ios" ? "Georgia" : "serif",
-      marginBottom: Spacing.lg,
+    },
+    subtitle: {
+      ...Typography.body,
+      color: colors.onSurfaceVariant,
+    },
+    searchSection: {
+      borderRadius: Radii.xl,
+      backgroundColor: colors.surfaceContainerHigh,
+      padding: Spacing.lg,
+      gap: Spacing.md,
     },
     searchContainer: {
       position: "relative",
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: colors.surfaceContainerHighest,
-      borderRadius: 12,
+      backgroundColor: colors.surfaceContainerLowest,
+      borderRadius: Radii.lg,
       paddingHorizontal: 14,
-      height: 56,
-      marginBottom: Spacing.xl,
-    },
-    searchIconWrap: {
-      marginRight: Spacing.sm,
+      minHeight: 58,
     },
     searchInput: {
       flex: 1,
-      fontSize: 16,
+      ...Typography.body,
       color: colors.onSurface,
       paddingVertical: 0,
-      paddingRight: 106,
+      paddingRight: 110,
     },
     addButton: {
       position: "absolute",
       right: 8,
       top: 8,
       bottom: 8,
-      borderRadius: 9,
+      borderRadius: Radii.md,
       backgroundColor: colors.primary,
       paddingHorizontal: Spacing.md,
       justifyContent: "center",
     },
     addButtonText: {
+      ...Typography.label,
       color: colors.onPrimary,
-      fontSize: 13,
-      fontWeight: "700",
     },
-    categoriesContainer: {
-      marginBottom: Spacing.xl,
-    },
-    categoryScroll: {
-      paddingRight: Spacing.xs,
+    categoriesRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: Spacing.sm,
     },
     categoryTag: {
-      paddingHorizontal: 20,
+      paddingHorizontal: 18,
       paddingVertical: 10,
-      borderRadius: 10,
-      marginRight: Spacing.sm,
-      backgroundColor: colors.surfaceContainerHigh,
+      borderRadius: Radii.pill,
+      backgroundColor: colors.surfaceContainerLowest,
     },
     categoryTagActive: {
       backgroundColor: colors.primary,
     },
     categoryText: {
-      fontSize: 13,
+      ...Typography.label,
       color: colors.onSurfaceVariant,
-      fontWeight: "500",
     },
     categoryTextActive: {
       color: colors.onPrimary,
@@ -177,17 +186,16 @@ export default function ExploreScreen() {
       marginBottom: Spacing.sm,
     },
     card: {
+      minHeight: 214,
+      borderRadius: Radii.xl,
       backgroundColor: colors.surfaceContainerLowest,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: "rgba(0,0,0,0.06)",
-      padding: Spacing.md,
-      minHeight: 198,
+      padding: Spacing.lg,
+      ...Elevation.card,
     },
     logoWrap: {
       width: 64,
       height: 64,
-      borderRadius: 12,
+      borderRadius: Radii.md,
       backgroundColor: colors.surfaceContainerLow,
       overflow: "hidden",
       marginBottom: Spacing.md,
@@ -197,24 +205,20 @@ export default function ExploreScreen() {
       height: "100%",
     },
     cardTitle: {
-      fontSize: 20,
-      lineHeight: 24,
-      fontWeight: "700",
+      ...Typography.cardTitle,
       color: colors.onSurface,
       marginBottom: 4,
-      fontFamily: Platform.OS === "ios" ? "Georgia" : "serif",
     },
     cardDescription: {
-      fontSize: 13,
-      lineHeight: 18,
+      ...Typography.body,
       color: colors.onSurfaceVariant,
-      minHeight: 38,
+      minHeight: 48,
       marginBottom: Spacing.md,
     },
     subscribeBtn: {
       marginTop: "auto",
-      borderRadius: 12,
-      paddingVertical: 10,
+      borderRadius: Radii.lg,
+      paddingVertical: 12,
       alignItems: "center",
       justifyContent: "center",
       flexDirection: "row",
@@ -225,19 +229,17 @@ export default function ExploreScreen() {
       backgroundColor: colors.primary,
     },
     subscribeBtnText: {
-      fontSize: 13,
-      fontWeight: "700",
+      ...Typography.label,
       color: colors.primary,
     },
     subscribeBtnTextActive: {
       color: colors.onPrimary,
     },
-    menuIcon: {
-      color: colors.onSurfaceVariant,
-      fontSize: 24,
+    searchIcon: {
+      marginRight: Spacing.sm,
     },
-    categorySection: {
-      marginBottom: Spacing.lg,
+    searchIconColor: {
+      color: colors.onSurfaceVariant,
     },
   });
 
@@ -246,11 +248,21 @@ export default function ExploreScreen() {
       <Header title="The Curator" />
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
-          <View style={styles.categorySection}>
+          <View style={styles.heroBlock}>
             <Text style={styles.title}>发现源</Text>
+            <Text style={styles.subtitle}>
+              以统一令牌组织搜索、分类和订阅卡片，用色块层次代替碎片化线框。
+            </Text>
+          </View>
+
+          <View style={styles.searchSection}>
             <View style={styles.searchContainer}>
-              <View style={styles.searchIconWrap}>
-                <MaterialIcons name="link" size={20} style={styles.menuIcon} />
+              <View style={styles.searchIcon}>
+                <MaterialIcons
+                  name="link"
+                  size={20}
+                  style={styles.searchIconColor}
+                />
               </View>
               <TextInput
                 style={styles.searchInput}
@@ -264,11 +276,7 @@ export default function ExploreScreen() {
               </TouchableOpacity>
             </View>
 
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.categoryScroll}
-            >
+            <View style={styles.categoriesRow}>
               {categories.map((category) => (
                 <TouchableOpacity
                   key={category}
@@ -289,7 +297,7 @@ export default function ExploreScreen() {
                   </Text>
                 </TouchableOpacity>
               ))}
-            </ScrollView>
+            </View>
           </View>
 
           <View style={styles.grid}>

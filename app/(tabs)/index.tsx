@@ -1,10 +1,7 @@
-import { useEffect, useState } from "react";
-import { Header } from "@/components/header";
-import { Colors, Spacing } from "@/constants/theme";
+import { useCallback, useEffect, useState } from "react";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter, type Href } from "expo-router";
 import {
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,13 +10,26 @@ import {
   View,
 } from "react-native";
 
+import { Header } from "@/components/header";
+import { StatePanel } from "@/components/ui/state-panel";
+import {
+  Colors,
+  Elevation,
+  Fonts,
+  Radii,
+  Spacing,
+  Typography,
+} from "@/constants/theme";
+import { useBookmarks } from "@/contexts/bookmark-context";
+import {
+  fetchCuratedArticles,
+  type CuratedArticle,
+} from "@/modules/curated/api/fetchCuratedArticles";
 import {
   fetchTodayArticles,
   type TimeRange,
   type TodayArticle,
 } from "@/modules/today/api/fetchTodayArticles";
-import { fetchCuratedArticles, type CuratedArticle } from "@/modules/curated/api/fetchCuratedArticles";
-import { useBookmarks } from "@/contexts/bookmark-context";
 
 type Article = {
   id: string;
@@ -29,23 +39,16 @@ type Article = {
   summary: string;
   featured?: boolean;
   sourceBadge?: string;
-  tags?: string[];
-  actionLabel?: string;
-  showDeepTag?: boolean;
-  isBookmarked?: boolean;
 };
 
-const timelineTabs = ["今日", "昨天", "本周", "精选推荐"];
-
-// 时间范围 tab 索引到 TimeRange 的映射
+const timelineTabs = ["今日", "昨天", "本周", "精选推荐"] as const;
 const tabIndexToTimeRange: (TimeRange | null)[] = [
   "today",
   "yesterday",
   "week",
-  null, // 精选推荐不使用时间范围
+  null,
 ];
 
-// 格式化相对时间
 function formatRelativeTime(dateString: string): string {
   const date = new Date(dateString);
   const now = new Date();
@@ -65,54 +68,6 @@ function formatRelativeTime(dateString: string): string {
   return date.toLocaleDateString("zh-CN");
 }
 
-export default function TodayScreen() {
-  const router = useRouter();
-  const colorScheme = "light";
-  const colors = Colors[colorScheme];
-  const [selectedTab, setSelectedTab] = useState(0);
-  const { isBookmarked, toggleBookmark } = useBookmarks();
-  const [todayArticles, setTodayArticles] = useState<TodayArticle[]>([]);
-  const [isLoadingToday, setIsLoadingToday] = useState(false);
-  const [curatedArticles, setCuratedArticles] = useState<CuratedArticle[]>([]);
-  const [isLoadingCurated, setIsLoadingCurated] = useState(false);
-
-  // 获取今日文章数据
-  useEffect(() => {
-    const timeRange = tabIndexToTimeRange[selectedTab];
-    if (timeRange) {
-      setIsLoadingToday(true);
-      fetchTodayArticles({ timeRange })
-        .then((articles) => {
-          setTodayArticles(articles);
-        })
-        .catch((err) => {
-          console.error("Failed to fetch today articles:", err);
-        })
-        .finally(() => {
-          setIsLoadingToday(false);
-        });
-    }
-  }, [selectedTab]);
-
-  // 获取精选推荐数据
-  useEffect(() => {
-    if (selectedTab === 3) {
-      // 精选推荐 tab
-      setIsLoadingCurated(true);
-      fetchCuratedArticles()
-        .then((articles) => {
-          setCuratedArticles(articles);
-        })
-        .catch((err) => {
-          console.error("Failed to fetch curated articles:", err);
-        })
-        .finally(() => {
-          setIsLoadingCurated(false);
-        });
-    }
-  }, [selectedTab]);
-
-  // Helper: 将 TodayArticle 转换为 Article 格式（用于时间范围过滤）
 const todayToArticle = (today: TodayArticle): Article => ({
   id: today.id,
   source: today.feed.title,
@@ -125,7 +80,6 @@ const todayToArticle = (today: TodayArticle): Article => ({
   sourceBadge: today.feed.title.substring(0, 3).toUpperCase(),
 });
 
-// Helper: 将 CuratedArticle 转换为 Article 格式（用于精选推荐）
 const curatedToArticle = (curated: CuratedArticle): Article => ({
   id: curated.id,
   source: curated.feed.title,
@@ -137,6 +91,45 @@ const curatedToArticle = (curated: CuratedArticle): Article => ({
   featured: curated.feed.isFeatured,
   sourceBadge: curated.feed.title.substring(0, 3).toUpperCase(),
 });
+
+export default function TodayScreen() {
+  const router = useRouter();
+  const colors = Colors.light;
+  const { isBookmarked, toggleBookmark } = useBookmarks();
+  const [selectedTab, setSelectedTab] = useState(0);
+  const [todayArticles, setTodayArticles] = useState<TodayArticle[]>([]);
+  const [curatedArticles, setCuratedArticles] = useState<CuratedArticle[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadArticles = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      if (selectedTab === 3) {
+        const data = await fetchCuratedArticles();
+        setCuratedArticles(data);
+        return;
+      }
+
+      const timeRange = tabIndexToTimeRange[selectedTab];
+      if (!timeRange) {
+        return;
+      }
+
+      const data = await fetchTodayArticles({ timeRange });
+      setTodayArticles(data);
+    } catch (err) {
+      console.error("Failed to fetch articles:", err);
+      setError("网络暂时不可用，请重新加载内容。");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedTab]);
+
+  useEffect(() => {
+    void loadArticles();
+  }, [loadArticles]);
 
   const currentArticles =
     selectedTab === 3
@@ -150,12 +143,6 @@ const curatedToArticle = (curated: CuratedArticle): Article => ({
     } as Href);
   };
 
-  const handleBookmarkToggle = (articleId: string) => {
-    toggleBookmark(articleId);
-  };
-
-  const checkBookmark = (articleId: string) => isBookmarked(articleId);
-
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -164,62 +151,88 @@ const curatedToArticle = (curated: CuratedArticle): Article => ({
     content: {
       paddingHorizontal: Spacing.xl,
       paddingBottom: 132,
+      gap: Spacing.lg,
     },
-    tabsSection: {
-      marginTop: Spacing.lg,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.outlineVariant,
-      paddingBottom: Spacing.sm,
+    heroBlock: {
+      borderRadius: Radii.xl,
+      backgroundColor: colors.surfaceContainerLow,
+      padding: Spacing.xl,
+    },
+    eyebrow: {
+      ...Typography.micro,
+      color: colors.primary,
+      textTransform: "uppercase",
+      marginBottom: Spacing.sm,
+    },
+    title: {
+      ...Typography.display,
+      color: colors.onSurface,
+      marginBottom: Spacing.sm,
+    },
+    subtitle: {
+      ...Typography.body,
+      color: colors.onSurfaceVariant,
+    },
+    filterBlock: {
+      borderRadius: Radii.xl,
+      backgroundColor: colors.surfaceContainerHigh,
+      padding: Spacing.lg,
+      gap: Spacing.md,
     },
     tabsRow: {
       flexDirection: "row",
-      alignItems: "center",
+      flexWrap: "wrap",
+      gap: Spacing.sm,
     },
     timelineTabButton: {
-      marginRight: Spacing.xl,
-      paddingBottom: Spacing.sm,
+      paddingHorizontal: Spacing.md,
+      paddingVertical: 10,
+      borderRadius: Radii.pill,
+      backgroundColor: colors.surfaceContainerLowest,
     },
     timelineTabActive: {
-      borderBottomWidth: 2,
-      borderBottomColor: colors.primary,
+      backgroundColor: colors.primary,
     },
     timelineTabText: {
-      fontSize: 14,
+      ...Typography.label,
       color: colors.onSurfaceVariant,
-      fontWeight: "500",
+      fontFamily: Fonts?.sans,
     },
     timelineTabTextActive: {
-      color: colors.primary,
-      fontWeight: "700",
+      color: colors.onPrimary,
     },
-    divider: {
-      width: 1,
-      height: 16,
+    helperRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    helperText: {
+      ...Typography.body,
+      color: colors.onSurfaceVariant,
+      flex: 1,
       marginRight: Spacing.md,
-      backgroundColor: colors.outlineVariant,
     },
     sortButton: {
       flexDirection: "row",
       alignItems: "center",
-      paddingBottom: Spacing.sm,
       gap: Spacing.xs,
-    },
-    sortIcon: {
-      fontSize: 14,
-      color: colors.onSurfaceVariant,
+      borderRadius: Radii.pill,
+      backgroundColor: colors.surfaceContainerLowest,
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.sm,
     },
     sortText: {
-      fontSize: 14,
-      color: colors.onSurfaceVariant,
-      fontWeight: "500",
+      ...Typography.label,
+      color: colors.onSurface,
     },
     articleList: {
-      marginTop: Spacing.md,
+      gap: Spacing.md,
     },
     articleItem: {
-      paddingVertical: 26,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.outlineVariant,
+      borderRadius: Radii.xl,
+      backgroundColor: colors.surfaceContainerLowest,
+      padding: Spacing.xl,
+      ...Elevation.card,
     },
     articleMetaRow: {
       flexDirection: "row",
@@ -227,272 +240,94 @@ const curatedToArticle = (curated: CuratedArticle): Article => ({
       marginBottom: Spacing.md,
       gap: Spacing.xs,
     },
-    metaIcon: {
-      fontSize: 14,
-      color: colors.onSurfaceVariant,
-    },
-    featuredIcon: {
-      color: colors.primary,
-    },
     sourceUpper: {
-      fontSize: 10,
-      fontWeight: "700",
+      ...Typography.micro,
       color: colors.primary,
-      letterSpacing: 1.2,
       textTransform: "uppercase",
+      flex: 1,
     },
     timeText: {
-      marginLeft: "auto",
-      fontSize: 10,
+      ...Typography.micro,
       color: colors.onSurfaceVariant,
     },
     articleTitle: {
-      fontSize: 28,
-      lineHeight: 34,
-      fontWeight: "700",
+      ...Typography.title,
       color: colors.onSurface,
-      fontFamily: Platform.OS === "ios" ? "Georgia" : "serif",
       marginBottom: Spacing.md,
     },
     articleSummary: {
-      fontSize: 16,
-      lineHeight: 28,
+      ...Typography.body,
       color: colors.onSurfaceVariant,
-      fontFamily: Platform.OS === "ios" ? "Georgia" : "serif",
       marginBottom: Spacing.lg,
     },
     bottomRow: {
       flexDirection: "row",
-      justifyContent: "space-between",
       alignItems: "center",
+      justifyContent: "space-between",
+      gap: Spacing.md,
     },
     sourceInfo: {
       flexDirection: "row",
       alignItems: "center",
       gap: Spacing.sm,
+      flex: 1,
     },
     sourceBadge: {
-      width: 24,
-      height: 24,
-      borderWidth: 1,
-      borderColor: colors.outlineVariant,
+      width: 28,
+      height: 28,
+      borderRadius: Radii.sm,
       backgroundColor: colors.surfaceContainerLow,
       justifyContent: "center",
       alignItems: "center",
     },
     sourceBadgeText: {
-      fontSize: 10,
-      fontWeight: "700",
+      ...Typography.micro,
       color: colors.onSurfaceVariant,
     },
     sourceName: {
-      fontSize: 12,
-      fontWeight: "600",
+      ...Typography.bodyStrong,
       color: colors.onSurfaceVariant,
-    },
-    actionText: {
-      fontSize: 12,
-      color: colors.primary,
-      fontWeight: "600",
-    },
-    tagsRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: Spacing.sm,
-    },
-    tag: {
-      borderWidth: 1,
-      borderColor: colors.outlineVariant,
-      paddingHorizontal: Spacing.sm,
-      paddingVertical: 2,
-    },
-    tagText: {
-      fontSize: 10,
-      color: colors.onSurfaceVariant,
-      textTransform: "uppercase",
-    },
-    deepTag: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 2,
-    },
-    deepTagText: {
-      fontSize: 10,
-      color: colors.primary,
-      fontWeight: "700",
-      letterSpacing: 0.4,
+      flex: 1,
     },
     bookmarkButton: {
-      padding: Spacing.xs,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.surfaceContainerLow,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    stateWrap: {
+      marginTop: Spacing.sm,
     },
     fab: {
       position: "absolute",
       right: Spacing.xl,
       bottom: 108,
-      width: 48,
-      height: 48,
-      borderRadius: 24,
+      width: 54,
+      height: 54,
+      borderRadius: 27,
       backgroundColor: colors.primary,
       justifyContent: "center",
       alignItems: "center",
-      shadowColor: colors.primary,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.35,
-      shadowRadius: 8,
-      elevation: 8,
+      ...Elevation.floating,
     },
   });
-
-  const renderArticleMeta = (article: Article) => {
-    if (article.featured) {
-      return (
-        <View style={styles.articleMetaRow}>
-          <MaterialIcons name="star" size={14} color={colors.primary} />
-          <Text style={styles.sourceUpper}>精选推荐</Text>
-          <Text style={styles.timeText}>{article.time}</Text>
-        </View>
-      );
-    }
-
-    return (
-      <View style={styles.articleMetaRow}>
-        <MaterialIcons
-          name="article"
-          size={14}
-          color={colors.onSurfaceVariant}
-        />
-        <Text style={styles.sourceUpper}>{article.source}</Text>
-        <Text style={styles.timeText}>{article.time}</Text>
-      </View>
-    );
-  };
-
-  const renderBottomRow = (article: Article, bookmarked: boolean) => {
-    const handleBookmarkPress = () => {
-      handleBookmarkToggle(article.id);
-    };
-    if (article.featured) {
-      return (
-        <View style={styles.bottomRow}>
-          <View style={styles.sourceInfo}>
-            <View style={styles.sourceBadge}>
-              <Text style={styles.sourceBadgeText}>
-                {article.sourceBadge ?? "ARC"}
-              </Text>
-            </View>
-            <Text style={styles.sourceName}>{article.source}</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.bookmarkButton}
-            onPress={handleBookmarkPress}
-          >
-            <MaterialIcons
-              name={bookmarked ? "bookmark" : "bookmark-border"}
-              size={20}
-              color={bookmarked ? colors.primary : colors.onSurfaceVariant}
-            />
-          </TouchableOpacity>
-        </View>
-      );
-    }
-
-    if (article.actionLabel) {
-      return (
-        <View style={styles.bottomRow}>
-          <TouchableOpacity>
-            <Text style={styles.actionText}>{article.actionLabel} →</Text>
-          </TouchableOpacity>
-          <View style={styles.sourceInfo}>
-            <TouchableOpacity style={styles.bookmarkButton}>
-              <MaterialIcons
-                name="ios-share"
-                size={20}
-                color={colors.onSurfaceVariant}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.bookmarkButton}
-              onPress={handleBookmarkPress}
-            >
-              <MaterialIcons
-                name={bookmarked ? "bookmark" : "bookmark-border"}
-                size={20}
-                color={bookmarked ? colors.primary : colors.onSurfaceVariant}
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
-      );
-    }
-
-    if (article.tags && article.tags.length > 0) {
-      return (
-        <View style={styles.bottomRow}>
-          <View style={styles.tagsRow}>
-            {article.tags.map((tag) => (
-              <View key={tag} style={styles.tag}>
-                <Text style={styles.tagText}>{tag}</Text>
-              </View>
-            ))}
-          </View>
-          <TouchableOpacity
-            style={styles.bookmarkButton}
-            onPress={handleBookmarkPress}
-          >
-            <MaterialIcons
-              name={bookmarked ? "bookmark" : "bookmark-border"}
-              size={20}
-              color={bookmarked ? colors.primary : colors.onSurfaceVariant}
-            />
-          </TouchableOpacity>
-        </View>
-      );
-    }
-
-    if (article.showDeepTag) {
-      return (
-        <View style={styles.bottomRow}>
-          <View style={styles.deepTag}>
-            <MaterialIcons name="verified" size={12} color={colors.primary} />
-            <Text style={styles.deepTagText}>深度解析</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.bookmarkButton}
-            onPress={handleBookmarkPress}
-          >
-            <MaterialIcons
-              name={bookmarked ? "bookmark" : "bookmark-border"}
-              size={20}
-              color={bookmarked ? colors.primary : colors.onSurfaceVariant}
-            />
-          </TouchableOpacity>
-        </View>
-      );
-    }
-
-    return (
-      <View style={styles.bottomRow}>
-        <View />
-        <TouchableOpacity
-          style={styles.bookmarkButton}
-          onPress={handleBookmarkPress}
-        >
-          <MaterialIcons
-            name={bookmarked ? "bookmark" : "bookmark-border"}
-            size={20}
-            color={bookmarked ? colors.primary : colors.onSurfaceVariant}
-          />
-        </TouchableOpacity>
-      </View>
-    );
-  };
 
   return (
     <View testID="screen-today" style={styles.container}>
       <Header title="今日摘要" />
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
-          <View style={styles.tabsSection}>
+          <View style={styles.heroBlock}>
+            <Text style={styles.eyebrow}>每日编排</Text>
+            <Text style={styles.title}>按节奏阅读今天。</Text>
+            <Text style={styles.subtitle}>
+              使用统一主题卡片组织文章流，减少线性分隔，强化内容层级。
+            </Text>
+          </View>
+
+          <View style={styles.filterBlock}>
             <View style={styles.tabsRow}>
               {timelineTabs.map((tab, index) => (
                 <TouchableOpacity
@@ -513,45 +348,113 @@ const curatedToArticle = (curated: CuratedArticle): Article => ({
                   </Text>
                 </TouchableOpacity>
               ))}
-              <View style={styles.divider} />
+            </View>
+            <View style={styles.helperRow}>
+              <Text style={styles.helperText}>
+                {selectedTab === 3
+                  ? "精选推荐按编辑权重与发布时间编排。"
+                  : "按发布时间快速切换视角，保留统一阅读密度。"}
+              </Text>
               <TouchableOpacity style={styles.sortButton}>
-                <MaterialIcons
-                  name="sort"
-                  size={14}
-                  color={colors.onSurfaceVariant}
-                />
-                <Text style={styles.sortText}>排序</Text>
+                <MaterialIcons name="sort" size={16} color={colors.onSurface} />
+                <Text style={styles.sortText}>最新</Text>
               </TouchableOpacity>
             </View>
           </View>
 
-          <View style={styles.articleList}>
-            {isLoadingCurated || isLoadingToday ? (
-              <View style={styles.articleItem}>
-                <Text style={styles.articleMetaRow}>加载中...</Text>
-              </View>
-            ) : (
-              currentArticles.map((article) => (
-                <Pressable
-                  key={article.id}
-                  style={styles.articleItem}
-                  onPress={() => handleArticlePress(article.id)}
-                >
-                  {renderArticleMeta(article)}
-                  <Text style={styles.articleTitle}>{article.title}</Text>
-                  <Text style={styles.articleSummary} numberOfLines={5}>
-                    {article.summary}
-                  </Text>
-                  {renderBottomRow(article, checkBookmark(article.id))}
-                </Pressable>
-              ))
-            )}
-          </View>
+          {error ? (
+            <View style={styles.stateWrap}>
+              <StatePanel
+                icon="wifi-off"
+                tone="error"
+                title="加载失败"
+                message={error}
+                actionLabel="重新加载"
+                onAction={() => void loadArticles()}
+              />
+            </View>
+          ) : null}
+
+          {!error && isLoading ? (
+            <View style={styles.stateWrap}>
+              <StatePanel
+                compact
+                icon="hourglass-top"
+                title="正在整理内容"
+                message="文章流正在更新，请稍候。"
+              />
+            </View>
+          ) : null}
+
+          {!error && !isLoading && currentArticles.length === 0 ? (
+            <View style={styles.stateWrap}>
+              <StatePanel
+                icon="library-books"
+                title="暂时没有内容"
+                message="切换时间范围或稍后再试，新的文章会继续补充进来。"
+                actionLabel="重新加载"
+                onAction={() => void loadArticles()}
+              />
+            </View>
+          ) : null}
+
+          {!error && !isLoading && currentArticles.length > 0 ? (
+            <View style={styles.articleList}>
+              {currentArticles.map((article) => {
+                const bookmarked = isBookmarked(article.id);
+                return (
+                  <Pressable
+                    key={article.id}
+                    style={styles.articleItem}
+                    onPress={() => handleArticlePress(article.id)}
+                  >
+                    <View style={styles.articleMetaRow}>
+                      <MaterialIcons
+                        name={article.featured ? "star" : "article"}
+                        size={16}
+                        color={colors.primary}
+                      />
+                      <Text style={styles.sourceUpper}>
+                        {article.featured ? "精选推荐" : article.source}
+                      </Text>
+                      <Text style={styles.timeText}>{article.time}</Text>
+                    </View>
+                    <Text style={styles.articleTitle}>{article.title}</Text>
+                    <Text style={styles.articleSummary}>{article.summary}</Text>
+                    <View style={styles.bottomRow}>
+                      <View style={styles.sourceInfo}>
+                        <View style={styles.sourceBadge}>
+                          <Text style={styles.sourceBadgeText}>
+                            {article.sourceBadge ?? "RSS"}
+                          </Text>
+                        </View>
+                        <Text style={styles.sourceName}>{article.source}</Text>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.bookmarkButton}
+                        onPress={() => toggleBookmark(article.id)}
+                      >
+                        <MaterialIcons
+                          name={bookmarked ? "bookmark" : "bookmark-border"}
+                          size={20}
+                          color={
+                            bookmarked
+                              ? colors.primary
+                              : colors.onSurfaceVariant
+                          }
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+          ) : null}
         </View>
       </ScrollView>
 
       <TouchableOpacity style={styles.fab}>
-        <MaterialIcons name="edit-note" size={26} color={colors.onPrimary} />
+        <MaterialIcons name="tune" size={24} color={colors.onPrimary} />
       </TouchableOpacity>
     </View>
   );

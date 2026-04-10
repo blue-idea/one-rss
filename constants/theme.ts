@@ -133,3 +133,81 @@ export const Fonts = Platform.select({
     mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   },
 });
+
+export const Radii = {
+  sm: 10,
+  md: 14,
+  lg: 18,
+  xl: 24,
+  pill: 999,
+};
+
+export const Typography = {
+  display: {
+    fontFamily: Fonts?.serif,
+    fontSize: 34,
+    lineHeight: 40,
+    fontWeight: "700" as const,
+  },
+  title: {
+    fontFamily: Fonts?.serif,
+    fontSize: 24,
+    lineHeight: 30,
+    fontWeight: "700" as const,
+  },
+  sectionTitle: {
+    fontFamily: Fonts?.serif,
+    fontSize: 20,
+    lineHeight: 26,
+    fontWeight: "700" as const,
+  },
+  cardTitle: {
+    fontFamily: Fonts?.serif,
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: "700" as const,
+  },
+  body: {
+    fontFamily: Fonts?.sans,
+    fontSize: 15,
+    lineHeight: 24,
+    fontWeight: "400" as const,
+  },
+  bodyStrong: {
+    fontFamily: Fonts?.sans,
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: "600" as const,
+  },
+  label: {
+    fontFamily: Fonts?.sans,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "700" as const,
+    letterSpacing: 0.4,
+  },
+  micro: {
+    fontFamily: Fonts?.sans,
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: "600" as const,
+    letterSpacing: 0.6,
+  },
+};
+
+export const Elevation = {
+  card: {
+    shadowColor: "#11181C",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.06,
+    shadowRadius: 24,
+    elevation: 4,
+  },
+  floating: {
+    shadowColor: "#11181C",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.14,
+    shadowRadius: 24,
+    elevation: 10,
+  },
+};
