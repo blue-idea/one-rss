@@ -13,6 +13,7 @@ import {
 
 import { Header } from "@/components/header";
 import { Colors, Spacing } from "@/constants/theme";
+import { MAX_FONT_SCALE } from "@/utils/accessibility";
 
 const categories = ["精选", "科技", "设计", "商业"];
 
@@ -114,7 +115,7 @@ export default function ExploreScreen() {
       backgroundColor: colors.surfaceContainerHighest,
       borderRadius: 12,
       paddingHorizontal: 14,
-      height: 56,
+      minHeight: 56,
       marginBottom: Spacing.xl,
     },
     searchIconWrap: {
@@ -136,6 +137,7 @@ export default function ExploreScreen() {
       backgroundColor: colors.primary,
       paddingHorizontal: Spacing.md,
       justifyContent: "center",
+      minWidth: 88,
     },
     addButtonText: {
       color: colors.onPrimary,
@@ -215,6 +217,7 @@ export default function ExploreScreen() {
       marginTop: "auto",
       borderRadius: 12,
       paddingVertical: 10,
+      minHeight: 44,
       alignItems: "center",
       justifyContent: "center",
       flexDirection: "row",
@@ -258,9 +261,20 @@ export default function ExploreScreen() {
                 placeholderTextColor={`${colors.onSurfaceVariant}99`}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
+                maxFontSizeMultiplier={MAX_FONT_SCALE}
+                accessibilityLabel="添加 RSS 地址或搜索订阅源"
               />
-              <TouchableOpacity style={styles.addButton}>
-                <Text style={styles.addButtonText}>添加订阅</Text>
+              <TouchableOpacity
+                style={styles.addButton}
+                accessibilityRole="button"
+                accessibilityLabel="添加订阅"
+              >
+                <Text
+                  style={styles.addButtonText}
+                  maxFontSizeMultiplier={MAX_FONT_SCALE}
+                >
+                  添加订阅
+                </Text>
               </TouchableOpacity>
             </View>
 
@@ -277,6 +291,11 @@ export default function ExploreScreen() {
                     selectedCategory === category && styles.categoryTagActive,
                   ]}
                   onPress={() => setSelectedCategory(category)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`筛选分类 ${category}`}
+                  accessibilityState={{
+                    selected: selectedCategory === category,
+                  }}
                 >
                   <Text
                     style={[
@@ -284,6 +303,7 @@ export default function ExploreScreen() {
                       selectedCategory === category &&
                         styles.categoryTextActive,
                     ]}
+                    maxFontSizeMultiplier={MAX_FONT_SCALE}
                   >
                     {category}
                   </Text>
@@ -303,10 +323,16 @@ export default function ExploreScreen() {
                       contentFit="cover"
                     />
                   </View>
-                  <Text style={styles.cardTitle} numberOfLines={1}>
+                  <Text
+                    style={styles.cardTitle}
+                    maxFontSizeMultiplier={MAX_FONT_SCALE}
+                  >
                     {source.name}
                   </Text>
-                  <Text style={styles.cardDescription} numberOfLines={2}>
+                  <Text
+                    style={styles.cardDescription}
+                    maxFontSizeMultiplier={MAX_FONT_SCALE}
+                  >
                     {source.description}
                   </Text>
                   <TouchableOpacity
@@ -314,6 +340,12 @@ export default function ExploreScreen() {
                       styles.subscribeBtn,
                       source.subscribed && styles.subscribeBtnActive,
                     ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      source.subscribed
+                        ? `已订阅 ${source.name}`
+                        : `订阅 ${source.name}`
+                    }
                   >
                     <MaterialIcons
                       name={source.subscribed ? "check" : "add"}
@@ -327,6 +359,7 @@ export default function ExploreScreen() {
                         styles.subscribeBtnText,
                         source.subscribed && styles.subscribeBtnTextActive,
                       ]}
+                      maxFontSizeMultiplier={MAX_FONT_SCALE}
                     >
                       {source.subscribed ? "已订阅" : "订阅"}
                     </Text>

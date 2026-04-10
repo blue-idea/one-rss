@@ -18,8 +18,16 @@ import {
   type TimeRange,
   type TodayArticle,
 } from "@/modules/today/api/fetchTodayArticles";
-import { fetchCuratedArticles, type CuratedArticle } from "@/modules/curated/api/fetchCuratedArticles";
+import {
+  fetchCuratedArticles,
+  type CuratedArticle,
+} from "@/modules/curated/api/fetchCuratedArticles";
 import { useBookmarks } from "@/contexts/bookmark-context";
+import {
+  getArticleCardAccessibilityLabel,
+  getBookmarkAccessibilityLabel,
+  MAX_FONT_SCALE,
+} from "@/utils/accessibility";
 
 type Article = {
   id: string;
@@ -113,30 +121,30 @@ export default function TodayScreen() {
   }, [selectedTab]);
 
   // Helper: 将 TodayArticle 转换为 Article 格式（用于时间范围过滤）
-const todayToArticle = (today: TodayArticle): Article => ({
-  id: today.id,
-  source: today.feed.title,
-  time: today.readTimeMinutes
-    ? `阅读时间 ${today.readTimeMinutes} 分钟`
-    : formatRelativeTime(today.publishedAt),
-  title: today.title,
-  summary: today.summary,
-  featured: today.feed.isFeatured,
-  sourceBadge: today.feed.title.substring(0, 3).toUpperCase(),
-});
+  const todayToArticle = (today: TodayArticle): Article => ({
+    id: today.id,
+    source: today.feed.title,
+    time: today.readTimeMinutes
+      ? `阅读时间 ${today.readTimeMinutes} 分钟`
+      : formatRelativeTime(today.publishedAt),
+    title: today.title,
+    summary: today.summary,
+    featured: today.feed.isFeatured,
+    sourceBadge: today.feed.title.substring(0, 3).toUpperCase(),
+  });
 
-// Helper: 将 CuratedArticle 转换为 Article 格式（用于精选推荐）
-const curatedToArticle = (curated: CuratedArticle): Article => ({
-  id: curated.id,
-  source: curated.feed.title,
-  time: curated.readTimeMinutes
-    ? `阅读时间 ${curated.readTimeMinutes} 分钟`
-    : new Date(curated.publishedAt).toLocaleDateString("zh-CN"),
-  title: curated.title,
-  summary: curated.summary,
-  featured: curated.feed.isFeatured,
-  sourceBadge: curated.feed.title.substring(0, 3).toUpperCase(),
-});
+  // Helper: 将 CuratedArticle 转换为 Article 格式（用于精选推荐）
+  const curatedToArticle = (curated: CuratedArticle): Article => ({
+    id: curated.id,
+    source: curated.feed.title,
+    time: curated.readTimeMinutes
+      ? `阅读时间 ${curated.readTimeMinutes} 分钟`
+      : new Date(curated.publishedAt).toLocaleDateString("zh-CN"),
+    title: curated.title,
+    summary: curated.summary,
+    featured: curated.feed.isFeatured,
+    sourceBadge: curated.feed.title.substring(0, 3).toUpperCase(),
+  });
 
   const currentArticles =
     selectedTab === 3
@@ -174,6 +182,8 @@ const curatedToArticle = (curated: CuratedArticle): Article => ({
     tabsRow: {
       flexDirection: "row",
       alignItems: "center",
+      flexWrap: "wrap",
+      rowGap: Spacing.sm,
     },
     timelineTabButton: {
       marginRight: Spacing.xl,
@@ -226,6 +236,7 @@ const curatedToArticle = (curated: CuratedArticle): Article => ({
       alignItems: "center",
       marginBottom: Spacing.md,
       gap: Spacing.xs,
+      flexWrap: "wrap",
     },
     metaIcon: {
       fontSize: 14,
@@ -242,7 +253,6 @@ const curatedToArticle = (curated: CuratedArticle): Article => ({
       textTransform: "uppercase",
     },
     timeText: {
-      marginLeft: "auto",
       fontSize: 10,
       color: colors.onSurfaceVariant,
     },
@@ -264,12 +274,15 @@ const curatedToArticle = (curated: CuratedArticle): Article => ({
     bottomRow: {
       flexDirection: "row",
       justifyContent: "space-between",
-      alignItems: "center",
+      alignItems: "flex-start",
+      gap: Spacing.md,
     },
     sourceInfo: {
       flexDirection: "row",
       alignItems: "center",
       gap: Spacing.sm,
+      flex: 1,
+      flexWrap: "wrap",
     },
     sourceBadge: {
       width: 24,
@@ -299,6 +312,8 @@ const curatedToArticle = (curated: CuratedArticle): Article => ({
       flexDirection: "row",
       alignItems: "center",
       gap: Spacing.sm,
+      flex: 1,
+      flexWrap: "wrap",
     },
     tag: {
       borderWidth: 1,
@@ -324,6 +339,10 @@ const curatedToArticle = (curated: CuratedArticle): Article => ({
     },
     bookmarkButton: {
       padding: Spacing.xs,
+      minWidth: 44,
+      minHeight: 44,
+      justifyContent: "center",
+      alignItems: "center",
     },
     fab: {
       position: "absolute",
@@ -348,8 +367,15 @@ const curatedToArticle = (curated: CuratedArticle): Article => ({
       return (
         <View style={styles.articleMetaRow}>
           <MaterialIcons name="star" size={14} color={colors.primary} />
-          <Text style={styles.sourceUpper}>精选推荐</Text>
-          <Text style={styles.timeText}>{article.time}</Text>
+          <Text
+            style={styles.sourceUpper}
+            maxFontSizeMultiplier={MAX_FONT_SCALE}
+          >
+            精选推荐
+          </Text>
+          <Text style={styles.timeText} maxFontSizeMultiplier={MAX_FONT_SCALE}>
+            {article.time}
+          </Text>
         </View>
       );
     }
@@ -361,8 +387,12 @@ const curatedToArticle = (curated: CuratedArticle): Article => ({
           size={14}
           color={colors.onSurfaceVariant}
         />
-        <Text style={styles.sourceUpper}>{article.source}</Text>
-        <Text style={styles.timeText}>{article.time}</Text>
+        <Text style={styles.sourceUpper} maxFontSizeMultiplier={MAX_FONT_SCALE}>
+          {article.source}
+        </Text>
+        <Text style={styles.timeText} maxFontSizeMultiplier={MAX_FONT_SCALE}>
+          {article.time}
+        </Text>
       </View>
     );
   };
@@ -376,15 +406,28 @@ const curatedToArticle = (curated: CuratedArticle): Article => ({
         <View style={styles.bottomRow}>
           <View style={styles.sourceInfo}>
             <View style={styles.sourceBadge}>
-              <Text style={styles.sourceBadgeText}>
+              <Text
+                style={styles.sourceBadgeText}
+                maxFontSizeMultiplier={MAX_FONT_SCALE}
+              >
                 {article.sourceBadge ?? "ARC"}
               </Text>
             </View>
-            <Text style={styles.sourceName}>{article.source}</Text>
+            <Text
+              style={styles.sourceName}
+              maxFontSizeMultiplier={MAX_FONT_SCALE}
+            >
+              {article.source}
+            </Text>
           </View>
           <TouchableOpacity
             style={styles.bookmarkButton}
             onPress={handleBookmarkPress}
+            accessibilityRole="button"
+            accessibilityLabel={getBookmarkAccessibilityLabel(
+              article.title,
+              bookmarked,
+            )}
           >
             <MaterialIcons
               name={bookmarked ? "bookmark" : "bookmark-border"}
@@ -399,11 +442,23 @@ const curatedToArticle = (curated: CuratedArticle): Article => ({
     if (article.actionLabel) {
       return (
         <View style={styles.bottomRow}>
-          <TouchableOpacity>
-            <Text style={styles.actionText}>{article.actionLabel} →</Text>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={article.actionLabel}
+          >
+            <Text
+              style={styles.actionText}
+              maxFontSizeMultiplier={MAX_FONT_SCALE}
+            >
+              {article.actionLabel} →
+            </Text>
           </TouchableOpacity>
           <View style={styles.sourceInfo}>
-            <TouchableOpacity style={styles.bookmarkButton}>
+            <TouchableOpacity
+              style={styles.bookmarkButton}
+              accessibilityRole="button"
+              accessibilityLabel={`分享《${article.title}》`}
+            >
               <MaterialIcons
                 name="ios-share"
                 size={20}
@@ -413,6 +468,11 @@ const curatedToArticle = (curated: CuratedArticle): Article => ({
             <TouchableOpacity
               style={styles.bookmarkButton}
               onPress={handleBookmarkPress}
+              accessibilityRole="button"
+              accessibilityLabel={getBookmarkAccessibilityLabel(
+                article.title,
+                bookmarked,
+              )}
             >
               <MaterialIcons
                 name={bookmarked ? "bookmark" : "bookmark-border"}
@@ -431,13 +491,23 @@ const curatedToArticle = (curated: CuratedArticle): Article => ({
           <View style={styles.tagsRow}>
             {article.tags.map((tag) => (
               <View key={tag} style={styles.tag}>
-                <Text style={styles.tagText}>{tag}</Text>
+                <Text
+                  style={styles.tagText}
+                  maxFontSizeMultiplier={MAX_FONT_SCALE}
+                >
+                  {tag}
+                </Text>
               </View>
             ))}
           </View>
           <TouchableOpacity
             style={styles.bookmarkButton}
             onPress={handleBookmarkPress}
+            accessibilityRole="button"
+            accessibilityLabel={getBookmarkAccessibilityLabel(
+              article.title,
+              bookmarked,
+            )}
           >
             <MaterialIcons
               name={bookmarked ? "bookmark" : "bookmark-border"}
@@ -454,11 +524,21 @@ const curatedToArticle = (curated: CuratedArticle): Article => ({
         <View style={styles.bottomRow}>
           <View style={styles.deepTag}>
             <MaterialIcons name="verified" size={12} color={colors.primary} />
-            <Text style={styles.deepTagText}>深度解析</Text>
+            <Text
+              style={styles.deepTagText}
+              maxFontSizeMultiplier={MAX_FONT_SCALE}
+            >
+              深度解析
+            </Text>
           </View>
           <TouchableOpacity
             style={styles.bookmarkButton}
             onPress={handleBookmarkPress}
+            accessibilityRole="button"
+            accessibilityLabel={getBookmarkAccessibilityLabel(
+              article.title,
+              bookmarked,
+            )}
           >
             <MaterialIcons
               name={bookmarked ? "bookmark" : "bookmark-border"}
@@ -476,6 +556,11 @@ const curatedToArticle = (curated: CuratedArticle): Article => ({
         <TouchableOpacity
           style={styles.bookmarkButton}
           onPress={handleBookmarkPress}
+          accessibilityRole="button"
+          accessibilityLabel={getBookmarkAccessibilityLabel(
+            article.title,
+            bookmarked,
+          )}
         >
           <MaterialIcons
             name={bookmarked ? "bookmark" : "bookmark-border"}
@@ -502,25 +587,38 @@ const curatedToArticle = (curated: CuratedArticle): Article => ({
                     index === selectedTab && styles.timelineTabActive,
                   ]}
                   onPress={() => setSelectedTab(index)}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: index === selectedTab }}
+                  accessibilityLabel={`切换到${tab}`}
                 >
                   <Text
                     style={[
                       styles.timelineTabText,
                       index === selectedTab && styles.timelineTabTextActive,
                     ]}
+                    maxFontSizeMultiplier={MAX_FONT_SCALE}
                   >
                     {tab}
                   </Text>
                 </TouchableOpacity>
               ))}
               <View style={styles.divider} />
-              <TouchableOpacity style={styles.sortButton}>
+              <TouchableOpacity
+                style={styles.sortButton}
+                accessibilityRole="button"
+                accessibilityLabel="排序选项"
+              >
                 <MaterialIcons
                   name="sort"
                   size={14}
                   color={colors.onSurfaceVariant}
                 />
-                <Text style={styles.sortText}>排序</Text>
+                <Text
+                  style={styles.sortText}
+                  maxFontSizeMultiplier={MAX_FONT_SCALE}
+                >
+                  排序
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -536,10 +634,25 @@ const curatedToArticle = (curated: CuratedArticle): Article => ({
                   key={article.id}
                   style={styles.articleItem}
                   onPress={() => handleArticlePress(article.id)}
+                  accessibilityRole="button"
+                  accessibilityLabel={getArticleCardAccessibilityLabel(
+                    article.title,
+                    article.source,
+                    article.time,
+                  )}
+                  accessibilityHint="打开文章详情"
                 >
                   {renderArticleMeta(article)}
-                  <Text style={styles.articleTitle}>{article.title}</Text>
-                  <Text style={styles.articleSummary} numberOfLines={5}>
+                  <Text
+                    style={styles.articleTitle}
+                    maxFontSizeMultiplier={MAX_FONT_SCALE}
+                  >
+                    {article.title}
+                  </Text>
+                  <Text
+                    style={styles.articleSummary}
+                    maxFontSizeMultiplier={MAX_FONT_SCALE}
+                  >
                     {article.summary}
                   </Text>
                   {renderBottomRow(article, checkBookmark(article.id))}
@@ -550,7 +663,11 @@ const curatedToArticle = (curated: CuratedArticle): Article => ({
         </View>
       </ScrollView>
 
-      <TouchableOpacity style={styles.fab}>
+      <TouchableOpacity
+        style={styles.fab}
+        accessibilityRole="button"
+        accessibilityLabel="快速记录想法"
+      >
         <MaterialIcons name="edit-note" size={26} color={colors.onPrimary} />
       </TouchableOpacity>
     </View>

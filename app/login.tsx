@@ -6,6 +6,7 @@ import { sendEmailCode } from "@/modules/auth/api/sendEmailCode";
 import { signInWithEmailPassword } from "@/modules/auth/api/signInWithEmailPassword";
 import { verifyEmailCode } from "@/modules/auth/api/verifyEmailCode";
 import { useOtpCooldown } from "@/modules/auth/hooks/useOtpCooldown";
+import { MAX_FONT_SCALE } from "@/utils/accessibility";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useCallback, useState } from "react";
@@ -361,8 +362,8 @@ export default function LoginScreen() {
       marginBottom: Spacing.md,
     },
     checkbox: {
-      width: 22,
-      height: 22,
+      minWidth: 22,
+      minHeight: 22,
       borderRadius: 6,
       borderWidth: 1.5,
       borderColor: colors.outlineVariant,
@@ -481,7 +482,9 @@ export default function LoginScreen() {
             </View>
 
             <View style={styles.fieldGap}>
-              <Text style={styles.label}>电子邮箱</Text>
+              <Text style={styles.label} maxFontSizeMultiplier={MAX_FONT_SCALE}>
+                电子邮箱
+              </Text>
               <View
                 style={[
                   styles.inputWrap,
@@ -510,21 +513,38 @@ export default function LoginScreen() {
                   autoCapitalize="none"
                   keyboardType="email-address"
                   autoComplete="email"
+                  maxFontSizeMultiplier={MAX_FONT_SCALE}
+                  accessibilityLabel="电子邮箱"
                 />
               </View>
               {emailError ? (
-                <Text style={styles.errorText}>{emailError}</Text>
+                <Text
+                  style={styles.errorText}
+                  maxFontSizeMultiplier={MAX_FONT_SCALE}
+                >
+                  {emailError}
+                </Text>
               ) : null}
             </View>
 
             {mode === "register" ? (
               <View style={styles.fieldGap}>
                 <View style={styles.labelRow}>
-                  <Text style={styles.label}>邮箱验证码</Text>
+                  <Text
+                    style={styles.label}
+                    maxFontSizeMultiplier={MAX_FONT_SCALE}
+                  >
+                    邮箱验证码
+                  </Text>
                   <TouchableOpacity
                     onPress={() => void handleSendOtp()}
                     disabled={isSendingOtp || otpSecondsLeft > 0}
                     accessibilityRole="button"
+                    accessibilityLabel={
+                      otpSecondsLeft > 0
+                        ? `重新发送验证码，${otpSecondsLeft} 秒后可用`
+                        : "发送邮箱验证码"
+                    }
                   >
                     <View
                       style={{ flexDirection: "row", alignItems: "center" }}
@@ -543,10 +563,14 @@ export default function LoginScreen() {
                             opacity: 0.5,
                           },
                         ]}
+                        maxFontSizeMultiplier={MAX_FONT_SCALE}
                       >
                         发送验证码
                         {otpSecondsLeft > 0 ? (
-                          <Text style={styles.otpSendMuted}>
+                          <Text
+                            style={styles.otpSendMuted}
+                            maxFontSizeMultiplier={MAX_FONT_SCALE}
+                          >
                             {" "}
                             ({otpSecondsLeft}s)
                           </Text>
@@ -576,6 +600,8 @@ export default function LoginScreen() {
                     keyboardType="number-pad"
                     maxLength={6}
                     editable={registerStep === "verify"}
+                    maxFontSizeMultiplier={MAX_FONT_SCALE}
+                    accessibilityLabel="邮箱验证码"
                   />
                   {otpError ? (
                     <MaterialIcons
@@ -586,13 +612,26 @@ export default function LoginScreen() {
                   ) : null}
                 </View>
                 {otpError ? (
-                  <Text style={styles.errorText}>{otpError}</Text>
+                  <Text
+                    style={styles.errorText}
+                    maxFontSizeMultiplier={MAX_FONT_SCALE}
+                  >
+                    {otpError}
+                  </Text>
                 ) : null}
                 {sendOtpError ? (
-                  <Text style={styles.errorText}>{sendOtpError}</Text>
+                  <Text
+                    style={styles.errorText}
+                    maxFontSizeMultiplier={MAX_FONT_SCALE}
+                  >
+                    {sendOtpError}
+                  </Text>
                 ) : null}
                 {registerStep === "setPassword" ? (
-                  <Text style={styles.successText}>
+                  <Text
+                    style={styles.successText}
+                    maxFontSizeMultiplier={MAX_FONT_SCALE}
+                  >
                     验证成功，请设置账户密码。
                   </Text>
                 ) : null}
@@ -607,7 +646,9 @@ export default function LoginScreen() {
                   : null,
               ]}
             >
-              <Text style={styles.label}>密码</Text>
+              <Text style={styles.label} maxFontSizeMultiplier={MAX_FONT_SCALE}>
+                密码
+              </Text>
               <View
                 style={[
                   styles.inputWrap,
@@ -630,6 +671,8 @@ export default function LoginScreen() {
                   autoComplete={
                     mode === "register" ? "password-new" : "password"
                   }
+                  maxFontSizeMultiplier={MAX_FONT_SCALE}
+                  accessibilityLabel="密码"
                 />
                 <TouchableOpacity
                   onPress={() => setShowPassword((s) => !s)}
@@ -644,13 +687,23 @@ export default function LoginScreen() {
                 </TouchableOpacity>
               </View>
               {passwordError ? (
-                <Text style={styles.errorText}>{passwordError}</Text>
+                <Text
+                  style={styles.errorText}
+                  maxFontSizeMultiplier={MAX_FONT_SCALE}
+                >
+                  {passwordError}
+                </Text>
               ) : null}
             </View>
 
             {mode === "register" && registerStep === "setPassword" ? (
               <View style={styles.fieldGap}>
-                <Text style={styles.label}>确认密码</Text>
+                <Text
+                  style={styles.label}
+                  maxFontSizeMultiplier={MAX_FONT_SCALE}
+                >
+                  确认密码
+                </Text>
                 <View
                   style={[
                     styles.inputWrap,
@@ -668,10 +721,15 @@ export default function LoginScreen() {
                     }}
                     secureTextEntry={!showConfirmPassword}
                     autoComplete="password-new"
+                    maxFontSizeMultiplier={MAX_FONT_SCALE}
+                    accessibilityLabel="确认密码"
                   />
                   <TouchableOpacity
                     onPress={() => setShowConfirmPassword((s) => !s)}
                     accessibilityRole="button"
+                    accessibilityLabel={
+                      showConfirmPassword ? "隐藏确认密码" : "显示确认密码"
+                    }
                   >
                     <MaterialIcons
                       name={
@@ -683,7 +741,12 @@ export default function LoginScreen() {
                   </TouchableOpacity>
                 </View>
                 {confirmError ? (
-                  <Text style={styles.errorText}>{confirmError}</Text>
+                  <Text
+                    style={styles.errorText}
+                    maxFontSizeMultiplier={MAX_FONT_SCALE}
+                  >
+                    {confirmError}
+                  </Text>
                 ) : null}
               </View>
             ) : null}
@@ -696,6 +759,9 @@ export default function LoginScreen() {
                     setAgreeTerms((a) => !a);
                     if (termsError) setTermsError(null);
                   }}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: agreeTerms }}
+                  accessibilityLabel="同意服务条款与隐私政策"
                 >
                   <View
                     style={[styles.checkbox, agreeTerms && styles.checkboxOn]}
@@ -708,14 +774,36 @@ export default function LoginScreen() {
                       />
                     ) : null}
                   </View>
-                  <Text style={styles.termsText}>
+                  <Text
+                    style={styles.termsText}
+                    maxFontSizeMultiplier={MAX_FONT_SCALE}
+                  >
                     我同意
-                    <Text style={styles.link}> 服务条款 </Text>和
-                    <Text style={styles.link}> 隐私政策</Text>。
+                    <Text
+                      style={styles.link}
+                      maxFontSizeMultiplier={MAX_FONT_SCALE}
+                    >
+                      {" "}
+                      服务条款{" "}
+                    </Text>
+                    和
+                    <Text
+                      style={styles.link}
+                      maxFontSizeMultiplier={MAX_FONT_SCALE}
+                    >
+                      {" "}
+                      隐私政策
+                    </Text>
+                    。
                   </Text>
                 </Pressable>
                 {termsError ? (
-                  <Text style={styles.errorText}>{termsError}</Text>
+                  <Text
+                    style={styles.errorText}
+                    maxFontSizeMultiplier={MAX_FONT_SCALE}
+                  >
+                    {termsError}
+                  </Text>
                 ) : null}
               </>
             ) : null}
@@ -726,6 +814,8 @@ export default function LoginScreen() {
               onPress={handleSubmit}
               disabled={isVerifyingOtp || isSubmittingAuth}
               activeOpacity={0.92}
+              accessibilityRole="button"
+              accessibilityLabel={mode === "register" ? "提交注册" : "提交登录"}
             >
               <LinearGradient
                 colors={["#0058bc", "#0070eb"]}
@@ -733,7 +823,10 @@ export default function LoginScreen() {
                 end={{ x: 1, y: 1 }}
                 style={styles.primaryGradient}
               >
-                <Text style={styles.primaryLabel}>
+                <Text
+                  style={styles.primaryLabel}
+                  maxFontSizeMultiplier={MAX_FONT_SCALE}
+                >
                   {mode === "register"
                     ? registerStep === "verify"
                       ? isVerifyingOtp
@@ -763,9 +856,18 @@ export default function LoginScreen() {
                     startOtpCooldown(0);
                   }}
                 >
-                  <Text style={styles.switchText}>
+                  <Text
+                    style={styles.switchText}
+                    maxFontSizeMultiplier={MAX_FONT_SCALE}
+                  >
                     已有账号？
-                    <Text style={styles.switchLink}> 在此登录</Text>
+                    <Text
+                      style={styles.switchLink}
+                      maxFontSizeMultiplier={MAX_FONT_SCALE}
+                    >
+                      {" "}
+                      在此登录
+                    </Text>
                   </Text>
                 </Pressable>
               ) : (
@@ -776,9 +878,18 @@ export default function LoginScreen() {
                     setRegisterStep("verify");
                   }}
                 >
-                  <Text style={styles.switchText}>
+                  <Text
+                    style={styles.switchText}
+                    maxFontSizeMultiplier={MAX_FONT_SCALE}
+                  >
                     还没有账号？
-                    <Text style={styles.switchLink}> 注册新账号</Text>
+                    <Text
+                      style={styles.switchLink}
+                      maxFontSizeMultiplier={MAX_FONT_SCALE}
+                    >
+                      {" "}
+                      注册新账号
+                    </Text>
                   </Text>
                 </Pressable>
               )}
@@ -786,13 +897,19 @@ export default function LoginScreen() {
 
             <View style={styles.dividerWrap}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerLabel}>或通过以下方式继续</Text>
+              <Text
+                style={styles.dividerLabel}
+                maxFontSizeMultiplier={MAX_FONT_SCALE}
+              >
+                或通过以下方式继续
+              </Text>
             </View>
 
             <View style={styles.socialRow}>
               <TouchableOpacity
                 style={styles.socialBtn}
                 accessibilityLabel="使用 Apple 继续"
+                accessibilityRole="button"
               >
                 <Image
                   source={{ uri: SOCIAL_APPLE_URI }}
@@ -802,6 +919,7 @@ export default function LoginScreen() {
               <TouchableOpacity
                 style={styles.socialBtn}
                 accessibilityLabel="使用 Google 继续"
+                accessibilityRole="button"
               >
                 <Image
                   source={{ uri: SOCIAL_GOOGLE_URI }}
@@ -811,6 +929,7 @@ export default function LoginScreen() {
               <TouchableOpacity
                 style={styles.socialBtn}
                 accessibilityLabel="使用微信继续"
+                accessibilityRole="button"
               >
                 <MaterialIcons
                   name="chat"

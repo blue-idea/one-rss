@@ -3,6 +3,7 @@ import { usePathname, useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "@/constants/theme";
+import { MAX_FONT_SCALE } from "@/utils/accessibility";
 
 type TabKey = "index" | "explore" | "shelf" | "profile";
 
@@ -55,6 +56,8 @@ export function AppTabBar({ activeKey }: AppTabBarProps) {
       justifyContent: "center",
       gap: 2,
       minWidth: 60,
+      minHeight: 48,
+      paddingHorizontal: 6,
     },
     label: {
       fontSize: 10,
@@ -75,9 +78,17 @@ export function AppTabBar({ activeKey }: AppTabBarProps) {
             testID={`app-tab-${item.key}`}
             style={styles.item}
             onPress={() => router.replace(item.href)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: focused }}
+            accessibilityLabel={`切换到${item.label}`}
           >
             <MaterialIcons name={item.icon} size={22} color={color} />
-            <Text style={[styles.label, { color }]}>{item.label}</Text>
+            <Text
+              style={[styles.label, { color }]}
+              maxFontSizeMultiplier={MAX_FONT_SCALE}
+            >
+              {item.label}
+            </Text>
           </Pressable>
         );
       })}

@@ -13,29 +13,22 @@ import { useRouter } from "expo-router";
 
 import { Header } from "@/components/header";
 import { useAuth } from "@/contexts/auth-context";
-import { usePreferences, INTERFACE_LANGUAGES, TRANSLATION_LANGUAGES } from "@/contexts/preference-context";
+import {
+  usePreferences,
+  INTERFACE_LANGUAGES,
+  TRANSLATION_LANGUAGES,
+} from "@/contexts/preference-context";
 import { Colors, Spacing } from "@/constants/theme";
-import { fetchUserProfileStats, type UserProfileStats } from "@/modules/profile/api/fetchUserProfileStats";
+import {
+  fetchUserProfileStats,
+  type UserProfileStats,
+} from "@/modules/profile/api/fetchUserProfileStats";
+import { MAX_FONT_SCALE } from "@/utils/accessibility";
 
 const profileStats = [
   { id: "sources", value: "0", label: "订阅源" },
   { id: "read", value: "0", label: "已读" },
   { id: "fav", value: "0", label: "收藏" },
-];
-
-const settingsItems = [
-  {
-    id: "reading",
-    icon: "menu-book",
-    title: "阅读偏好",
-    desc: "字体大小，行高，主题",
-  },
-  {
-    id: "notify",
-    icon: "notifications-active",
-    title: "通知设置",
-    desc: "重大新闻，每日摘要",
-  },
 ];
 
 export default function ProfileScreen() {
@@ -47,8 +40,12 @@ export default function ProfileScreen() {
   const [stats, setStats] = useState<UserProfileStats | null>(null);
 
   // Get display labels for current languages
-  const interfaceLangLabel = INTERFACE_LANGUAGES.find(l => l.value === interfaceLanguage)?.label ?? "中文 (简体)";
-  const translationLangLabel = TRANSLATION_LANGUAGES.find(l => l.value === translationLanguage)?.label ?? "English";
+  const interfaceLangLabel =
+    INTERFACE_LANGUAGES.find((l) => l.value === interfaceLanguage)?.label ??
+    "中文 (简体)";
+  const translationLangLabel =
+    TRANSLATION_LANGUAGES.find((l) => l.value === translationLanguage)?.label ??
+    "English";
 
   // Dynamic settings items based on preferences
   const dynamicSettingsItems = [
@@ -64,11 +61,23 @@ export default function ProfileScreen() {
       title: "通知设置",
       desc: "重大新闻，每日摘要",
     },
-    { id: "lang", icon: "language", title: "界面语言", desc: interfaceLangLabel, route: "/language-settings?type=interface" },
-    { id: "translation", icon: "translate", title: "翻译语言", desc: translationLangLabel, route: "/language-settings?type=translation" },
+    {
+      id: "lang",
+      icon: "language",
+      title: "界面语言",
+      desc: interfaceLangLabel,
+      route: "/language-settings?type=interface",
+    },
+    {
+      id: "translation",
+      icon: "translate",
+      title: "翻译语言",
+      desc: translationLangLabel,
+      route: "/language-settings?type=translation",
+    },
   ];
 
-  const handleSettingPress = (item: typeof dynamicSettingsItems[0]) => {
+  const handleSettingPress = (item: (typeof dynamicSettingsItems)[0]) => {
     if (item.id === "lang" || item.id === "translation") {
       router.push(item.route as any);
     }
@@ -94,11 +103,17 @@ export default function ProfileScreen() {
   }, []);
 
   // Update stats display when fetched
-  const displayStats = stats ? [
-    { id: "sources", value: String(stats.subscriptionCount), label: "订阅源" },
-    { id: "read", value: String(stats.readCount), label: "已读" },
-    { id: "fav", value: String(stats.bookmarkCount), label: "收藏" },
-  ] : profileStats;
+  const displayStats = stats
+    ? [
+        {
+          id: "sources",
+          value: String(stats.subscriptionCount),
+          label: "订阅源",
+        },
+        { id: "read", value: String(stats.readCount), label: "已读" },
+        { id: "fav", value: String(stats.bookmarkCount), label: "收藏" },
+      ]
+    : profileStats;
 
   const styles = StyleSheet.create({
     container: {
@@ -239,7 +254,7 @@ export default function ProfileScreen() {
     },
     settingDesc: {
       fontSize: 12,
-      color: "#6b7280",
+      color: colors.onSurfaceVariant,
     },
     logoutWrap: {
       marginTop: Spacing.xxl,
@@ -299,24 +314,54 @@ export default function ProfileScreen() {
               </View>
               <Text style={styles.userName}>Reader 101</Text>
               <View style={styles.memberTag}>
-                <Text style={styles.memberTagText}>高级会员</Text>
+                <Text
+                  style={styles.memberTagText}
+                  maxFontSizeMultiplier={MAX_FONT_SCALE}
+                >
+                  高级会员
+                </Text>
               </View>
             </View>
           </View>
 
           <View style={styles.statsGrid}>
             {displayStats.map((stat) => (
-              <View key={stat.id} style={styles.statCard}>
-                <Text style={styles.statValue}>{stat.value}</Text>
-                <Text style={styles.statLabel}>{stat.label}</Text>
+              <View
+                key={stat.id}
+                style={styles.statCard}
+                accessibilityLabel={`${stat.label} ${stat.value}`}
+              >
+                <Text
+                  style={styles.statValue}
+                  maxFontSizeMultiplier={MAX_FONT_SCALE}
+                >
+                  {stat.value}
+                </Text>
+                <Text
+                  style={styles.statLabel}
+                  maxFontSizeMultiplier={MAX_FONT_SCALE}
+                >
+                  {stat.label}
+                </Text>
               </View>
             ))}
           </View>
 
-          <Text style={styles.sectionTitle}>账户设置</Text>
+          <Text
+            style={styles.sectionTitle}
+            maxFontSizeMultiplier={MAX_FONT_SCALE}
+          >
+            账户设置
+          </Text>
           <View style={styles.settingsList}>
             {dynamicSettingsItems.map((item) => (
-              <TouchableOpacity key={item.id} style={styles.settingsItem} onPress={() => handleSettingPress(item)}>
+              <TouchableOpacity
+                key={item.id}
+                style={styles.settingsItem}
+                onPress={() => handleSettingPress(item)}
+                accessibilityRole="button"
+                accessibilityLabel={`${item.title}，当前 ${item.desc}`}
+              >
                 <View style={styles.settingLeft}>
                   <View style={styles.settingIconWrap}>
                     <MaterialIcons
@@ -326,8 +371,18 @@ export default function ProfileScreen() {
                     />
                   </View>
                   <View>
-                    <Text style={styles.settingTitle}>{item.title}</Text>
-                    <Text style={styles.settingDesc}>{item.desc}</Text>
+                    <Text
+                      style={styles.settingTitle}
+                      maxFontSizeMultiplier={MAX_FONT_SCALE}
+                    >
+                      {item.title}
+                    </Text>
+                    <Text
+                      style={styles.settingDesc}
+                      maxFontSizeMultiplier={MAX_FONT_SCALE}
+                    >
+                      {item.desc}
+                    </Text>
                   </View>
                 </View>
                 <MaterialIcons
@@ -343,11 +398,20 @@ export default function ProfileScreen() {
             <TouchableOpacity
               style={styles.logoutBtn}
               onPress={() => void signOut()}
+              accessibilityRole="button"
+              accessibilityLabel="退出登录"
             >
               <MaterialIcons name="logout" size={20} color={colors.error} />
-              <Text style={styles.logoutText}>退出登录</Text>
+              <Text
+                style={styles.logoutText}
+                maxFontSizeMultiplier={MAX_FONT_SCALE}
+              >
+                退出登录
+              </Text>
             </TouchableOpacity>
-            <Text style={styles.version}>THE CURATOR 版本 2.4.0</Text>
+            <Text style={styles.version} maxFontSizeMultiplier={MAX_FONT_SCALE}>
+              THE CURATOR 版本 2.4.0
+            </Text>
           </View>
         </View>
       </ScrollView>

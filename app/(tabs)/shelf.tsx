@@ -15,6 +15,7 @@ import {
 import { Header } from "@/components/header";
 import { Colors, Spacing } from "@/constants/theme";
 import { useBookmarks } from "@/contexts/bookmark-context";
+import { MAX_FONT_SCALE } from "@/utils/accessibility";
 
 const filterChips = ["全部", "收藏", "设计", "科技", "文化", "建筑", "商业"];
 
@@ -75,7 +76,7 @@ export default function ShelfScreen() {
   const [selectedChip, setSelectedChip] = useState("全部");
   const colorScheme = "light";
   const colors = Colors[colorScheme];
-  const { isBookmarked: checkBookmark, bookmarkedIds } = useBookmarks();
+  const { bookmarkedIds } = useBookmarks();
   const visibleFeeds = useMemo(
     () =>
       shelfFeeds.filter((item) => {
@@ -105,9 +106,6 @@ export default function ShelfScreen() {
     // Filter to only show articles that are actually bookmarked
     return articles.filter((article) => bookmarkedIds.has(article.id));
   }, [bookmarkedIds]);
-
-  const showBookmarks = selectedChip === "收藏";
-
   const handleArticlePress = (articleId: string) => {
     router.push({
       pathname: "/read",
@@ -177,14 +175,18 @@ export default function ShelfScreen() {
       backgroundColor: colors.surfaceContainerLow,
       padding: Spacing.lg,
       flexDirection: "row",
-      alignItems: "center",
+      alignItems: "flex-start",
       justifyContent: "space-between",
+      gap: Spacing.md,
     },
     rowLeft: {
       flexDirection: "row",
       alignItems: "center",
       flex: 1,
       marginRight: Spacing.md,
+    },
+    articleInfo: {
+      flex: 1,
     },
     logoWrap: {
       width: 56,
@@ -227,12 +229,18 @@ export default function ShelfScreen() {
     },
     updateText: {
       fontSize: 12,
-      color: `${colors.onSurfaceVariant}AA`,
+      color: colors.onSurfaceVariant,
+    },
+    sourceName: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: colors.onSurfaceVariant,
     },
     rowRight: {
       flexDirection: "row",
       alignItems: "center",
       gap: Spacing.md,
+      minHeight: 44,
     },
     unread: {
       minWidth: 24,
@@ -255,6 +263,13 @@ export default function ShelfScreen() {
       borderStyle: "dashed",
       borderColor: `${colors.outlineVariant}66`,
       padding: Spacing.xxxl,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    emptyBookmarkWrap: {
+      borderRadius: 24,
+      backgroundColor: colors.surfaceContainerLow,
+      padding: Spacing.xxl,
       justifyContent: "center",
       alignItems: "center",
     },
@@ -316,12 +331,16 @@ export default function ShelfScreen() {
                   selectedChip === chip && styles.chipActive,
                 ]}
                 onPress={() => setSelectedChip(chip)}
+                accessibilityRole="button"
+                accessibilityLabel={`筛选 ${chip}`}
+                accessibilityState={{ selected: selectedChip === chip }}
               >
                 <Text
                   style={[
                     styles.chipText,
                     selectedChip === chip && styles.chipTextActive,
                   ]}
+                  maxFontSizeMultiplier={MAX_FONT_SCALE}
                 >
                   {chip}
                 </Text>
@@ -337,15 +356,31 @@ export default function ShelfScreen() {
                     key={article.id}
                     style={styles.row}
                     onPress={() => handleArticlePress(article.id)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${article.title}，来源 ${article.source}，${article.time}`}
+                    accessibilityHint="打开文章详情"
                   >
                     <View style={styles.rowLeft}>
                       <View style={styles.articleInfo}>
-                        <Text style={styles.feedTitle} numberOfLines={2}>
+                        <Text
+                          style={styles.feedTitle}
+                          maxFontSizeMultiplier={MAX_FONT_SCALE}
+                        >
                           {article.title}
                         </Text>
                         <View style={styles.metaRow}>
-                          <Text style={styles.sourceName}>{article.source}</Text>
-                          <Text style={styles.updateText}>{article.time}</Text>
+                          <Text
+                            style={styles.sourceName}
+                            maxFontSizeMultiplier={MAX_FONT_SCALE}
+                          >
+                            {article.source}
+                          </Text>
+                          <Text
+                            style={styles.updateText}
+                            maxFontSizeMultiplier={MAX_FONT_SCALE}
+                          >
+                            {article.time}
+                          </Text>
                         </View>
                       </View>
                     </View>
@@ -361,10 +396,22 @@ export default function ShelfScreen() {
               ) : (
                 <View style={styles.emptyBookmarkWrap}>
                   <View style={styles.emptyIconWrap}>
-                    <MaterialIcons name="bookmark-border" size={30} color={colors.primary} />
+                    <MaterialIcons
+                      name="bookmark-border"
+                      size={30}
+                      color={colors.primary}
+                    />
                   </View>
-                  <Text style={styles.emptyTitle}>暂无收藏</Text>
-                  <Text style={styles.emptyDesc}>
+                  <Text
+                    style={styles.emptyTitle}
+                    maxFontSizeMultiplier={MAX_FONT_SCALE}
+                  >
+                    暂无收藏
+                  </Text>
+                  <Text
+                    style={styles.emptyDesc}
+                    maxFontSizeMultiplier={MAX_FONT_SCALE}
+                  >
                     在今日页或阅读页点击收藏按钮来保存文章。
                   </Text>
                 </View>
@@ -375,6 +422,9 @@ export default function ShelfScreen() {
                   key={feed.id}
                   style={styles.row}
                   onPress={() => handleFeedPress(feed.id)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${feed.name}，${feed.tag}，${feed.updateAt}，未读 ${feed.unread} 篇`}
+                  accessibilityHint="打开该订阅源的文章列表"
                 >
                   <View style={styles.rowLeft}>
                     <View style={styles.logoWrap}>
@@ -385,20 +435,38 @@ export default function ShelfScreen() {
                       />
                     </View>
                     <View>
-                      <Text style={styles.feedTitle} numberOfLines={1}>
+                      <Text
+                        style={styles.feedTitle}
+                        maxFontSizeMultiplier={MAX_FONT_SCALE}
+                      >
                         {feed.name}
                       </Text>
                       <View style={styles.metaRow}>
                         <View style={styles.tag}>
-                          <Text style={styles.tagText}>{feed.tag}</Text>
+                          <Text
+                            style={styles.tagText}
+                            maxFontSizeMultiplier={MAX_FONT_SCALE}
+                          >
+                            {feed.tag}
+                          </Text>
                         </View>
-                        <Text style={styles.updateText}>{feed.updateAt}</Text>
+                        <Text
+                          style={styles.updateText}
+                          maxFontSizeMultiplier={MAX_FONT_SCALE}
+                        >
+                          {feed.updateAt}
+                        </Text>
                       </View>
                     </View>
                   </View>
                   <View style={styles.rowRight}>
                     <View style={styles.unread}>
-                      <Text style={styles.unreadText}>{feed.unread}</Text>
+                      <Text
+                        style={styles.unreadText}
+                        maxFontSizeMultiplier={MAX_FONT_SCALE}
+                      >
+                        {feed.unread}
+                      </Text>
                     </View>
                     <MaterialIcons
                       name="chevron-right"
@@ -415,12 +483,29 @@ export default function ShelfScreen() {
             <View style={styles.emptyIconWrap}>
               <MaterialIcons name="rss-feed" size={30} color={colors.primary} />
             </View>
-            <Text style={styles.emptyTitle}>发现更多声音</Text>
-            <Text style={styles.emptyDesc}>
+            <Text
+              style={styles.emptyTitle}
+              maxFontSizeMultiplier={MAX_FONT_SCALE}
+            >
+              发现更多声音
+            </Text>
+            <Text
+              style={styles.emptyDesc}
+              maxFontSizeMultiplier={MAX_FONT_SCALE}
+            >
               寻找并关注世界上最优秀的作家和出版物。
             </Text>
-            <TouchableOpacity style={styles.cta}>
-              <Text style={styles.ctaText}>探索目录</Text>
+            <TouchableOpacity
+              style={styles.cta}
+              accessibilityRole="button"
+              accessibilityLabel="探索目录"
+            >
+              <Text
+                style={styles.ctaText}
+                maxFontSizeMultiplier={MAX_FONT_SCALE}
+              >
+                探索目录
+              </Text>
             </TouchableOpacity>
           </View>
         </View>

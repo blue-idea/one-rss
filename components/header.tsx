@@ -1,7 +1,7 @@
 import {
+  Pressable,
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
   Platform,
   StatusBar,
@@ -9,6 +9,7 @@ import {
 import { useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Colors, Spacing } from "@/constants/theme";
+import { MAX_FONT_SCALE } from "@/utils/accessibility";
 
 export type HeaderProps = {
   title: string;
@@ -63,8 +64,8 @@ export function Header({
       minWidth: 48,
     },
     iconButton: {
-      width: 32,
-      height: 32,
+      minWidth: 44,
+      minHeight: 44,
       justifyContent: "center",
       alignItems: "center",
     },
@@ -114,6 +115,8 @@ export function Header({
     rightButton: {
       paddingVertical: Spacing.sm,
       paddingHorizontal: Spacing.sm,
+      minHeight: 44,
+      justifyContent: "center",
     },
     rightText: {
       fontSize: 15,
@@ -133,49 +136,97 @@ export function Header({
     <View style={styles.container}>
       <View style={styles.leftContainer}>
         {(showBack || leftIcon) && (
-          <TouchableOpacity style={styles.iconButton} onPress={handleLeftPress}>
+          <Pressable
+            style={styles.iconButton}
+            onPress={handleLeftPress}
+            accessibilityRole="button"
+            accessibilityLabel={showBack ? "返回上一页" : "打开菜单"}
+          >
             {leftIcon ? (
-              <Text style={styles.leftText}>{leftIcon}</Text>
+              <Text
+                style={styles.leftText}
+                maxFontSizeMultiplier={MAX_FONT_SCALE}
+              >
+                {leftIcon}
+              </Text>
             ) : showBack ? (
-              <Text style={styles.leftText}>‹</Text>
+              <Text
+                style={styles.leftText}
+                maxFontSizeMultiplier={MAX_FONT_SCALE}
+              >
+                ‹
+              </Text>
             ) : (
               <MaterialIcons name="menu" size={24} color={colors.onSurface} />
             )}
-          </TouchableOpacity>
+          </Pressable>
         )}
         {!showBack && !leftIcon && (
-          <TouchableOpacity style={styles.iconButton} onPress={onLeftPress}>
+          <Pressable
+            style={styles.iconButton}
+            onPress={onLeftPress}
+            accessibilityRole="button"
+            accessibilityLabel="打开菜单"
+          >
             <MaterialIcons name="menu" size={24} color={colors.onSurface} />
-          </TouchableOpacity>
+          </Pressable>
         )}
       </View>
 
       <View style={styles.centerContainer}>
-        <Text style={styles.title} numberOfLines={1}>
+        <Text
+          style={styles.title}
+          numberOfLines={2}
+          maxFontSizeMultiplier={MAX_FONT_SCALE}
+          accessibilityRole="header"
+        >
           {title}
         </Text>
       </View>
 
       <View style={styles.rightContainer}>
         {rightText ? (
-          <TouchableOpacity style={styles.rightButton} onPress={onRightPress}>
-            <Text style={styles.rightText}>{rightText}</Text>
-          </TouchableOpacity>
+          <Pressable
+            style={styles.rightButton}
+            onPress={onRightPress}
+            accessibilityRole="button"
+            accessibilityLabel={rightText}
+          >
+            <Text
+              style={styles.rightText}
+              maxFontSizeMultiplier={MAX_FONT_SCALE}
+            >
+              {rightText}
+            </Text>
+          </Pressable>
         ) : (
           <View style={styles.rightActions}>
             {showSearch && (
-              <TouchableOpacity style={styles.iconButton}>
+              <Pressable
+                style={styles.iconButton}
+                accessibilityRole="button"
+                accessibilityLabel="搜索"
+              >
                 <MaterialIcons
                   name="search"
                   size={22}
                   color={colors.onSurfaceVariant}
                 />
-              </TouchableOpacity>
+              </Pressable>
             )}
             {showAvatar && (
-              <TouchableOpacity style={styles.avatar}>
-                <Text style={styles.avatarText}>{avatarText}</Text>
-              </TouchableOpacity>
+              <Pressable
+                style={styles.avatar}
+                accessibilityRole="button"
+                accessibilityLabel="打开个人资料"
+              >
+                <Text
+                  style={styles.avatarText}
+                  maxFontSizeMultiplier={MAX_FONT_SCALE}
+                >
+                  {avatarText}
+                </Text>
+              </Pressable>
             )}
           </View>
         )}

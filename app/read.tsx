@@ -1,8 +1,9 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Share, Alert } from "react-native";
 import {
+  Alert,
+  Share,
   ScrollView,
   StyleSheet,
   Text,
@@ -23,6 +24,10 @@ import {
 } from "@/contexts/preference-context";
 import { fetchArticle, type Article } from "@/modules/article/api/fetchArticle";
 import { updateReadingProgress } from "@/modules/article/api/updateReadingProgress";
+import {
+  getBookmarkAccessibilityLabel,
+  MAX_FONT_SCALE,
+} from "@/utils/accessibility";
 
 // 主题配色
 const themeColors = {
@@ -117,38 +122,51 @@ export default function ReadScreen() {
   }, [params.id]);
 
   // 报告阅读进度
-  const reportProgress = useCallback(async (progress: number) => {
-    if (params.id) {
-      try {
-        await updateReadingProgress({ articleId: params.id, progress });
-      } catch (error) {
-        console.log("Failed to report progress:", error);
+  const reportProgress = useCallback(
+    async (progress: number) => {
+      if (params.id) {
+        try {
+          await updateReadingProgress({ articleId: params.id, progress });
+        } catch (error) {
+          console.log("Failed to report progress:", error);
+        }
       }
-    }
-  }, [params.id]);
+    },
+    [params.id],
+  );
 
-  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-    const scrollableHeight = contentSize.height - layoutMeasurement.height;
-    if (scrollableHeight > 0) {
-      const progress = Math.min(
-        Math.round((contentOffset.y / scrollableHeight) * 100),
-        100
-      );
-      setScrollProgress(progress);
-      if (progress % 10 === 0 || progress === 100) {
-        reportProgress(progress);
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { contentOffset, contentSize, layoutMeasurement } =
+        event.nativeEvent;
+      const scrollableHeight = contentSize.height - layoutMeasurement.height;
+      if (scrollableHeight > 0) {
+        const progress = Math.min(
+          Math.round((contentOffset.y / scrollableHeight) * 100),
+          100,
+        );
+        setScrollProgress(progress);
+        if (progress % 10 === 0 || progress === 100) {
+          reportProgress(progress);
+        }
       }
-    }
-  }, [reportProgress]);
+    },
+    [reportProgress],
+  );
 
-  const handleContentSizeChange = useCallback((_width: number, height: number) => {
-    contentHeightRef.current = height;
-  }, []);
+  const handleContentSizeChange = useCallback(
+    (_width: number, height: number) => {
+      contentHeightRef.current = height;
+    },
+    [],
+  );
 
-  const handleLayout = useCallback((event: { nativeEvent: { layout: { height: number } } }) => {
-    scrollViewHeightRef.current = event.nativeEvent.layout.height;
-  }, []);
+  const handleLayout = useCallback(
+    (event: { nativeEvent: { layout: { height: number } } }) => {
+      scrollViewHeightRef.current = event.nativeEvent.layout.height;
+    },
+    [],
+  );
 
   const handleBookmarkToggle = useCallback(() => {
     if (params.id) {
@@ -166,11 +184,9 @@ export default function ReadScreen() {
         url: params.id ? `one-rss://article/${params.id}` : undefined,
       });
     } catch {
-      Alert.alert(
-        "无法分享",
-        "请尝试通过系统分享菜单手动分享这篇文章。",
-        [{ text: "确定" }]
-      );
+      Alert.alert("无法分享", "请尝试通过系统分享菜单手动分享这篇文章。", [
+        { text: "确定" },
+      ]);
     }
   };
 
@@ -199,9 +215,10 @@ export default function ReadScreen() {
     ? `${article.readTimeMinutes}分钟阅读`
     : "";
 
-  const metaText = formattedDate && readTime
-    ? `发布于 ${formattedDate} • ${readTime}`
-    : formattedDate || readTime || "";
+  const metaText =
+    formattedDate && readTime
+      ? `发布于 ${formattedDate} • ${readTime}`
+      : formattedDate || readTime || "";
 
   const styles = StyleSheet.create({
     container: {
@@ -228,8 +245,8 @@ export default function ReadScreen() {
       borderBottomColor: theme.border,
     },
     topAction: {
-      width: 40,
-      height: 40,
+      minWidth: 44,
+      minHeight: 44,
       borderRadius: 20,
       justifyContent: "center",
       alignItems: "center",
@@ -259,7 +276,7 @@ export default function ReadScreen() {
     },
     headerMetaRow: {
       flexDirection: "row",
-      alignItems: "center",
+      alignItems: "flex-start",
       marginBottom: Spacing.lg,
       gap: Spacing.md,
     },
@@ -319,8 +336,10 @@ export default function ReadScreen() {
       paddingHorizontal: Spacing.sm,
       paddingVertical: Spacing.sm,
       flexDirection: "row",
-      alignItems: "center",
+      alignItems: "flex-start",
       justifyContent: "space-between",
+      gap: Spacing.xs,
+      flexWrap: "wrap",
     },
     toolbarGroup: {
       flexDirection: "row",
@@ -328,8 +347,8 @@ export default function ReadScreen() {
       gap: 4,
     },
     toolButton: {
-      width: 48,
-      height: 48,
+      minWidth: 48,
+      minHeight: 48,
       borderRadius: 24,
       alignItems: "center",
       justifyContent: "center",
@@ -341,8 +360,8 @@ export default function ReadScreen() {
       marginTop: 1,
     },
     speakButton: {
-      width: 56,
-      height: 56,
+      minWidth: 56,
+      minHeight: 56,
       borderRadius: 28,
       alignItems: "center",
       justifyContent: "center",
@@ -443,8 +462,8 @@ export default function ReadScreen() {
       gap: Spacing.md,
     },
     sliderButton: {
-      width: 36,
-      height: 36,
+      minWidth: 44,
+      minHeight: 44,
       borderRadius: 18,
       backgroundColor: theme.surfaceHigh,
       justifyContent: "center",
@@ -483,8 +502,16 @@ export default function ReadScreen() {
         style={styles.modalOverlay}
         onPress={() => setShowThemePanel(false)}
       >
-        <Pressable style={styles.panelContainer} onPress={(e) => e.stopPropagation()}>
-          <Text style={styles.panelTitle}>选择阅读主题</Text>
+        <Pressable
+          style={styles.panelContainer}
+          onPress={(e) => e.stopPropagation()}
+        >
+          <Text
+            style={styles.panelTitle}
+            maxFontSizeMultiplier={MAX_FONT_SCALE}
+          >
+            选择阅读主题
+          </Text>
           <View style={styles.optionGrid}>
             {(["light", "dark", "deep"] as ReaderTheme[]).map((t) => (
               <TouchableOpacity
@@ -503,6 +530,7 @@ export default function ReadScreen() {
                     styles.optionText,
                     readerTheme === t && styles.optionTextActive,
                   ]}
+                  maxFontSizeMultiplier={MAX_FONT_SCALE}
                 >
                   {themeLabels[t]}
                 </Text>
@@ -526,12 +554,25 @@ export default function ReadScreen() {
         style={styles.modalOverlay}
         onPress={() => setShowFontPanel(false)}
       >
-        <Pressable style={styles.panelContainer} onPress={(e) => e.stopPropagation()}>
-          <Text style={styles.panelTitle}>阅读设置</Text>
+        <Pressable
+          style={styles.panelContainer}
+          onPress={(e) => e.stopPropagation()}
+        >
+          <Text
+            style={styles.panelTitle}
+            maxFontSizeMultiplier={MAX_FONT_SCALE}
+          >
+            阅读设置
+          </Text>
 
           {/* 字号设置 */}
           <View style={styles.sliderContainer}>
-            <Text style={styles.sliderLabel}>字体大小</Text>
+            <Text
+              style={styles.sliderLabel}
+              maxFontSizeMultiplier={MAX_FONT_SCALE}
+            >
+              字体大小
+            </Text>
             <View style={styles.sliderRow}>
               <TouchableOpacity
                 style={styles.sliderButton}
@@ -539,26 +580,46 @@ export default function ReadScreen() {
                   const idx = fontSizes.indexOf(readerFontSize);
                   if (idx > 0) setReaderFontSize(fontSizes[idx - 1]);
                 }}
+                accessibilityRole="button"
+                accessibilityLabel="减小字体大小"
               >
                 <MaterialIcons name="remove" size={20} color={theme.text} />
               </TouchableOpacity>
-              <Text style={styles.sliderValue}>{readerFontSize}</Text>
+              <Text
+                style={styles.sliderValue}
+                maxFontSizeMultiplier={MAX_FONT_SCALE}
+              >
+                {readerFontSize}
+              </Text>
               <TouchableOpacity
                 style={styles.sliderButton}
                 onPress={() => {
                   const idx = fontSizes.indexOf(readerFontSize);
-                  if (idx < fontSizes.length - 1) setReaderFontSize(fontSizes[idx + 1]);
+                  if (idx < fontSizes.length - 1)
+                    setReaderFontSize(fontSizes[idx + 1]);
                 }}
+                accessibilityRole="button"
+                accessibilityLabel="增大字体大小"
               >
                 <MaterialIcons name="add" size={20} color={theme.text} />
               </TouchableOpacity>
             </View>
-            <Text style={styles.currentValue}>当前: {readerFontSize}px</Text>
+            <Text
+              style={styles.currentValue}
+              maxFontSizeMultiplier={MAX_FONT_SCALE}
+            >
+              当前: {readerFontSize}px
+            </Text>
           </View>
 
           {/* 行高设置 */}
           <View style={styles.sliderContainer}>
-            <Text style={styles.sliderLabel}>行高</Text>
+            <Text
+              style={styles.sliderLabel}
+              maxFontSizeMultiplier={MAX_FONT_SCALE}
+            >
+              行高
+            </Text>
             <View style={styles.optionGrid}>
               {lineHeights.map((h) => (
                 <TouchableOpacity
@@ -568,12 +629,15 @@ export default function ReadScreen() {
                     readerLineHeight === h && styles.optionItemActive,
                   ]}
                   onPress={() => setReaderLineHeight(h)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`设置行高 ${h}`}
                 >
                   <Text
                     style={[
                       styles.optionText,
                       readerLineHeight === h && styles.optionTextActive,
                     ]}
+                    maxFontSizeMultiplier={MAX_FONT_SCALE}
                   >
                     {h}
                   </Text>
@@ -590,7 +654,9 @@ export default function ReadScreen() {
   if (isLoading) {
     return (
       <View style={[styles.container, styles.loadingContainer]}>
-        <Text style={styles.loadingText}>加载中...</Text>
+        <Text style={styles.loadingText} maxFontSizeMultiplier={MAX_FONT_SCALE}>
+          加载中...
+        </Text>
       </View>
     );
   }
@@ -599,10 +665,14 @@ export default function ReadScreen() {
   if (error || !article) {
     return (
       <View style={[styles.container, styles.errorContainer]}>
-        <Text style={styles.errorText}>{error || "无法加载文章"}</Text>
+        <Text style={styles.errorText} maxFontSizeMultiplier={MAX_FONT_SCALE}>
+          {error || "无法加载文章"}
+        </Text>
         <TouchableOpacity
           style={[styles.topAction, { marginTop: Spacing.lg }]}
           onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="返回上一页"
         >
           <MaterialIcons name="arrow-back" size={24} color={theme.text} />
         </TouchableOpacity>
@@ -617,28 +687,41 @@ export default function ReadScreen() {
         <TouchableOpacity
           style={styles.topAction}
           onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="返回上一页"
         >
           <MaterialIcons name="arrow-back" size={24} color={theme.text} />
         </TouchableOpacity>
         <View style={styles.topCenter}>
           <View style={styles.topCenterIcon}>
-            <MaterialIcons
-              name="auto-stories"
-              size={16}
-              color={theme.accent}
-            />
+            <MaterialIcons name="auto-stories" size={16} color={theme.accent} />
           </View>
-          <Text style={styles.topTitle}>{article.feed.title}</Text>
+          <Text style={styles.topTitle} maxFontSizeMultiplier={MAX_FONT_SCALE}>
+            {article.feed.title}
+          </Text>
         </View>
         <View style={styles.topRightActions}>
-          <TouchableOpacity style={styles.topAction} onPress={handleBookmarkToggle}>
+          <TouchableOpacity
+            style={styles.topAction}
+            onPress={handleBookmarkToggle}
+            accessibilityRole="button"
+            accessibilityLabel={getBookmarkAccessibilityLabel(
+              article.title,
+              displayBookmarked,
+            )}
+          >
             <MaterialIcons
               name={displayBookmarked ? "bookmark" : "bookmark-border"}
               size={22}
               color={displayBookmarked ? theme.accent : theme.text}
             />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.topAction} onPress={handleShare}>
+          <TouchableOpacity
+            style={styles.topAction}
+            onPress={handleShare}
+            accessibilityRole="button"
+            accessibilityLabel={`分享《${article.title}》`}
+          >
             <MaterialIcons name="share" size={22} color={theme.text} />
           </TouchableOpacity>
         </View>
@@ -658,29 +741,49 @@ export default function ReadScreen() {
           {/* 元信息 */}
           <View style={styles.headerMetaRow}>
             <View style={styles.sourceIconWrap}>
-              <MaterialIcons
-                name="newspaper"
-                size={18}
-                color={theme.accent}
-              />
+              <MaterialIcons name="newspaper" size={18} color={theme.accent} />
             </View>
             <View style={styles.sourceBlock}>
-              <Text style={styles.sourceName}>{article.feed.title}</Text>
-              <Text style={styles.sourceMeta}>{metaText}</Text>
+              <Text
+                style={styles.sourceName}
+                maxFontSizeMultiplier={MAX_FONT_SCALE}
+              >
+                {article.feed.title}
+              </Text>
+              <Text
+                style={styles.sourceMeta}
+                maxFontSizeMultiplier={MAX_FONT_SCALE}
+              >
+                {metaText}
+              </Text>
             </View>
           </View>
 
           {/* 标题 */}
-          <Text style={styles.articleTitle}>{article.title}</Text>
+          <Text
+            style={styles.articleTitle}
+            maxFontSizeMultiplier={MAX_FONT_SCALE}
+          >
+            {article.title}
+          </Text>
 
           {/* 摘要/导语 */}
           {article.summary && (
-            <Text style={styles.summaryText}>{article.summary}</Text>
+            <Text
+              style={styles.summaryText}
+              maxFontSizeMultiplier={MAX_FONT_SCALE}
+            >
+              {article.summary}
+            </Text>
           )}
 
           {/* 正文段落 */}
           {contentParagraphs.map((paragraph, index) => (
-            <Text key={index} style={styles.paragraph}>
+            <Text
+              key={index}
+              style={styles.paragraph}
+              maxFontSizeMultiplier={MAX_FONT_SCALE}
+            >
               {paragraph}
             </Text>
           ))}
@@ -693,45 +796,69 @@ export default function ReadScreen() {
           <TouchableOpacity
             style={styles.toolButton}
             onPress={() => setShowThemePanel(true)}
+            accessibilityRole="button"
+            accessibilityLabel="打开阅读主题设置"
           >
-            <MaterialIcons
-              name="palette"
-              size={22}
-              color={theme.secondary}
-            />
-            <Text style={styles.toolLabel}>主题</Text>
+            <MaterialIcons name="palette" size={22} color={theme.secondary} />
+            <Text
+              style={styles.toolLabel}
+              maxFontSizeMultiplier={MAX_FONT_SCALE}
+            >
+              主题
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.toolButton}
             onPress={() => setShowFontPanel(true)}
+            accessibilityRole="button"
+            accessibilityLabel="打开字体与行高设置"
           >
             <MaterialIcons
               name="format-size"
               size={22}
               color={theme.secondary}
             />
-            <Text style={styles.toolLabel}>字体</Text>
+            <Text
+              style={styles.toolLabel}
+              maxFontSizeMultiplier={MAX_FONT_SCALE}
+            >
+              字体
+            </Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.speakButton}>
+        <TouchableOpacity
+          style={styles.speakButton}
+          accessibilityRole="button"
+          accessibilityLabel="朗读文章"
+        >
           <MaterialIcons name="volume-up" size={24} color={theme.accent} />
-          <Text style={styles.speakLabel}>朗读</Text>
+          <Text
+            style={styles.speakLabel}
+            maxFontSizeMultiplier={MAX_FONT_SCALE}
+          >
+            朗读
+          </Text>
         </TouchableOpacity>
         <View style={styles.toolbarGroup}>
-          <TouchableOpacity style={styles.toolButton}>
-            <MaterialIcons
-              name="translate"
-              size={22}
-              color={theme.secondary}
-            />
-            <Text style={styles.toolLabel}>翻译</Text>
+          <TouchableOpacity
+            style={styles.toolButton}
+            accessibilityRole="button"
+            accessibilityLabel="翻译文章"
+          >
+            <MaterialIcons name="translate" size={22} color={theme.secondary} />
+            <Text
+              style={styles.toolLabel}
+              maxFontSizeMultiplier={MAX_FONT_SCALE}
+            >
+              翻译
+            </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.toolButton}>
-            <MaterialIcons
-              name="more-vert"
-              size={22}
-              color={theme.secondary}
-            />
+          <TouchableOpacity
+            style={styles.toolButton}
+            accessibilityRole="button"
+            accessibilityLabel="更多操作"
+          >
+            <MaterialIcons name="more-vert" size={22} color={theme.secondary} />
           </TouchableOpacity>
         </View>
       </View>
