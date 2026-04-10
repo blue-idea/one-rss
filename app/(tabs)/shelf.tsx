@@ -129,8 +129,12 @@ export default function ShelfScreen() {
     [feeds, selectedChip],
   );
 
-  const handleFeedPress = (feedId: string) => {
-    router.push(`/feed/${feedId}`);
+  // const handleFeedPress = (feedId: string) => {
+  //   router.push(`/feed/${feedId}`);
+  // };
+
+  const handleFeedPress = (_feedId: string) => {
+    // TODO: Task 15 - 书架源详情页
   };
 
   const handleExplorePress = () => {
