@@ -1,81 +1,80 @@
-import { Header } from "@/components/header";
-import { Colors, Spacing } from "@/constants/theme";
-import { MaterialIcons } from "@expo/vector-icons";
+import { useState, useEffect, useCallback } from "react";
 import {
+  ActivityIndicator,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  RefreshControl,
 } from "react-native";
 
-type Article = {
-  id: string;
-  source: string;
-  time: string;
-  title: string;
-  summary: string;
-  featured?: boolean;
-  sourceBadge?: string;
-  tags?: string[];
-  actionLabel?: string;
-  showDeepTag?: boolean;
-};
+import { Header } from "@/components/header";
+import { Colors, Spacing } from "@/constants/theme";
+import { MaterialIcons } from "@expo/vector-icons";
+import { router } from "expo-router";
 
-const timelineTabs = ["今日", "昨天", "本周"];
+import {
+  fetchTodayArticles,
+  type Article,
+  type TimeRange,
+} from "@/modules/today/api/fetchTodayArticles";
 
-const todayArticles: Article[] = [
-  {
-    id: "1",
-    source: "建筑评论",
-    time: "阅读时间 12 分钟",
-    title: "沉默的建筑师：设计没有视觉噪音的城市",
-    summary:
-      "在持续连接的时代，新一代城市设计师正在优先考虑“宁静权”。本文探讨声学景观设计如何影响心理健康，并分析减少视觉干扰对生活质量的提升。",
-    featured: true,
-    sourceBadge: "ARC",
-  },
-  {
-    id: "2",
-    source: "纽约时报",
-    time: "2小时前",
-    title: "全球经济：向再生金融模式的转型",
-    summary:
-      "全球投资机构开始放弃季度增长，转而关注未来 50 年的生态系统稳定性。再生金融不仅是道德选择，也正在成为新的风险管理框架。",
-    actionLabel: "阅读全文",
-  },
-  {
-    id: "3",
-    source: "TechCrunch",
-    time: "4小时前",
-    title: "超越硅基：首台碳纳米管计算机上线",
-    summary:
-      "新型计算架构实现更高性能和更低功耗，标志着计算科学进入新阶段，并有望从底层改写 AI 训练与边缘计算的硬件版图。",
-    tags: ["基础研究", "量子物理"],
-  },
-  {
-    id: "4",
-    source: "Dezeen",
-    time: "5小时前",
-    title: "粗野主义的伦理：为什么原始混凝土正在现代回归",
-    summary:
-      "新一代建筑师将粗野主义重新定义为可持续方案，通过材料寿命与结构诚实性回应“一次性设计”文化，探索更长期的建筑价值。",
-  },
-  {
-    id: "5",
-    source: "大西洋月刊",
-    time: "8小时前",
-    title: "慢读革命：深度专注的抗争",
-    summary:
-      "在碎片化信息流中，深度阅读正在成为稀缺能力。研究表明，长篇阅读不仅提升认知连接能力，也帮助我们重新夺回注意力主权。",
-    showDeepTag: true,
-  },
+const TIMELINE_TABS: { key: TimeRange; label: string }[] = [
+  { key: "today", label: "今日" },
+  { key: "yesterday", label: "昨天" },
+  { key: "week", label: "本周" },
 ];
+
+function formatRelativeTime(text: string): string {
+  return text;
+}
 
 export default function TodayScreen() {
   const colorScheme = "light";
   const colors = Colors[colorScheme];
+
+  const [timeRange, setTimeRange] = useState<TimeRange>("today");
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadArticles = useCallback(async (range: TimeRange) => {
+    try {
+      setError(null);
+      const data = await fetchTodayArticles({ timeRange: range });
+      setArticles(data);
+    } catch (err) {
+      console.error("loadArticles: failed", err);
+      setError("加载失败，请稍后重试");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    setLoading(true);
+    loadArticles(timeRange);
+  }, [timeRange, loadArticles]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadArticles(timeRange);
+  }, [timeRange, loadArticles]);
+
+  const handleTimeRangeChange = useCallback((range: TimeRange) => {
+    setTimeRange(range);
+  }, []);
+
+  const handleArticlePress = useCallback((article: Article) => {
+    router.push({
+      pathname: "/read",
+      params: { articleId: article.id },
+    });
+  }, []);
 
   const styles = StyleSheet.create({
     container: {
@@ -133,6 +132,28 @@ export default function TodayScreen() {
       fontSize: 14,
       color: colors.onSurfaceVariant,
       fontWeight: "500",
+    },
+    sortDropdown: {
+      position: "absolute",
+      top: 40,
+      right: 0,
+      backgroundColor: colors.surface,
+      borderRadius: 8,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      elevation: 4,
+      zIndex: 100,
+      minWidth: 120,
+    },
+    sortOption: {
+      paddingVertical: Spacing.sm,
+      paddingHorizontal: Spacing.md,
+    },
+    sortOptionText: {
+      fontSize: 14,
+      color: colors.onSurface,
     },
     articleList: {
       marginTop: Spacing.md,
@@ -246,6 +267,21 @@ export default function TodayScreen() {
     bookmarkButton: {
       padding: Spacing.xs,
     },
+    emptyState: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingVertical: 80,
+    },
+    emptyText: {
+      fontSize: 16,
+      color: colors.onSurfaceVariant,
+    },
+    errorText: {
+      fontSize: 14,
+      color: colors.error,
+      textAlign: "center",
+    },
     fab: {
       position: "absolute",
       right: Spacing.xl,
@@ -270,7 +306,9 @@ export default function TodayScreen() {
         <View style={styles.articleMetaRow}>
           <MaterialIcons name="star" size={14} color={colors.primary} />
           <Text style={styles.sourceUpper}>精选推荐</Text>
-          <Text style={styles.timeText}>{article.time}</Text>
+          <Text style={styles.timeText}>
+            {formatRelativeTime(article.time)}
+          </Text>
         </View>
       );
     }
@@ -283,103 +321,23 @@ export default function TodayScreen() {
           color={colors.onSurfaceVariant}
         />
         <Text style={styles.sourceUpper}>{article.source}</Text>
-        <Text style={styles.timeText}>{article.time}</Text>
+        <Text style={styles.timeText}>{formatRelativeTime(article.time)}</Text>
       </View>
     );
   };
 
   const renderBottomRow = (article: Article) => {
-    if (article.featured) {
-      return (
-        <View style={styles.bottomRow}>
-          <View style={styles.sourceInfo}>
-            <View style={styles.sourceBadge}>
-              <Text style={styles.sourceBadgeText}>
-                {article.sourceBadge ?? "ARC"}
-              </Text>
-            </View>
-            <Text style={styles.sourceName}>{article.source}</Text>
-          </View>
-          <TouchableOpacity style={styles.bookmarkButton}>
-            <MaterialIcons
-              name="bookmark-border"
-              size={20}
-              color={colors.onSurfaceVariant}
-            />
-          </TouchableOpacity>
-        </View>
-      );
-    }
-
-    if (article.actionLabel) {
-      return (
-        <View style={styles.bottomRow}>
-          <TouchableOpacity>
-            <Text style={styles.actionText}>{article.actionLabel} →</Text>
-          </TouchableOpacity>
-          <View style={styles.sourceInfo}>
-            <TouchableOpacity style={styles.bookmarkButton}>
-              <MaterialIcons
-                name="ios-share"
-                size={20}
-                color={colors.onSurfaceVariant}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.bookmarkButton}>
-              <MaterialIcons
-                name="bookmark-border"
-                size={20}
-                color={colors.onSurfaceVariant}
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
-      );
-    }
-
-    if (article.tags && article.tags.length > 0) {
-      return (
-        <View style={styles.bottomRow}>
-          <View style={styles.tagsRow}>
-            {article.tags.map((tag) => (
-              <View key={tag} style={styles.tag}>
-                <Text style={styles.tagText}>{tag}</Text>
-              </View>
-            ))}
-          </View>
-          <TouchableOpacity style={styles.bookmarkButton}>
-            <MaterialIcons
-              name="bookmark-border"
-              size={20}
-              color={colors.onSurfaceVariant}
-            />
-          </TouchableOpacity>
-        </View>
-      );
-    }
-
-    if (article.showDeepTag) {
-      return (
-        <View style={styles.bottomRow}>
-          <View style={styles.deepTag}>
-            <MaterialIcons name="verified" size={12} color={colors.primary} />
-            <Text style={styles.deepTagText}>深度解析</Text>
-          </View>
-          <TouchableOpacity style={styles.bookmarkButton}>
-            <MaterialIcons
-              name="bookmark-border"
-              size={20}
-              color={colors.onSurfaceVariant}
-            />
-          </TouchableOpacity>
-        </View>
-      );
-    }
-
     return (
       <View style={styles.bottomRow}>
-        <View />
-        <TouchableOpacity style={styles.bookmarkButton}>
+        <View style={styles.sourceInfo}>
+          {article.sourceBadge && (
+            <View style={styles.sourceBadge}>
+              <Text style={styles.sourceBadgeText}>{article.sourceBadge}</Text>
+            </View>
+          )}
+          <Text style={styles.sourceName}>{article.source}</Text>
+        </View>
+        <TouchableOpacity style={styles.bookmarkButton} onPress={() => {}}>
           <MaterialIcons
             name="bookmark-border"
             size={20}
@@ -393,25 +351,31 @@ export default function TodayScreen() {
   return (
     <View testID="screen-today" style={styles.container}>
       <Header title="今日摘要" />
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
+      >
         <View style={styles.content}>
           <View style={styles.tabsSection}>
             <View style={styles.tabsRow}>
-              {timelineTabs.map((tab, index) => (
+              {TIMELINE_TABS.map((tab) => (
                 <TouchableOpacity
-                  key={tab}
+                  key={tab.key}
                   style={[
                     styles.timelineTabButton,
-                    index === 0 && styles.timelineTabActive,
+                    timeRange === tab.key && styles.timelineTabActive,
                   ]}
+                  onPress={() => handleTimeRangeChange(tab.key)}
                 >
                   <Text
                     style={[
                       styles.timelineTabText,
-                      index === 0 && styles.timelineTabTextActive,
+                      timeRange === tab.key && styles.timelineTabTextActive,
                     ]}
                   >
-                    {tab}
+                    {tab.label}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -427,18 +391,37 @@ export default function TodayScreen() {
             </View>
           </View>
 
-          <View style={styles.articleList}>
-            {todayArticles.map((article) => (
-              <View key={article.id} style={styles.articleItem}>
-                {renderArticleMeta(article)}
-                <Text style={styles.articleTitle}>{article.title}</Text>
-                <Text style={styles.articleSummary} numberOfLines={5}>
-                  {article.summary}
-                </Text>
-                {renderBottomRow(article)}
-              </View>
-            ))}
-          </View>
+          {loading ? (
+            <View style={styles.emptyState}>
+              <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          ) : error ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          ) : articles.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>暂无文章</Text>
+            </View>
+          ) : (
+            <View style={styles.articleList}>
+              {articles.map((article) => (
+                <TouchableOpacity
+                  key={article.id}
+                  style={styles.articleItem}
+                  onPress={() => handleArticlePress(article)}
+                  activeOpacity={0.7}
+                >
+                  {renderArticleMeta(article)}
+                  <Text style={styles.articleTitle}>{article.title}</Text>
+                  <Text style={styles.articleSummary} numberOfLines={5}>
+                    {article.summary}
+                  </Text>
+                  {renderBottomRow(article)}
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </View>
       </ScrollView>
 
