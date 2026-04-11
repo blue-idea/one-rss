@@ -147,7 +147,7 @@ export default function ReadScreen() {
         }
       }
     },
-    [reportProgress],
+    [reportProgress, scrollProgress],
   );
 
   const handleContentSizeChange = useCallback(
