@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  parseCuratedArticlesResponse,
-  type CuratedArticle,
-  type CuratedArticlesResponse,
-} from "@/modules/curated/api/fetchCuratedArticles";
+import { parseCuratedArticlesResponse } from "@/modules/curated/api/fetchCuratedArticles";
 
 describe("parseCuratedArticlesResponse", () => {
   it("parses success payload with articles", () => {
@@ -57,7 +53,11 @@ describe("parseCuratedArticlesResponse", () => {
       meta: {},
     };
 
-    const result = parseCuratedArticlesResponse(mockResponse);
+    const result = parseCuratedArticlesResponse(mockResponse) as {
+      ok: false;
+      code: string;
+      message: string;
+    };
 
     expect(result.ok).toBe(false);
     expect(result.code).toBe("NETWORK_ERROR");
@@ -65,7 +65,10 @@ describe("parseCuratedArticlesResponse", () => {
   });
 
   it("returns error for invalid response structure", () => {
-    const result = parseCuratedArticlesResponse(null);
+    const result = parseCuratedArticlesResponse(null) as {
+      ok: false;
+      code: string;
+    };
     expect(result.ok).toBe(false);
     expect(result.code).toBe("INTERNAL_ERROR");
   });
@@ -77,7 +80,7 @@ describe("parseCuratedArticlesResponse", () => {
         pagination: { limit: 20, offset: 0, hasMore: false },
       },
       meta: {},
-    });
+    }) as { ok: false; code: string };
 
     expect(result.ok).toBe(false);
     expect(result.code).toBe("INTERNAL_ERROR");

@@ -6,7 +6,6 @@ describe("Navigation and Information Architecture", () => {
   it("should navigate to correct tab on tab press", () => {
     // This test documents the expected navigation behavior
     const tabRoutes = ["index", "explore", "shelf", "profile"];
-    const tabTitles = ["今日", "发现", "书架", "我的"];
 
     expect(tabRoutes).toHaveLength(4);
     expect(tabRoutes[0]).toBe("index"); // "今日" tab
@@ -132,7 +131,8 @@ describe("Offline Caching and Reading", () => {
     const shouldShowOfflineMessage = offlineMode && !articleCached;
 
     // Expected message when article not cached offline
-    const offlineMessage = "This article is not available offline. Please go online to read it.";
+    const offlineMessage =
+      "This article is not available offline. Please go online to read it.";
 
     expect(shouldShowOfflineMessage).toBe(true);
     expect(offlineMessage).toContain("offline");
