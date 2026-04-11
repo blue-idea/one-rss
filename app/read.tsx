@@ -142,12 +142,12 @@ export default function ReadScreen() {
           100,
         );
         setScrollProgress(progress);
-        if (progress % 10 === 0 || progress === 100) {
+        if ((progress % 10 === 0 || progress === 100) && progress !== scrollProgress) {
           reportProgress(progress);
         }
       }
     },
-    [reportProgress],
+    [reportProgress, scrollProgress],
   );
 
   const handleContentSizeChange = useCallback(
