@@ -72,7 +72,7 @@ export function parseFeedsResponse(body: unknown):
     return {
       ok: true,
       data: {
-        feeds: feeds as FeedSource[],
+feeds: (feeds as any[]).map(f => ({ ...f, imageUrl: f.image_url, siteUrl: f.site_url, isSubscribed: f.is_subscribed })),
         categories: categories as FeedCategory[],
         pagination: pagination as FeedsResponse["pagination"],
       },
