@@ -5,6 +5,7 @@ import {
   getSupabaseUrl,
   getSupabaseAnonKey,
 } from "@/modules/today/api/getSupabaseConfig";
+import { logSupabaseRestError } from "./logSupabaseRestError";
 import type { FeedCategory } from "./types";
 
 function getSupabaseClient() {
@@ -77,91 +78,108 @@ export function parseFeedCategoriesResponse(body: unknown):
 }
 
 export async function fetchFeedCategories(): Promise<FeedCategory[]> {
-  const supabase = getSupabaseClient();
-
-  const { data: sessionData, error: sessionError } =
-    await supabase.auth.getSession();
-
-  if (sessionError) {
-    console.error("fetchFeedCategories: getSession error", sessionError);
-    throw new AuthApiError("Failed to get user session.", "SESSION_ERROR", 0);
-  }
-
-  const accessToken = sessionData?.session?.access_token;
-  if (!accessToken) {
-    throw new AuthApiError(
-      "Please sign in to browse feeds.",
-      "UNAUTHORIZED",
-      0,
-    );
-  }
-
-  const supabaseUrl = getSupabaseUrl();
-  if (!supabaseUrl) {
-    throw new AuthApiError("Supabase is not configured.", "NOT_CONFIGURED", 0);
-  }
-
-  const url = `${supabaseUrl}/rest/v1/feed_categories?select=*&order=sort.asc`;
-
-  const anonKey = getSupabaseAnonKey();
-
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    Prefer: "count=exact",
-  };
-
-  if (anonKey) {
-    headers.apikey = anonKey;
-  }
-  headers.Authorization = `Bearer ${accessToken}`;
-
-  let res: Response;
   try {
-    res = await fetch(url, {
-      method: "GET",
-      headers,
-    });
-  } catch {
-    throw new AuthApiError(
-      "Network error. Please try again.",
-      "NETWORK_ERROR",
-      0,
-    );
-  }
+    const supabase = getSupabaseClient();
 
-  if (!res.ok) {
+    const { data: sessionData, error: sessionError } =
+      await supabase.auth.getSession();
+
+    if (sessionError) {
+      console.error("fetchFeedCategories: getSession error", sessionError);
+      throw new AuthApiError("Failed to get user session.", "SESSION_ERROR", 0);
+    }
+
+    const accessToken = sessionData?.session?.access_token;
+    if (!accessToken) {
+      throw new AuthApiError(
+        "Please sign in to browse feeds.",
+        "UNAUTHORIZED",
+        0,
+      );
+    }
+
+    const supabaseUrl = getSupabaseUrl();
+    if (!supabaseUrl) {
+      throw new AuthApiError(
+        "Supabase is not configured.",
+        "NOT_CONFIGURED",
+        0,
+      );
+    }
+
+    const url = `${supabaseUrl}/rest/v1/feed_categories?select=*&order=sort.asc`;
+
+    const anonKey = getSupabaseAnonKey();
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      Prefer: "count=exact",
+    };
+
+    if (anonKey) {
+      headers.apikey = anonKey;
+    }
+    headers.Authorization = `Bearer ${accessToken}`;
+
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method: "GET",
+        headers,
+      });
+    } catch (networkErr) {
+      console.error("fetchFeedCategories: network error", networkErr);
+      throw new AuthApiError(
+        "Network error. Please try again.",
+        "NETWORK_ERROR",
+        0,
+      );
+    }
+
+    if (!res.ok) {
+      await logSupabaseRestError("fetchFeedCategories", res);
+      throw new AuthApiError(
+        "Failed to fetch categories.",
+        "FETCH_ERROR",
+        res.status,
+      );
+    }
+
+    let jsonBody: unknown;
+    try {
+      jsonBody = await res.json();
+    } catch (parseErr) {
+      console.error("fetchFeedCategories: invalid JSON body", parseErr);
+      throw new AuthApiError(
+        "Invalid response from server.",
+        "INTERNAL_ERROR",
+        res.status,
+      );
+    }
+
+    // Supabase REST API returns raw array directly
+    if (Array.isArray(jsonBody)) {
+      return jsonBody as FeedCategory[];
+    }
+
+    const parsed = parseFeedCategoriesResponse(jsonBody);
+    if (parsed.ok) {
+      return parsed.data.categories;
+    }
+
+    console.error(
+      "fetchFeedCategories: unexpected payload",
+      parsed.message,
+      parsed.details,
+    );
     throw new AuthApiError(
       "Failed to fetch categories.",
-      "FETCH_ERROR",
+      parsed.code,
       res.status,
     );
+  } catch (e) {
+    if (e instanceof AuthApiError) throw e;
+    console.error("fetchFeedCategories: unexpected error", e);
+    throw new AuthApiError("Failed to fetch categories.", "INTERNAL_ERROR", 0);
   }
-
-  let jsonBody: unknown;
-  try {
-    jsonBody = await res.json();
-  } catch {
-    throw new AuthApiError(
-      "Invalid response from server.",
-      "INTERNAL_ERROR",
-      res.status,
-    );
-  }
-
-  // Supabase REST API returns raw array directly
-  if (Array.isArray(jsonBody)) {
-    return jsonBody as FeedCategory[];
-  }
-
-  const parsed = parseFeedCategoriesResponse(jsonBody);
-  if (parsed.ok) {
-    return parsed.data.categories;
-  }
-
-  throw new AuthApiError(
-    parsed.message,
-    parsed.code,
-    res.status,
-    parsed.details,
-  );
 }

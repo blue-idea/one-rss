@@ -16,12 +16,30 @@ import {
 
 import { Header } from "@/components/header";
 import { Colors, Spacing } from "@/constants/theme";
+import { AuthApiError } from "@/modules/auth/api/authApiError";
 import {
   fetchFeedCategories,
   fetchFeeds,
   type FeedCategory,
   type FeedSource,
 } from "@/modules/explore/api";
+
+const USER_SAFE_EXPLORE_ERROR_CODES = new Set([
+  "UNAUTHORIZED",
+  "NOT_CONFIGURED",
+  "SESSION_ERROR",
+  "NETWORK_ERROR",
+]);
+
+function userFacingExploreError(err: unknown): string {
+  if (
+    err instanceof AuthApiError &&
+    USER_SAFE_EXPLORE_ERROR_CODES.has(err.code)
+  ) {
+    return err.message;
+  }
+  return "加载失败，请稍后重试";
+}
 
 export default function ExploreScreen() {
   const [categories, setCategories] = useState<FeedCategory[]>([]);
@@ -103,7 +121,7 @@ export default function ExploreScreen() {
         setPage(pageNum);
       } catch (err) {
         console.error("Failed to load feeds:", err);
-        setError(err instanceof Error ? err.message : "Failed to load feeds");
+        setError(userFacingExploreError(err));
         if (!append) {
           setFeeds([]);
         }
