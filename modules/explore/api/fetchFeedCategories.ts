@@ -148,6 +148,11 @@ export async function fetchFeedCategories(): Promise<FeedCategory[]> {
     );
   }
 
+  // Supabase REST API returns raw array directly
+  if (Array.isArray(jsonBody)) {
+    return jsonBody as FeedCategory[];
+  }
+
   const parsed = parseFeedCategoriesResponse(jsonBody);
   if (parsed.ok) {
     return parsed.data.categories;

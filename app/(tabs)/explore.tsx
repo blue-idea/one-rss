@@ -1,8 +1,10 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import {
   ActivityIndicator,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
   Platform,
   ScrollView,
   StyleSheet,
@@ -26,6 +28,8 @@ export default function ExploreScreen() {
   const [feeds, setFeeds] = useState<FeedSource[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("全部");
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +59,21 @@ export default function ExploreScreen() {
     loadCategories();
   }, []);
 
+  // Debounce search query
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    searchTimeoutRef.current = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery]);
+
   // Fetch feeds
   const loadFeeds = useCallback(
     async (pageNum: number, append: boolean = false) => {
@@ -70,7 +89,7 @@ export default function ExploreScreen() {
           selectedCategory === "全部" ? undefined : selectedCategory;
         const result = await fetchFeeds({
           categorySlug: currentCategory,
-          keyword: searchQuery.trim() || undefined,
+          keyword: debouncedSearch.trim() || undefined,
           page: pageNum,
           pageSize: 20,
         });
@@ -93,7 +112,7 @@ export default function ExploreScreen() {
         setIsLoadingMore(false);
       }
     },
-    [selectedCategory, searchQuery],
+    [selectedCategory, debouncedSearch],
   );
 
   // Initial load and reload on filter change
@@ -108,16 +127,30 @@ export default function ExploreScreen() {
     }
   }, [isLoadingMore, hasMore, isLoading, page, loadFeeds]);
 
+  // Scroll handler for infinite scroll
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { layoutMeasurement, contentOffset, contentSize } =
+        event.nativeEvent;
+      const isNearBottom =
+        layoutMeasurement.height + contentOffset.y >= contentSize.height - 100;
+      if (isNearBottom) {
+        handleLoadMore();
+      }
+    },
+    [handleLoadMore],
+  );
+
   // Filter feeds by search query (client-side for immediate feedback)
   const filteredFeeds = useMemo(() => {
-    if (!searchQuery.trim()) return feeds;
-    const q = searchQuery.trim().toLowerCase();
+    if (!debouncedSearch.trim()) return feeds;
+    const q = debouncedSearch.trim().toLowerCase();
     return feeds.filter(
       (feed) =>
         feed.title.toLowerCase().includes(q) ||
-        feed.description.toLowerCase().includes(q),
+        (feed.description?.toLowerCase().includes(q) ?? false),
     );
-  }, [feeds, searchQuery]);
+  }, [feeds, debouncedSearch]);
 
   const styles = StyleSheet.create({
     container: {
@@ -326,7 +359,7 @@ export default function ExploreScreen() {
       <Header title="The Curator" />
       <ScrollView
         showsVerticalScrollIndicator={false}
-        onScrollEndDrag={handleLoadMore}
+        onScroll={handleScroll}
         scrollEventThrottle={16}
       >
         <View style={styles.content}>
