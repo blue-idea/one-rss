@@ -129,8 +129,8 @@ export async function fetchFeeds(
   params.set("offset", String((page - 1) * pageSize));
 
   // Filter by category if provided
-  if (categorySlug && categorySlug !== "all") {
-    params.set("categorySlug", categorySlug);
+if (categorySlug && categorySlug !== "all") {
+    params.set("category_slug", categorySlug);
   }
 
   // Search by keyword if provided
