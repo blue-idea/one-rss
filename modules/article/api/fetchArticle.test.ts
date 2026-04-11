@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseArticleResponse, type Article } from "@/modules/article/api/fetchArticle";
+import { parseArticleResponse } from "@/modules/article/api/fetchArticle";
 
 // 需求5 - 文章阅读体验
 describe("parseArticleResponse", () => {
@@ -12,7 +12,8 @@ describe("parseArticleResponse", () => {
         id: "article-123",
         title: "Understanding React Hooks",
         summary: "A comprehensive guide to React Hooks",
-        content: "<p>React Hooks are functions that let you use state and other React features without writing a class...</p>",
+        content:
+          "<p>React Hooks are functions that let you use state and other React features without writing a class...</p>",
         sourceUrl: "https://example.com/react-hooks",
         publishedAt: "2026-04-10T08:00:00Z",
         readTimeMinutes: 10,
@@ -176,7 +177,11 @@ describe("parseArticleResponse", () => {
       },
     };
 
-    const result = parseArticleResponse(mockResponse);
+    const result = parseArticleResponse(mockResponse) as {
+      ok: false;
+      code: string;
+      message: string;
+    };
 
     expect(result.ok).toBe(false);
     expect(result.code).toBe("NOT_FOUND");

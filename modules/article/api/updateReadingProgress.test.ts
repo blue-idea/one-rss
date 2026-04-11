@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  parseUpdateReadingProgressResponse,
-  type UpdateReadingProgressResponse,
-} from "@/modules/article/api/updateReadingProgress";
+import { parseUpdateReadingProgressResponse } from "@/modules/article/api/updateReadingProgress";
 
 // 需求5.7 - 阅读进度与系统分享
 describe("parseUpdateReadingProgressResponse", () => {
@@ -31,7 +28,11 @@ describe("parseUpdateReadingProgressResponse", () => {
       meta: {},
     };
 
-    const result = parseUpdateReadingProgressResponse(mockResponse, 404);
+    const result = parseUpdateReadingProgressResponse(mockResponse, 404) as {
+      ok: false;
+      code: string;
+      message: string;
+    };
 
     expect(result.ok).toBe(false);
     expect(result.code).toBe("INVALID_ARTICLE");
@@ -56,7 +57,10 @@ describe("parseUpdateReadingProgressResponse", () => {
       meta: {},
     };
 
-    const result = parseUpdateReadingProgressResponse(mockResponse, 500);
+    const result = parseUpdateReadingProgressResponse(mockResponse, 500) as {
+      ok: false;
+      message: string;
+    };
 
     expect(result.ok).toBe(false);
     expect(result.message).toBe("Internal server error");
@@ -101,7 +105,10 @@ describe("Offline Write Prevention", () => {
       },
     };
 
-    const result = parseUpdateReadingProgressResponse(serverError, 500);
+    const result = parseUpdateReadingProgressResponse(serverError, 500) as {
+      ok: false;
+      message: string;
+    };
 
     expect(result.ok).toBe(false);
     // Message should be user-friendly, not expose internal error details

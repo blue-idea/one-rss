@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  parseTodayArticlesResponse,
-  type TodayArticle,
-  type TimeRange,
-} from "@/modules/today/api/fetchTodayArticles";
+import { parseTodayArticlesResponse } from "@/modules/today/api/fetchTodayArticles";
 
 // 需求3 - 今日聚合流
 describe("parseTodayArticlesResponse", () => {
@@ -270,7 +266,11 @@ describe("parseTodayArticlesResponse", () => {
       meta: {},
     };
 
-    const result = parseTodayArticlesResponse(mockResponse);
+    const result = parseTodayArticlesResponse(mockResponse) as {
+      ok: false;
+      code: string;
+      message: string;
+    };
 
     expect(result.ok).toBe(false);
     expect(result.code).toBe("UNAUTHORIZED");

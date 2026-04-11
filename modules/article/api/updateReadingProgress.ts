@@ -1,7 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 
 import { AuthApiError } from "@/modules/auth/api/authApiError";
-import { getSupabaseUrl, getSupabaseAnonKey } from "@/modules/today/api/getSupabaseConfig";
+import {
+  getSupabaseUrl,
+  getSupabaseAnonKey,
+} from "@/modules/today/api/getSupabaseConfig";
 
 function getSupabaseClient() {
   const supabaseUrl = getSupabaseUrl();
@@ -23,7 +26,6 @@ export type UpdateReadingProgressResponse =
       details?: Record<string, unknown>;
     };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function parseUpdateReadingProgressResponse(
   body: unknown,
   status: number,
@@ -70,15 +72,12 @@ export async function updateReadingProgress(
   const supabase = getSupabaseClient();
 
   // Get current session to extract access token
-  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  const { data: sessionData, error: sessionError } =
+    await supabase.auth.getSession();
 
   if (sessionError) {
     console.error("updateReadingProgress: getSession error", sessionError);
-    throw new AuthApiError(
-      "Failed to get user session.",
-      "SESSION_ERROR",
-      0,
-    );
+    throw new AuthApiError("Failed to get user session.", "SESSION_ERROR", 0);
   }
 
   const accessToken = sessionData?.session?.access_token;
@@ -92,11 +91,7 @@ export async function updateReadingProgress(
   const anonKey = getSupabaseAnonKey();
 
   if (!supabaseUrl) {
-    throw new AuthApiError(
-      "Supabase is not configured.",
-      "NOT_CONFIGURED",
-      0,
-    );
+    throw new AuthApiError("Supabase is not configured.", "NOT_CONFIGURED", 0);
   }
 
   const url = `${supabaseUrl}/functions/v1/update-article-progress`;
