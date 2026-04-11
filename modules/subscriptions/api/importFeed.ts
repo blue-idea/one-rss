@@ -1,22 +1,10 @@
-import { createClient } from "@supabase/supabase-js";
-
 import { AuthApiError } from "@/modules/auth/api/authApiError";
 import {
   getSupabaseUrl,
   getSupabaseAnonKey,
 } from "@/modules/today/api/getSupabaseConfig";
+import { getAccessToken } from "./createSupabaseClient";
 import type { ImportFeedResult } from "./types";
-
-function getSupabaseClient() {
-  const supabaseUrl = getSupabaseUrl();
-  const supabaseAnonKey = getSupabaseAnonKey();
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new AuthApiError("Supabase is not configured.", "NOT_CONFIGURED", 0);
-  }
-
-  return createClient(supabaseUrl, supabaseAnonKey);
-}
 
 export type ImportFeedResponse =
   | { ok: true; data: ImportFeedResult }
@@ -87,24 +75,7 @@ export async function importFeed(url: string): Promise<ImportFeedResult> {
     );
   }
 
-  const supabase = getSupabaseClient();
-
-  const { data: sessionData, error: sessionError } =
-    await supabase.auth.getSession();
-
-  if (sessionError) {
-    console.error("importFeed: getSession error", sessionError);
-    throw new AuthApiError("Failed to get user session.", "SESSION_ERROR", 0);
-  }
-
-  const accessToken = sessionData?.session?.access_token;
-  if (!accessToken) {
-    throw new AuthApiError(
-      "Please sign in to import feeds.",
-      "UNAUTHORIZED",
-      0,
-    );
-  }
+  const accessToken = await getAccessToken();
 
   const supabaseUrl = getSupabaseUrl();
   if (!supabaseUrl) {

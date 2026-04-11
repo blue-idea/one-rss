@@ -1,22 +1,10 @@
-import { createClient } from "@supabase/supabase-js";
-
 import { AuthApiError } from "@/modules/auth/api/authApiError";
 import {
   getSupabaseUrl,
   getSupabaseAnonKey,
 } from "@/modules/today/api/getSupabaseConfig";
+import { getAccessToken } from "./createSupabaseClient";
 import type { SubscribeResult } from "./types";
-
-function getSupabaseClient() {
-  const supabaseUrl = getSupabaseUrl();
-  const supabaseAnonKey = getSupabaseAnonKey();
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new AuthApiError("Supabase is not configured.", "NOT_CONFIGURED", 0);
-  }
-
-  return createClient(supabaseUrl, supabaseAnonKey);
-}
 
 export type SubscribeToFeedResponse =
   | { ok: true; data: SubscribeResult }
@@ -67,20 +55,7 @@ export function parseSubscribeResponse(body: unknown): SubscribeToFeedResponse {
 export async function subscribeToFeed(
   feedId: string,
 ): Promise<SubscribeResult> {
-  const supabase = getSupabaseClient();
-
-  const { data: sessionData, error: sessionError } =
-    await supabase.auth.getSession();
-
-  if (sessionError) {
-    console.error("subscribeToFeed: getSession error", sessionError);
-    throw new AuthApiError("Failed to get user session.", "SESSION_ERROR", 0);
-  }
-
-  const accessToken = sessionData?.session?.access_token;
-  if (!accessToken) {
-    throw new AuthApiError("Please sign in to subscribe.", "UNAUTHORIZED", 0);
-  }
+  const accessToken = await getAccessToken();
 
   const supabaseUrl = getSupabaseUrl();
   if (!supabaseUrl) {

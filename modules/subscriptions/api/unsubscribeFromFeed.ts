@@ -1,22 +1,10 @@
-import { createClient } from "@supabase/supabase-js";
-
 import { AuthApiError } from "@/modules/auth/api/authApiError";
 import {
   getSupabaseUrl,
   getSupabaseAnonKey,
 } from "@/modules/today/api/getSupabaseConfig";
+import { getAccessToken } from "./createSupabaseClient";
 import type { UnsubscribeResult } from "./types";
-
-function getSupabaseClient() {
-  const supabaseUrl = getSupabaseUrl();
-  const supabaseAnonKey = getSupabaseAnonKey();
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new AuthApiError("Supabase is not configured.", "NOT_CONFIGURED", 0);
-  }
-
-  return createClient(supabaseUrl, supabaseAnonKey);
-}
 
 export type UnsubscribeResponse =
   | { ok: true; data: UnsubscribeResult }
@@ -59,27 +47,13 @@ export function parseUnsubscribeResponse(body: unknown): UnsubscribeResponse {
 export async function unsubscribeFromFeed(
   feedId: string,
 ): Promise<UnsubscribeResult> {
-  const supabase = getSupabaseClient();
-
-  const { data: sessionData, error: sessionError } =
-    await supabase.auth.getSession();
-
-  if (sessionError) {
-    console.error("unsubscribeFromFeed: getSession error", sessionError);
-    throw new AuthApiError("Failed to get user session.", "SESSION_ERROR", 0);
-  }
-
-  const accessToken = sessionData?.session?.access_token;
-  if (!accessToken) {
-    throw new AuthApiError("Please sign in to unsubscribe.", "UNAUTHORIZED", 0);
-  }
+  const accessToken = await getAccessToken();
 
   const supabaseUrl = getSupabaseUrl();
   if (!supabaseUrl) {
     throw new AuthApiError("Supabase is not configured.", "NOT_CONFIGURED", 0);
   }
 
-  // First, get the subscription ID
   const anonKey = getSupabaseAnonKey();
 
   const headers: Record<string, string> = {
@@ -91,12 +65,13 @@ export async function unsubscribeFromFeed(
   }
   headers.Authorization = `Bearer ${accessToken}`;
 
-  // Find subscription
+  // Use single filtered DELETE - more efficient than find-then-delete
+  const deleteUrl = `${supabaseUrl}/rest/v1/subscriptions?feed_id=eq.${encodeURIComponent(feedId)}`;
+
   let res: Response;
   try {
-    const selectUrl = `${supabaseUrl}/rest/v1/subscriptions?feed_id=eq.${encodeURIComponent(feedId)}&select=id`;
-    res = await fetch(selectUrl, {
-      method: "GET",
+    res = await fetch(deleteUrl, {
+      method: "DELETE",
       headers,
     });
   } catch {
@@ -107,12 +82,9 @@ export async function unsubscribeFromFeed(
     );
   }
 
-  if (!res.ok) {
-    throw new AuthApiError(
-      "Failed to find subscription.",
-      "FETCH_ERROR",
-      res.status,
-    );
+  // 200/204/404 are all acceptable for idempotent delete
+  if (res.ok || res.status === 404) {
+    return { success: true };
   }
 
   let jsonBody: unknown;
@@ -126,34 +98,13 @@ export async function unsubscribeFromFeed(
     );
   }
 
-  const subscriptions = jsonBody as { id: string }[];
-  if (!Array.isArray(subscriptions) || subscriptions.length === 0) {
-    // Already unsubscribed - return success (idempotent)
-    return { success: true };
-  }
-
-  const subscriptionId = subscriptions[0].id;
-
-  // Delete subscription
-  try {
-    const deleteUrl = `${supabaseUrl}/rest/v1/subscriptions?id=eq.${encodeURIComponent(subscriptionId)}`;
-    res = await fetch(deleteUrl, {
-      method: "DELETE",
-      headers,
-    });
-  } catch {
+  const parsed = parseUnsubscribeResponse(jsonBody);
+  if (!parsed.ok) {
     throw new AuthApiError(
-      "Network error. Please try again.",
-      "NETWORK_ERROR",
-      0,
-    );
-  }
-
-  if (!res.ok && res.status !== 404) {
-    throw new AuthApiError(
-      "Failed to unsubscribe.",
-      "DELETE_ERROR",
+      parsed.message,
+      parsed.code,
       res.status,
+      parsed.details,
     );
   }
 
