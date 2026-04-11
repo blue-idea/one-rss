@@ -29,8 +29,11 @@ jobs:
       - name: pnpm audit
         run: pnpm audit --audit-level=high
 
+      # Requires GitHub Dependency graph (Repo Settings → Code security → Dependency graph).
+      # On forks or repos without it, the action errors; we still run pnpm audit above.
       - name: Dependency Review
         if: github.event_name == 'pull_request'
+        continue-on-error: true
         uses: actions/dependency-review-action@v4
 
       - name: Snyk Scan
