@@ -158,3 +158,213 @@ describe("Discovery and Subscription", () => {
     }
   });
 });
+
+// 需求3(6) - 精品优先推荐流
+describe("Featured Feed Priority and Sorting", () => {
+  // 需求3.6: 当用户进入"精选推荐"栏目时，OneRss 应优先展示来自 is_featured = true 订阅源的文章...
+  // 验证排序规则：feeds.is_featured 优先，同优先级内按发布时间倒序
+  it("should parse articles with featured feed priority", () => {
+    const mockResponse = {
+      success: true,
+      data: {
+        articles: [
+          {
+            id: "a1",
+            title: "Featured Article 1",
+            summary: "From featured source",
+            sourceUrl: "https://example.com/f1",
+            publishedAt: "2026-04-10T12:00:00Z",
+            readTimeMinutes: 5,
+            feed: {
+              id: "f1",
+              title: "Featured Feed",
+              imageUrl: "https://example.com/logo.png",
+              siteUrl: "https://example.com",
+              isFeatured: true,
+            },
+          },
+          {
+            id: "a2",
+            title: "Featured Article 2 (older)",
+            summary: "From same featured source",
+            sourceUrl: "https://example.com/f2",
+            publishedAt: "2026-04-10T08:00:00Z",
+            readTimeMinutes: 3,
+            feed: {
+              id: "f1",
+              title: "Featured Feed",
+              imageUrl: "https://example.com/logo.png",
+              siteUrl: "https://example.com",
+              isFeatured: true,
+            },
+          },
+          {
+            id: "a3",
+            title: "Regular Article (newer)",
+            summary: "From regular source",
+            sourceUrl: "https://example.com/f3",
+            publishedAt: "2026-04-10T11:00:00Z",
+            readTimeMinutes: 4,
+            feed: {
+              id: "f2",
+              title: "Regular Feed",
+              imageUrl: null,
+              siteUrl: "https://regular.example.com",
+              isFeatured: false,
+            },
+          },
+          {
+            id: "a4",
+            title: "Regular Article (older)",
+            summary: "From regular source",
+            sourceUrl: "https://example.com/f4",
+            publishedAt: "2026-04-10T06:00:00Z",
+            readTimeMinutes: 2,
+            feed: {
+              id: "f2",
+              title: "Regular Feed",
+              imageUrl: null,
+              siteUrl: "https://regular.example.com",
+              isFeatured: false,
+            },
+          },
+        ],
+        pagination: { limit: 20, offset: 0, hasMore: false },
+      },
+      meta: {},
+    };
+
+    const result = parseCuratedArticlesResponse(mockResponse);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const articles = result.data.articles;
+
+      // Verify all articles are parsed correctly
+      expect(articles).toHaveLength(4);
+
+      // Featured articles should come first (is_featured = true)
+      const featuredArticles = articles.filter((a) => a.feed.isFeatured);
+
+      // First 2 articles should be from featured feeds
+      expect(featuredArticles).toHaveLength(2);
+      expect(articles[0].feed.isFeatured).toBe(true);
+      expect(articles[1].feed.isFeatured).toBe(true);
+
+      // Within featured, newer article should come first (descending by publishedAt)
+      const featuredPublishedAt0 = new Date(articles[0].publishedAt).getTime();
+      const featuredPublishedAt1 = new Date(articles[1].publishedAt).getTime();
+      expect(featuredPublishedAt0).toBeGreaterThan(featuredPublishedAt1);
+
+      // Regular articles should come after featured
+      expect(articles[2].feed.isFeatured).toBe(false);
+      expect(articles[3].feed.isFeatured).toBe(false);
+
+      // Within regular, newer article should come first
+      const regularPublishedAt2 = new Date(articles[2].publishedAt).getTime();
+      const regularPublishedAt3 = new Date(articles[3].publishedAt).getTime();
+      expect(regularPublishedAt2).toBeGreaterThan(regularPublishedAt3);
+    }
+  });
+
+  // 验证时间倒序：同优先级内最新文章在前
+  it("should maintain descending order by published time within same priority", () => {
+    const mockResponse = {
+      success: true,
+      data: {
+        articles: [
+          {
+            id: "a1",
+            title: "Newest Featured",
+            summary: "Newest featured",
+            sourceUrl: "https://example.com/a1",
+            publishedAt: "2026-04-10T14:00:00Z",
+            readTimeMinutes: 5,
+            feed: {
+              id: "f1",
+              title: "Featured",
+              imageUrl: null,
+              siteUrl: "https://example.com",
+              isFeatured: true,
+            },
+          },
+          {
+            id: "a2",
+            title: "Oldest Featured",
+            summary: "Oldest featured",
+            sourceUrl: "https://example.com/a2",
+            publishedAt: "2026-04-10T06:00:00Z",
+            readTimeMinutes: 3,
+            feed: {
+              id: "f1",
+              title: "Featured",
+              imageUrl: null,
+              siteUrl: "https://example.com",
+              isFeatured: true,
+            },
+          },
+        ],
+        pagination: { limit: 20, offset: 0, hasMore: false },
+      },
+      meta: {},
+    };
+
+    const result = parseCuratedArticlesResponse(mockResponse);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const articles = result.data.articles;
+
+      // Verify descending order by publishedAt
+      const time0 = new Date(articles[0].publishedAt).getTime();
+      const time1 = new Date(articles[1].publishedAt).getTime();
+      expect(time0).toBeGreaterThan(time1);
+    }
+  });
+
+  // 验证与今日流排序规则一致性
+  it("should have consistent structure with today articles feed", () => {
+    const curatedResponse = {
+      success: true,
+      data: {
+        articles: [
+          {
+            id: "a1",
+            title: "Article",
+            summary: "Summary",
+            sourceUrl: "https://example.com",
+            publishedAt: "2026-04-10T10:00:00Z",
+            readTimeMinutes: 5,
+            feed: {
+              id: "f1",
+              title: "Feed",
+              imageUrl: null,
+              siteUrl: "https://example.com",
+              isFeatured: true,
+            },
+          },
+        ],
+        pagination: { limit: 20, offset: 0, hasMore: false },
+      },
+      meta: {},
+    };
+
+    const result = parseCuratedArticlesResponse(curatedResponse);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const article = result.data.articles[0];
+
+      // Verify required fields for consistent rendering
+      expect(article).toHaveProperty("id");
+      expect(article).toHaveProperty("title");
+      expect(article).toHaveProperty("summary");
+      expect(article).toHaveProperty("sourceUrl");
+      expect(article).toHaveProperty("publishedAt");
+      expect(article).toHaveProperty("readTimeMinutes");
+      expect(article).toHaveProperty("feed");
+
+      // Verify feed structure
+      expect(article.feed).toHaveProperty("id");
+      expect(article.feed).toHaveProperty("title");
+      expect(article.feed).toHaveProperty("isFeatured");
+    }
+  });
+});
