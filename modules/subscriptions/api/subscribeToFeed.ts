@@ -4,6 +4,7 @@ import {
   getSupabaseAnonKey,
 } from "@/modules/today/api/getSupabaseConfig";
 import { getAccessToken } from "./createSupabaseClient";
+import { checkSubscriptionLimit } from "./getSubscriptionCount";
 import type { SubscribeResult } from "./types";
 
 export type SubscribeToFeedResponse =
@@ -55,6 +56,9 @@ export function parseSubscribeResponse(body: unknown): SubscribeToFeedResponse {
 export async function subscribeToFeed(
   feedId: string,
 ): Promise<SubscribeResult> {
+  // Client-side check: verify user hasn't exceeded subscription limit
+  await checkSubscriptionLimit();
+
   const accessToken = await getAccessToken();
 
   const supabaseUrl = getSupabaseUrl();
