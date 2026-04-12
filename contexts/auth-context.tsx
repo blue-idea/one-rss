@@ -10,6 +10,7 @@ import {
 } from "react";
 
 import { AUTH_SESSION_STORAGE_KEY } from "@/constants/auth";
+import { createSupabaseClient } from "@/modules/subscriptions/api/createSupabaseClient";
 
 const SESSION_VALUE = "1";
 
@@ -51,6 +52,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    try {
+      await createSupabaseClient().auth.signOut();
+    } catch {
+      // 未配置 Supabase 或未建立会话时忽略
+    }
     await AsyncStorage.removeItem(AUTH_SESSION_STORAGE_KEY);
     setIsAuthenticated(false);
   }, []);

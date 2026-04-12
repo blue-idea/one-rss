@@ -1,6 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
-
 import { AuthApiError } from "@/modules/auth/api/authApiError";
+import { createSupabaseClient } from "@/modules/subscriptions/api/createSupabaseClient";
 import {
   getSupabaseUrl,
   getSupabaseAnonKey,
@@ -12,17 +11,6 @@ import type {
   FeedsResponse,
   FetchFeedsOptions,
 } from "./types";
-
-function getSupabaseClient() {
-  const supabaseUrl = getSupabaseUrl();
-  const supabaseAnonKey = getSupabaseAnonKey();
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new AuthApiError("Supabase is not configured.", "NOT_CONFIGURED", 0);
-  }
-
-  return createClient(supabaseUrl, supabaseAnonKey);
-}
 
 export type FetchFeedsResult = {
   feeds: FeedSource[];
@@ -104,7 +92,7 @@ export async function fetchFeeds(
   const { categorySlug, keyword, page = 1, pageSize = 20 } = options;
 
   try {
-    const supabase = getSupabaseClient();
+    const supabase = createSupabaseClient();
 
     const { data: sessionData, error: sessionError } =
       await supabase.auth.getSession();

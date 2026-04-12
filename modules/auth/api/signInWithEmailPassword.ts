@@ -1,4 +1,5 @@
 import { AuthApiError } from "@/modules/auth/api/authApiError";
+import { createSupabaseClient } from "@/modules/subscriptions/api/createSupabaseClient";
 
 function getSupabaseUrl(): string | undefined {
   const direct = process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -106,7 +107,34 @@ export async function signInWithEmailPassword(
   }
 
   const parsed = parseSignInResponse(body);
-  if (parsed.ok) return;
+  if (!parsed.ok) {
+    throw new AuthApiError(parsed.message, parsed.code, res.status);
+  }
 
-  throw new AuthApiError(parsed.message, parsed.code, res.status);
+  const rec = body as Record<string, unknown>;
+  const accessToken =
+    typeof rec.access_token === "string" ? rec.access_token : "";
+  const refreshToken =
+    typeof rec.refresh_token === "string" ? rec.refresh_token : "";
+  if (!accessToken || !refreshToken) {
+    throw new AuthApiError(
+      "Invalid response from server.",
+      "INTERNAL_ERROR",
+      res.status,
+    );
+  }
+
+  const supabase = createSupabaseClient();
+  const { error: persistError } = await supabase.auth.setSession({
+    access_token: accessToken,
+    refresh_token: refreshToken,
+  });
+  if (persistError) {
+    console.error("signInWithEmailPassword: setSession error", persistError);
+    throw new AuthApiError(
+      persistError.message || "Failed to persist session.",
+      "SESSION_ERROR",
+      0,
+    );
+  }
 }
