@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createSupabaseClient as getSupabaseClient } from "@/modules/subscriptions/api/createSupabaseClient";
 
 import { AuthApiError } from "@/modules/auth/api/authApiError";
 
@@ -7,25 +7,9 @@ function getCuratedArticlesUrl(): string | undefined {
   return typeof u === "string" && u.trim().length > 0 ? u.trim() : undefined;
 }
 
-function getSupabaseUrl(): string | undefined {
-  const u = process.env.EXPO_PUBLIC_SUPABASE_URL;
-  return typeof u === "string" && u.trim().length > 0 ? u.trim() : undefined;
-}
-
 function getSupabaseAnonKey(): string | undefined {
   const k = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
   return typeof k === "string" && k.trim().length > 0 ? k.trim() : undefined;
-}
-
-function getSupabaseClient() {
-  const supabaseUrl = getSupabaseUrl();
-  const supabaseAnonKey = getSupabaseAnonKey();
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error("Missing Supabase environment variables");
-  }
-
-  return createClient(supabaseUrl, supabaseAnonKey);
 }
 
 export type CuratedFeed = {
@@ -82,7 +66,11 @@ export function parseCuratedArticlesResponse(body: unknown):
     }
     const articles = data.articles;
     const pagination = data.pagination;
-    if (!Array.isArray(articles) || !pagination || typeof pagination !== "object") {
+    if (
+      !Array.isArray(articles) ||
+      !pagination ||
+      typeof pagination !== "object"
+    ) {
       return {
         ok: false,
         code: "INTERNAL_ERROR",
@@ -124,15 +112,12 @@ export async function fetchCuratedArticles(
   const supabase = getSupabaseClient();
 
   // Get current session to extract access token
-  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  const { data: sessionData, error: sessionError } =
+    await supabase.auth.getSession();
 
   if (sessionError) {
     console.error("fetchCuratedArticles: getSession error", sessionError);
-    throw new AuthApiError(
-      "Failed to get user session.",
-      "SESSION_ERROR",
-      0,
-    );
+    throw new AuthApiError("Failed to get user session.", "SESSION_ERROR", 0);
   }
 
   const accessToken = sessionData?.session?.access_token;

@@ -2,24 +2,8 @@
  * 退出登录 API
  */
 
-import { createClient } from "@supabase/supabase-js";
+import { createSupabaseClient as getSupabaseClient } from "@/modules/subscriptions/api/createSupabaseClient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-import {
-  getSupabaseUrl,
-  getSupabaseAnonKey,
-} from "@/modules/today/api/getSupabaseConfig";
-
-function getSupabaseClient() {
-  const supabaseUrl = getSupabaseUrl();
-  const supabaseAnonKey = getSupabaseAnonKey();
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error("Missing Supabase environment variables");
-  }
-
-  return createClient(supabaseUrl, supabaseAnonKey);
-}
 
 export type LogoutResult =
   | { ok: true }

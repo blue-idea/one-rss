@@ -1,18 +1,10 @@
-import { createClient } from "@supabase/supabase-js";
-
 import { AuthApiError } from "@/modules/auth/api/authApiError";
-import { getSupabaseUrl, getSupabaseAnonKey } from "@/modules/today/api/getSupabaseConfig";
+import { createSupabaseClient as getSupabaseClient } from "@/modules/subscriptions/api/createSupabaseClient";
 
-function getSupabaseClient() {
-  const supabaseUrl = getSupabaseUrl();
-  const supabaseAnonKey = getSupabaseAnonKey();
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error("Missing Supabase environment variables");
-  }
-
-  return createClient(supabaseUrl, supabaseAnonKey);
-}
+import {
+  getSupabaseUrl,
+  getSupabaseAnonKey,
+} from "@/modules/today/api/getSupabaseConfig";
 
 export type Feed = {
   id: string;
@@ -76,11 +68,7 @@ export async function fetchArticle(articleId: string): Promise<Article> {
 
   if (sessionError) {
     console.error("fetchArticle: getSession error", sessionError);
-    throw new AuthApiError(
-      "Failed to get user session.",
-      "SESSION_ERROR",
-      0,
-    );
+    throw new AuthApiError("Failed to get user session.", "SESSION_ERROR", 0);
   }
 
   const accessToken = sessionData?.session?.access_token;
@@ -153,11 +141,7 @@ export async function fetchArticle(articleId: string): Promise<Article> {
     );
   }
   if (res.status === 404) {
-    throw new AuthApiError(
-      parsed.message,
-      "NOT_FOUND",
-      res.status,
-    );
+    throw new AuthApiError(parsed.message, "NOT_FOUND", res.status);
   }
 
   throw new AuthApiError(parsed.message, parsed.code, res.status);

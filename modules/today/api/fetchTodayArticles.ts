@@ -1,18 +1,7 @@
-import { createClient } from "@supabase/supabase-js";
+import { createSupabaseClient as getSupabaseClient } from "@/modules/subscriptions/api/createSupabaseClient";
 
 import { AuthApiError } from "@/modules/auth/api/authApiError";
-import { getSupabaseUrl, getSupabaseAnonKey, getTodayArticlesUrl } from "./getSupabaseConfig";
-
-function getSupabaseClient() {
-  const supabaseUrl = getSupabaseUrl();
-  const supabaseAnonKey = getSupabaseAnonKey();
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error("Missing Supabase environment variables");
-  }
-
-  return createClient(supabaseUrl, supabaseAnonKey);
-}
+import { getSupabaseAnonKey, getTodayArticlesUrl } from "./getSupabaseConfig";
 
 export type Feed = {
   id: string;
@@ -78,7 +67,11 @@ export function parseTodayArticlesResponse(body: unknown):
     }
     const articles = data.articles;
     const pagination = data.pagination;
-    if (!Array.isArray(articles) || !pagination || typeof pagination !== "object") {
+    if (
+      !Array.isArray(articles) ||
+      !pagination ||
+      typeof pagination !== "object"
+    ) {
       return {
         ok: false,
         code: "INTERNAL_ERROR",
@@ -115,15 +108,12 @@ export async function fetchTodayArticles(
   const supabase = getSupabaseClient();
 
   // Get current session to extract access token
-  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  const { data: sessionData, error: sessionError } =
+    await supabase.auth.getSession();
 
   if (sessionError) {
     console.error("fetchTodayArticles: getSession error", sessionError);
-    throw new AuthApiError(
-      "Failed to get user session.",
-      "SESSION_ERROR",
-      0,
-    );
+    throw new AuthApiError("Failed to get user session.", "SESSION_ERROR", 0);
   }
 
   const accessToken = sessionData?.session?.access_token;

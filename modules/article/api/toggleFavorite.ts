@@ -1,21 +1,10 @@
-import { createClient } from "@supabase/supabase-js";
-
 import { AuthApiError } from "@/modules/auth/api/authApiError";
+import { createSupabaseClient as getSupabaseClient } from "@/modules/subscriptions/api/createSupabaseClient";
+
 import {
   getSupabaseUrl,
   getSupabaseAnonKey,
 } from "@/modules/today/api/getSupabaseConfig";
-
-function getSupabaseClient() {
-  const supabaseUrl = getSupabaseUrl();
-  const supabaseAnonKey = getSupabaseAnonKey();
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error("Missing Supabase environment variables");
-  }
-
-  return createClient(supabaseUrl, supabaseAnonKey);
-}
 
 export type ToggleFavoriteResponse =
   | { ok: true; isFavorited: boolean }

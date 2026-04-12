@@ -1,18 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createClient } from "@supabase/supabase-js";
-
-import { getSupabaseUrl, getSupabaseAnonKey } from "@/modules/today/api/getSupabaseConfig";
-
-function getSupabaseClient() {
-  const supabaseUrl = getSupabaseUrl();
-  const supabaseAnonKey = getSupabaseAnonKey();
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error("Missing Supabase environment variables");
-  }
-
-  return createClient(supabaseUrl, supabaseAnonKey);
-}
+import { createSupabaseClient as getSupabaseClient } from "@/modules/subscriptions/api/createSupabaseClient";
 
 export interface UserProfileStats {
   subscriptionCount: number;
@@ -23,7 +10,9 @@ export interface UserProfileStats {
 export async function fetchUserProfileStats(): Promise<UserProfileStats> {
   const supabase = getSupabaseClient();
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
     throw new Error("User not authenticated");

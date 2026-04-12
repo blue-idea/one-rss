@@ -1053,7 +1053,7 @@ export default function LoginScreen() {
             <TouchableOpacity
               testID="auth-submit"
               style={styles.primaryButton}
-              onPress={handleSubmit}
+              onPress={() => void handleSubmit()}
               disabled={isVerifyingOtp || isSubmittingAuth}
               activeOpacity={0.92}
             >
@@ -1078,6 +1078,12 @@ export default function LoginScreen() {
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
+
+            {mode === "login" && sendOtpError ? (
+              <Text testID="auth-login-error" style={styles.errorText}>
+                {sendOtpError}
+              </Text>
+            ) : null}
 
             <View style={styles.switchRow}>
               {mode === "register" ? (
